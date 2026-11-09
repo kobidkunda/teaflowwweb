@@ -1,0 +1,13 @@
+flowchart LR
+ A[Customer] --> B[TeaFloww storefront]
+ B --> C[Blend Lab domain/API]
+ C --> D[(Projects + payment ledger)]
+ C --> E[Payment gateway adapter]
+ C --> F[Courier adapter]
+ C --> G[(Outbox + worker)]
+ G --> H[TeaPilot adapter]
+ H --> I[Samples, tasting, blends]
+ G --> J[Report generator]
+ J --> K[(Private object storage)]
+ K --> C
+ L[Lab staff] --> H

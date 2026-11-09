@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+<defs><linearGradient id="g" x1="0" x2="1"><stop stop-color="#19291f"/><stop offset="1" stop-color="#3b5744"/></linearGradient></defs>
+<rect width="390" height="844" fill="#f6f1e7"/>
+<rect width="390" height="30" fill="#1d2a24"/><text x="195" y="19" text-anchor="middle" font-family="Arial" font-size="9" fill="#f4eee2">COMPLIMENTARY SHIPPING FROM ₹1,500</text>
+<rect y="30" width="390" height="69" fill="#fbf8f1"/><text x="17" y="72" font-family="Arial" font-size="22" fill="#1d2a24">☰</text><text x="62" y="70" font-family="Georgia" font-size="17" fill="#1d2a24">✳ THE TEA HOUSE</text><text x="335" y="70" font-family="Arial" font-size="19" fill="#1d2a24">♧</text>
+<rect y="99" width="390" height="520" fill="url(#g)"/>
+<text x="23" y="156" font-family="Arial" font-size="10" letter-spacing="2" fill="#d8c6a4">THE ART OF A QUIETER RITUAL</text>
+<text x="23" y="215" font-family="Georgia" font-size="37" fill="#f6f1e7">Closer to the</text><text x="23" y="260" font-family="Georgia" font-size="37" fill="#f6f1e7">garden.</text><text x="23" y="306" font-family="Georgia" font-style="italic" font-size="37" fill="#d6c8a7">Better in the cup.</text>
+<text x="23" y="347" font-family="Arial" font-size="12" fill="#d6dfd5">Explore extraordinary tea through</text><text x="23" y="366" font-family="Arial" font-size="12" fill="#d6dfd5">origin, season and taste.</text>
+<rect x="23" y="390" width="221" height="44" fill="#f6f1e7"/><text x="37" y="418" font-family="Arial" font-weight="bold" font-size="11" fill="#1d2a24">DISCOVER THE COLLECTION ↗</text>
+<ellipse cx="260" cy="578" rx="118" ry="17" fill="#142018" opacity=".5"/>
+<ellipse cx="259" cy="553" rx="132" ry="27" fill="#eae3d6"/>
+<path d="M150 455Q150 553 220 564Q259 574 299 564Q372 552 368 455Z" fill="#f1e9db"/>
+<ellipse cx="259" cy="456" rx="109" ry="28" fill="#f3ecdf"/>
+<ellipse cx="259" cy="456" rx="98" ry="20" fill="#ac6536"/>
+<path d="M215 427C195 394 232 371 211 342M270 426C249 391 291 368 268 340" stroke="#d6e0d5" stroke-width="5" fill="none" opacity=".3"/>
+<rect y="619" width="390" height="54" fill="#eee9df"/>
+<text x="18" y="651" font-family="Arial" font-size="10" fill="#35483a">01 DISCOVER BY TASTE</text><text x="215" y="651" font-family="Arial" font-size="10" fill="#35483a">02 KNOW THE ORIGIN</text>
+<text x="23" y="710" font-family="Arial" font-size="10" letter-spacing="2" fill="#66765e">A TEA FOR EVERY MOMENT</text>
+<text x="23" y="754" font-family="Georgia" font-size="30" fill="#1d2a24">How do you like</text><text x="23" y="791" font-family="Georgia" font-style="italic" font-size="30" fill="#1d2a24">your cup?</text>
+<rect x="280" y="706" width="91" height="119" fill="#294638"/><text x="291" y="750" font-family="Georgia" font-size="15" fill="#f4eee2">Bold &amp;</text><text x="291" y="770" font-family="Georgia" font-size="15" fill="#f4eee2">beautiful.</text>
+</svg>

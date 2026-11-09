@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+<defs><linearGradient id="h" x1="0" x2="1"><stop stop-color="#19291f"/><stop offset="1" stop-color="#365342"/></linearGradient><linearGradient id="c" x1="0" x2="1"><stop stop-color="#e7ddc9"/><stop offset="1" stop-color="#fbf5e8"/></linearGradient></defs>
+<rect width="1280" height="800" fill="#f6f1e7"/>
+<rect width="1280" height="28" fill="#18271e"/><text x="640" y="19" font-family="Arial" font-size="10" fill="#e8e1d3" text-anchor="middle">A QUIETER WAY TO DISCOVER FINE TEA · COMPLIMENTARY SHIPPING FROM ₹1,500</text>
+<rect y="28" width="1280" height="75" fill="#fbf8f1"/>
+<text x="65" y="76" font-family="Georgia" font-size="23" fill="#1d2a24">✳  THE TEA HOUSE</text>
+<text x="590" y="74" font-family="Arial" font-size="13" fill="#29392e">Shop Tea</text><text x="700" y="74" font-family="Arial" font-size="13" fill="#29392e">Origins</text><text x="794" y="74" font-family="Arial" font-size="13" fill="#29392e">Tea Finder</text><text x="905" y="74" font-family="Arial" font-size="13" fill="#29392e">Gifts</text><text x="1140" y="74" font-family="Arial" font-size="13" fill="#29392e">Search  ♧</text>
+<rect y="103" width="1280" height="485" fill="url(#h)"/>
+<path d="M660 435L760 300L860 390L990 220L1120 360L1280 245V588H660Z" fill="#88a087" opacity=".12"/>
+<path d="M650 515L810 330L920 410L1040 315L1180 420L1280 350V588H650Z" fill="#a1b29b" opacity=".1"/>
+<text x="80" y="195" font-family="Arial" font-size="12" letter-spacing="3" fill="#d3c7a6">THE ART OF A QUIETER RITUAL</text>
+<text x="80" y="273" font-family="Georgia" font-size="58" fill="#f7f0e4">Closer to the garden.</text>
+<text x="80" y="339" font-family="Georgia" font-style="italic" font-size="58" fill="#d6c7a7">Better in the cup.</text>
+<text x="80" y="385" font-family="Arial" font-size="15" fill="#dce4d8">Explore extraordinary tea through the language of origin,</text>
+<text x="80" y="407" font-family="Arial" font-size="15" fill="#dce4d8">season and taste. Made for slow moments.</text>
+<rect x="80" y="445" width="230" height="50" rx="2" fill="#f6f1e7"/><text x="103" y="476" font-family="Arial" font-weight="bold" font-size="12" fill="#1d2a24">DISCOVER THE COLLECTION  ↗</text>
+<text x="342" y="475" font-family="Arial" font-size="13" fill="#f6f1e7">Find your tea  →</text>
+<ellipse cx="980" cy="530" rx="205" ry="28" fill="#101d15" opacity=".4"/>
+<ellipse cx="980" cy="490" rx="220" ry="43" fill="#eee6d6"/>
+<path d="M787 308Q790 472 901 486Q980 508 1055 486Q1165 467 1173 308Z" fill="url(#c)"/>
+<path d="M1147 330C1260 293 1245 451 1157 446" fill="none" stroke="#e7dece" stroke-width="28"/>
+<ellipse cx="980" cy="306" rx="192" ry="52" fill="#eae1d0"/>
+<ellipse cx="980" cy="307" rx="170" ry="38" fill="#9b542c"/>
+<ellipse cx="980" cy="300" rx="145" ry="22" fill="#cb8744" opacity=".7"/>
+<path d="M885 246C850 202 920 173 887 125M986 250C950 195 1020 162 987 112M1080 245C1045 192 1115 169 1083 122" fill="none" stroke="#c8d9ca" stroke-width="7" opacity=".25"/>
+<rect y="588" width="1280" height="51" fill="#eee9df"/>
+<text x="100" y="619" font-family="Arial" font-size="12" fill="#314434">01  DISCOVER BY TASTE</text><text x="390" y="619" font-family="Arial" font-size="12" fill="#314434">02  KNOW THE ORIGIN</text><text x="690" y="619" font-family="Arial" font-size="12" fill="#314434">03  BREW WITH CONFIDENCE</text><text x="1030" y="619" font-family="Arial" font-size="12" fill="#314434">04  GIFT BEAUTIFULLY</text>
+<text x="80" y="690" font-family="Arial" letter-spacing="3" font-size="11" fill="#63735e">A TEA FOR EVERY MOMENT</text>
+<text x="80" y="750" font-family="Georgia" font-size="42" fill="#1d2a24">How do you like your cup?</text>
+<rect x="760" y="669" width="150" height="105" fill="#294638"/><rect x="925" y="669" width="150" height="105" fill="#d9e1d0"/><rect x="1090" y="669" width="150" height="105" fill="#d8b58b"/>
+<text x="775" y="715" font-family="Georgia" font-size="20" fill="white">Bold &amp;</text><text x="775" y="739" font-family="Georgia" font-size="20" fill="white">beautiful.</text>
+<text x="940" y="715" font-family="Georgia" font-size="20" fill="#284332">Fresh &amp;</text><text x="940" y="739" font-family="Georgia" font-size="20" fill="#284332">gentle.</text>
+<text x="1105" y="715" font-family="Georgia" font-size="20" fill="#503d26">Made to</text><text x="1105" y="739" font-family="Georgia" font-size="20" fill="#503d26">be given.</text>
+</svg>

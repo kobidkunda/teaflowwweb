@@ -1,0 +1,79 @@
+{
+  "_help": "Template for scripts/import-product-package.mjs. Copy this file, duplicate the product object per SKU family, fill every field (leave unknown optional fields out entirely — omitted fields are preserved, never blanked), then run: node scripts/import-product-package.mjs pkg.json (dry-run) and add --apply to import. Images: omitted array keeps the gallery; provided array REPLACES it. Variants: omitted MRP preserves, null clears. Delete this _help key or leave it — the importer ignores it.",
+  "products": [
+    {
+      "slug": "rose-hibiscus-iced-black-tea",
+      "name": "Rose Hibiscus Iced Black Tea",
+      "category": "Iced & Clear Teas",
+      "status": "draft",
+      "ingredients": "Dooars black tea, rose petals, hibiscus",
+      "featured": false,
+      "description": "Single-estate summer black tea blended for iced brewing.",
+      "tasting_notes": "Rosewater, wild berry, brisk finish",
+      "aroma_tags": ["rose", "hibiscus", "berry"],
+      "floral": 4,
+      "fruity": 4,
+      "malty": 2,
+      "body": 3,
+      "sweetness": 3,
+      "earthy": 0,
+      "dry_leaf_grade": "FTGFOP",
+      "dry_leaf_appearance": "Dark twisted leaf with petals",
+      "dry_leaf_aroma": "Rose garden",
+      "liquor_hue_hex": "#a83a4e",
+      "liquor_hue_name": "Rosé Ruby",
+      "liquor_clarity": "Brilliant",
+      "liquor_body": "Silky light",
+      "wet_leaf_aroma": "Stewed berries",
+      "wet_leaf_oxidation": "Full",
+      "brew_temp": 95,
+      "brew_seconds": 300,
+      "leaf_dose_grams": 5,
+      "water_ml": 1000,
+      "steep_count": 1,
+      "steep_instructions": "Steep hot, pour over ice.",
+      "origin": "Dooars, West Bengal, India",
+      "verified_origin": "Dooars estate lot, garden invoice verified",
+      "estate": "Dooars Estate",
+      "flush": "Summer Flush",
+      "harvest_date": "June 2026",
+      "elevation_feet": 450,
+      "elevation_display": "300 – 600 ft",
+      "lot_number": "DJ-06/26",
+      "cultivar": "P312",
+      "estate_story": "Young Dooars garden replanted for iced-tea cultivars.",
+      "seo_title": "Rose Hibiscus Iced Black Tea | TeaFloww",
+      "seo_description": "Cold-brewed Dooars black tea with rose and hibiscus. Single-estate summer lot.",
+      "canonical_override": "",
+      "noindex": 0,
+      "variants": [
+        {
+          "sku": "TEMPLATE-RH-100G",
+          "grams": 100,
+          "packaging_format": "loose_leaf_pouch",
+          "price": 199,
+          "mrp_inr": 249,
+          "stock": 0,
+          "servings": 50
+        },
+        {
+          "sku": "TEMPLATE-RH-250G",
+          "grams": 250,
+          "packaging_format": "loose_leaf_pouch",
+          "price_paise": 44900,
+          "compare_at_price_paise": null,
+          "stock": 0,
+          "servings": 125
+        }
+      ],
+      "images": [
+        {
+          "url": "/uploads/template-rose-1.webp",
+          "alt_text": "Rose hibiscus iced black tea pouch, front",
+          "sort_order": 0,
+          "is_primary": 1
+        }
+      ]
+    }
+  ]
+}

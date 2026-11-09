@@ -1,0 +1,19 @@
+flowchart TD
+ A[Discover Blend Lab] --> B[Compare three plans]
+ B --> C[Enter tea + goals]
+ C --> D[Courier eligibility]
+ D -->|Supported| E[Verified payment]
+ D -->|Not supported| F[Clear alternative / stop]
+ E --> G[Inbound sample booked]
+ G --> H[Intake accepted]
+ H --> I[Professional tasting]
+ I --> J{Plan}
+ J -->|₹299| K[Short match & bulk quote]
+ J -->|₹1,999| L[Reviewed PDF report]
+ J -->|₹2,999| M[Reviewed PDF + trial blends]
+ M --> N[Outbound sample + feedback]
+ N --> O[Approve / revision]
+ K --> P[Commercial quote]
+ L --> P
+ O --> P
+ P --> Q[Wholesale supply]

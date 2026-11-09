@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800">
+<defs><linearGradient id="t" x1="0" x2="1"><stop stop-color="#253d30"/><stop offset=".5" stop-color="#4d6953"/><stop offset="1" stop-color="#1e3428"/></linearGradient></defs>
+<rect width="1280" height="800" fill="#f6f1e7"/>
+<rect width="1280" height="29" fill="#1d2a24"/><text x="640" y="19" text-anchor="middle" font-family="Arial" font-size="10" fill="#f4efe4">A QUIETER WAY TO DISCOVER FINE TEA · COMPLIMENTARY SHIPPING FROM ₹1,500</text>
+<rect y="29" width="1280" height="75" fill="#fbf8f1"/><text x="65" y="76" font-family="Georgia" font-size="23" fill="#1d2a24">✳  THE TEA HOUSE</text><text x="600" y="74" font-family="Arial" font-size="13" fill="#29392e">Shop Tea</text><text x="710" y="74" font-family="Arial" font-size="13" fill="#29392e">Origins</text><text x="800" y="74" font-family="Arial" font-size="13" fill="#29392e">Tea Finder</text><text x="915" y="74" font-family="Arial" font-size="13" fill="#29392e">Gifts</text>
+<text x="64" y="140" font-family="Arial" font-size="11" fill="#75776c">The Tea House / Shop / Darjeeling / Spring Clonal</text>
+<rect x="64" y="163" width="635" height="565" fill="#dfe5d9"/>
+<rect x="85" y="183" width="117" height="28" fill="#f6f1e7"/><text x="100" y="202" font-family="Arial" font-size="10" fill="#1d2a24">FIRST FLUSH</text>
+<ellipse cx="382" cy="650" rx="150" ry="23" fill="#364d3d" opacity=".2"/>
+<rect x="265" y="274" width="240" height="355" rx="15" fill="url(#t)"/>
+<ellipse cx="385" cy="274" rx="120" ry="25" fill="#6a856d"/>
+<rect x="258" y="254" width="254" height="38" rx="8" fill="#4b684f"/>
+<ellipse cx="385" cy="255" rx="127" ry="21" fill="#69856a"/>
+<rect x="293" y="340" width="184" height="214" fill="#f5f0e5"/>
+<text x="385" y="374" font-family="Georgia" text-anchor="middle" font-size="15" fill="#2e4935">THE TEA HOUSE</text>
+<text x="385" y="450" font-family="Georgia" text-anchor="middle" font-size="42" fill="#59745b">✳</text>
+<text x="385" y="497" font-family="Georgia" text-anchor="middle" font-size="19" fill="#2e4935">DARJEELING</text>
+<text x="385" y="517" font-family="Arial" text-anchor="middle" font-size="10" letter-spacing="2" fill="#2e4935">SPRING CLONAL</text>
+<text x="747" y="196" font-family="Arial" font-size="12" letter-spacing="2" fill="#697a55">DARJEELING · FIRST FLUSH</text>
+<text x="747" y="255" font-family="Georgia" font-size="48" fill="#1d2a24">Darjeeling</text><text x="747" y="309" font-family="Georgia" font-size="48" fill="#1d2a24">Spring Clonal</text>
+<text x="747" y="350" font-family="Arial" font-size="12" letter-spacing="2" fill="#63755e">WILDFLOWER · PEACH · HONEY</text>
+<text x="747" y="388" font-family="Arial" font-size="14" fill="#5b5d55">A delicate, fragrant spring-style tea with an</text><text x="747" y="410" font-family="Arial" font-size="14" fill="#5b5d55">elegant floral finish.</text>
+<rect x="747" y="439" width="115" height="34" fill="#e8e8df"/><text x="765" y="461" font-family="Arial" font-size="11" fill="#34513c">LIGHT BODY</text><rect x="873" y="439" width="135" height="34" fill="#e8e8df"/><text x="887" y="461" font-family="Arial" font-size="11" fill="#34513c">WHOLE LEAF</text>
+<path d="M747 510H1210" stroke="#cfcbbf"/>
+<text x="747" y="537" font-family="Arial" font-size="12" fill="#66725f">SELECT YOUR SIZE</text>
+<rect x="747" y="551" width="137" height="87" fill="#e4e9df" stroke="#23483a" stroke-width="2"/><text x="766" y="579" font-family="Arial" font-weight="bold" font-size="17" fill="#1d2a24">50g</text><text x="766" y="603" font-family="Arial" font-size="12" fill="#6b6f64">~25 cups</text><text x="766" y="624" font-family="Arial" font-size="13" fill="#1d2a24">₹799</text>
+<rect x="896" y="551" width="137" height="87" fill="#fbf8f1" stroke="#c8c8be"/><text x="915" y="579" font-family="Arial" font-weight="bold" font-size="17" fill="#1d2a24">100g</text><text x="915" y="603" font-family="Arial" font-size="12" fill="#6b6f64">~50 cups</text><text x="915" y="624" font-family="Arial" font-size="13" fill="#1d2a24">₹1,399</text>
+<text x="747" y="685" font-family="Arial" font-size="27" font-weight="bold" fill="#1d2a24">₹799</text><text x="747" y="708" font-family="Arial" font-size="12" fill="#6a6f65">50g · Approximately 25 cups</text>
+<rect x="747" y="728" width="460" height="54" fill="#1d2a24"/><text x="977" y="762" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#f6f1e7">ADD TO BAG — ₹799</text>
+</svg>

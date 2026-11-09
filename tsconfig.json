@@ -1,0 +1,62 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": false,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".next-build/types/**/*.ts",
+    ".next-deploy-check/types/**/*.ts",
+    ".next-dev/types/**/*.ts",
+    ".next-home-check/types/**/*.ts",
+    ".next-home-preview/types/**/*.ts",
+    ".next-home-trials-check/types/**/*.ts",
+    ".next-international-check/types/**/*.ts",
+    ".next-international-final/types/**/*.ts",
+    ".next-international-polished/types/**/*.ts",
+    ".next-international-preview/types/**/*.ts",
+    ".next-international-release/types/**/*.ts",
+    ".next-international-verified/types/**/*.ts",
+    ".next-pdp-preview/types/**/*.ts",
+    ".next-perfcheck/types/**/*.ts",
+    ".next-publish-images-check/types/**/*.ts",
+    ".next-quality-check/types/**/*.ts",
+    ".next-quality-final/types/**/*.ts",
+    ".next-scroll-check/types/**/*.ts",
+    ".next-test/types/**/*.ts",
+    ".next-trials-check/types/**/*.ts",
+    ".next/types/**/*.ts",
+    "next-env.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".next-*"
+  ]
+}

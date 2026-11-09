@@ -1,0 +1,40 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "TeaFloww \u00b7 Nirva",
+    "documentationUrl": "https://teafloww.com/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:teafloww.com:api:commerce",
+      "displayName": "TeaFloww commerce API",
+      "type": "application/openapi+json",
+      "url": "https://teafloww.com/api/mcp/openapi",
+      "description": "API descriptions for the TeaFloww connector. Mutating tools require operator authentication.",
+      "representativeQueries": [
+        "What operations does the TeaFloww commerce connector support?",
+        "Where is the TeaFloww commerce API documented?"
+      ]
+    },
+    {
+      "identifier": "urn:air:teafloww.com:catalog:products",
+      "displayName": "TeaFloww product feed",
+      "type": "text/csv",
+      "url": "https://teafloww.com/feeds/catalog.csv",
+      "representativeQueries": [
+        "Where can I read the TeaFloww product catalog?",
+        "Which tea products and pack variants are in the TeaFloww feed?"
+      ]
+    },
+    {
+      "identifier": "urn:air:teafloww.com:catalog:google-merchant",
+      "displayName": "TeaFloww Google Merchant feed",
+      "type": "application/xml",
+      "url": "https://teafloww.com/feeds/google.xml",
+      "representativeQueries": [
+        "Where is TeaFloww's Google Merchant product feed?",
+        "How can I retrieve TeaFloww product data as XML?"
+      ]
+    }
+  ]
+}

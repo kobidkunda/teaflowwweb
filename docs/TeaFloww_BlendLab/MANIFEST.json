@@ -1,0 +1,224 @@
+{
+  "project": "TeaFloww Blend Lab - implementation/design handoff",
+  "artifact_type": "documentation and nonproduction code examples",
+  "prepared_date": "2026-10-31",
+  "full_application_included": false,
+  "live_website_changed": false,
+  "notes": [
+    "React and Next-style paths are illustrative; verify the existing site stack first",
+    "Static HTML visual preview is design-only; no backend checkout is implemented",
+    "Tax/courier/entitlements/26kg MOQ must be validated before production"
+  ],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "bytes": 3585,
+      "sha256": "656b1b8a981e11b088c42523e79c47178452dd61d167fbbd1e96fc68a501e10b"
+    },
+    {
+      "path": "DESIGN.md",
+      "bytes": 10305,
+      "sha256": "df11b91ec5f0d2f43799a56049454abe5f44e18e79e1a63060e868f8721bfe0c"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4515,
+      "sha256": "cedf7465f1e70bf73a2dc1d237046e54381c0b3f6d1923fedbc74a01866492a3"
+    },
+    {
+      "path": "assets/previews/desktop.png",
+      "bytes": 1166822,
+      "sha256": "520f585ffcb55422afc985a21976841524c22958adfe5c8ceb38d1a8c6540dd6"
+    },
+    {
+      "path": "assets/previews/mobile.png",
+      "bytes": 751294,
+      "sha256": "66687251b0e1c8505c580d70db74bf7d42e139185f385947f22c895aabdc23c1"
+    },
+    {
+      "path": "checklists/LAUNCH_GATE.md",
+      "bytes": 1495,
+      "sha256": "98c5b9d37624b75fef178b196c310da94d5882b2f3229f2a45ba770d05c94b61"
+    },
+    {
+      "path": "diagrams/architecture.mmd",
+      "bytes": 363,
+      "sha256": "9c49cb98c3351d4039b3277f334f19d6b1e00eea9f02b5c6cb23468948c5d66c"
+    },
+    {
+      "path": "diagrams/customer-journey.mmd",
+      "bytes": 582,
+      "sha256": "d6b61461e94da49317aeb19f436908f1bfaa1e46ca411e50c34a39b4b1e7fba7"
+    },
+    {
+      "path": "docs/ANALYTICS.md",
+      "bytes": 2256,
+      "sha256": "6fc3954801911f9f10b00f2a71410a160ad5c0433c494a2cde9f6a7069d01dd0"
+    },
+    {
+      "path": "docs/API_CONTRACTS.yaml",
+      "bytes": 7357,
+      "sha256": "cd9853f07b8b1aebb9a108d549bf9dec9ec6818c58ec975875a389ec3fc892a5"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "bytes": 7089,
+      "sha256": "de6c43ab706054920ae9ec172076c3d60c5ff768514de9d534b446a07700dc47"
+    },
+    {
+      "path": "docs/BACKLOG.csv",
+      "bytes": 1165,
+      "sha256": "a8a3aba8bc29f3d0bd36e5f03376b4c36d59a20bb54f0329a2fbe2748408fd0f"
+    },
+    {
+      "path": "docs/CONTENT_AND_SEO.md",
+      "bytes": 4283,
+      "sha256": "8e287f7027ba486f209c22e90df32e5b12a326c9a221d47c146100a78ab40ebc"
+    },
+    {
+      "path": "docs/DATA_MODEL.sql",
+      "bytes": 8056,
+      "sha256": "44e649ba3bbca4d816ce1b6575fabc3decc09392e8f36446c57c32202a4ef471"
+    },
+    {
+      "path": "docs/IMPLEMENTATION_PLAN.md",
+      "bytes": 12014,
+      "sha256": "24c79b439a6072e65b183c2fd068624584e56b9f679d6b42f5529133a623d801"
+    },
+    {
+      "path": "docs/INTEGRATION_DISCOVERY.md",
+      "bytes": 3690,
+      "sha256": "5018068c24ddcf30f02a4941b9d69b43b932b1fabb885050bb9fd03cd7e68a63"
+    },
+    {
+      "path": "docs/OPERATIONS_SOP.md",
+      "bytes": 4661,
+      "sha256": "e397f6d7c764db939f1068376d7dd883f8a19cb37297a9358da271d662e0329f"
+    },
+    {
+      "path": "docs/PROPOSED_REPO_STRUCTURE.md",
+      "bytes": 5888,
+      "sha256": "0e49b7daa428ca4458d4c0c03b9e0b05775d79e71a15f6c0b754523b20f3f4fa"
+    },
+    {
+      "path": "docs/QA_AND_ACCEPTANCE.md",
+      "bytes": 4427,
+      "sha256": "49388715012dbd880a72f64289a5138f81dbe218930ad61613abfc5880527c54"
+    },
+    {
+      "path": "docs/REFERENCES.md",
+      "bytes": 2803,
+      "sha256": "c138fcf4f4033d0799cadb3fa1a168ebc4880675cf7e322cb4cd8d22bfad21ca"
+    },
+    {
+      "path": "docs/REPORT_SPEC.md",
+      "bytes": 3580,
+      "sha256": "270873c6f448cc66f43228c07b907c7310d3e081ffa194e616ef890294747d33"
+    },
+    {
+      "path": "docs/SCREEN_TEMPLATES.md",
+      "bytes": 8890,
+      "sha256": "6d7a4fd6681c8db945dddcefedad4bccf877a0612d068bc6e5b8ff0b76d34ef8"
+    },
+    {
+      "path": "docs/SECURITY_AND_COMPLIANCE.md",
+      "bytes": 3446,
+      "sha256": "bbb778705258db69ef66fe4eebd31ed3022e734cff2495025447c274f662a3a3"
+    },
+    {
+      "path": "docs/SITE_MAP_AND_FLOWS.md",
+      "bytes": 3802,
+      "sha256": "43aef67a196d8b6cb726b153d6e0ddeec547094fac8e2667dbc3138e46a7cb69"
+    },
+    {
+      "path": "docs/STATE_MACHINES.md",
+      "bytes": 3580,
+      "sha256": "7ad17fb93bd4299116705d59c24570bfc5f237250cf3ecc0065f8a2915f41083"
+    },
+    {
+      "path": "docs/TODOS.md",
+      "bytes": 9090,
+      "sha256": "3dbc9507758b5084a7ddfa94bbbb465d0788247576cd94e9ae5d5257e35f93f6"
+    },
+    {
+      "path": "examples/react/README.md",
+      "bytes": 1727,
+      "sha256": "bf956d5bd1cd0994b08d9d3ea4549366a7330b5be3063f9399b65cc36a497a09"
+    },
+    {
+      "path": "examples/react/components/BlendLabHero.tsx",
+      "bytes": 1570,
+      "sha256": "1f4ebe6d5fbdb450d429a02503ba196cca4e06739ba881e90d48a95f8a6b9fc7"
+    },
+    {
+      "path": "examples/react/components/Button.tsx",
+      "bytes": 1024,
+      "sha256": "81ab35d4fff310a7430c8aae1ba3d9cf13bd7327f20211a2d1c1690c317b8362"
+    },
+    {
+      "path": "examples/react/components/GoalsSelector.tsx",
+      "bytes": 1429,
+      "sha256": "3654558c563efa9edb17f0abf468b4c31c8faf08e6b2c5b5a922ed346503ab6e"
+    },
+    {
+      "path": "examples/react/components/PlanCard.tsx",
+      "bytes": 1409,
+      "sha256": "b60e242870416dd886b3873f17f850683b654fd6d8a887abf47f199e103694e2"
+    },
+    {
+      "path": "examples/react/components/ProcessSteps.tsx",
+      "bytes": 890,
+      "sha256": "7e067c3c49fbccb2fb7388cd8d52905c142c11b0ecebae0030c1d51a00ddc0c0"
+    },
+    {
+      "path": "examples/react/components/ReportTeaser.tsx",
+      "bytes": 1130,
+      "sha256": "b5e10edcf5df412a8c20f01a5d1009fff3925a4651e2183932d6cd4527e3b863"
+    },
+    {
+      "path": "examples/react/components/SectionHeading.tsx",
+      "bytes": 436,
+      "sha256": "522065c9d3bbdfdacaf8f179cb666ece2614010e58e3e0de2a24da9baad2dc88"
+    },
+    {
+      "path": "examples/react/domain/money.ts",
+      "bytes": 913,
+      "sha256": "d93e5accaabf87d157968adf6bc34907191545b2849543b0f140b40a077ce15d"
+    },
+    {
+      "path": "examples/react/domain/plans.ts",
+      "bytes": 2599,
+      "sha256": "3958b6370bcad9675232daedbd2705caedc8dfa70149f7c1430be11054e37a05"
+    },
+    {
+      "path": "examples/react/domain/state-machine.ts",
+      "bytes": 1539,
+      "sha256": "feea1323ac4d0af2e02300394533b2d21fce29d094612f90e7ffb2b7b5c4ab01"
+    },
+    {
+      "path": "examples/react/domain/types.ts",
+      "bytes": 1516,
+      "sha256": "a195e44d15c2862a9214ef2fa999cba70c0bab07328fde1aa92882535b482ceb"
+    },
+    {
+      "path": "examples/react/snippets/BlendLabLandingExample.tsx",
+      "bytes": 1819,
+      "sha256": "db3fd5699987beb3f74f0ac968492a17aab1b2fecaab7b0648a2c38bc5a023e0"
+    },
+    {
+      "path": "examples/react/snippets/CheckoutServerPseudo.ts",
+      "bytes": 1409,
+      "sha256": "64287bffc1f721defb36f4c253410ef14b7b2b46cc3d834c971d09f8cbd6c644"
+    },
+    {
+      "path": "examples/react/styles/tokens.css",
+      "bytes": 8391,
+      "sha256": "74b032be9009a4f789f57d171c5b65e45bf53b873f254734abbfa7a3bef839e8"
+    },
+    {
+      "path": "examples/static-preview/index.html",
+      "bytes": 30240,
+      "sha256": "d31f096733fe208c21f15756c89d5516e442193a10fad1bf62144c6b78bd6d27"
+    }
+  ]
+}

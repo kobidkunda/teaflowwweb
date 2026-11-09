@@ -1,0 +1,18 @@
+id,priority,workstream,task,acceptance
+BL-001,P0,Discovery,Verify stack and existing codebase,Architecture map
+BL-005,P0,Finance,Service GST and invoice approval,Signed classification
+BL-006,P0,Commercial,Per-plan economics incl courier,Approved unit economics
+BL-012,P0,Design,Design tokens and shared components,Visual/a11y review
+BL-014,P0,Frontend,Homepage Blend Lab placement,Responsive screenshots
+BL-016,P0,Frontend,Dedicated landing page,Content and usability review
+BL-023,P0,Frontend,Five-step intake checkout,Form QA
+BL-027,P0,Backend,Verified payment/webhook,Replay+amount tests
+BL-030,P0,Integrations,Inbound courier booking,Exceptions tested
+BL-035,P0,Lab,Controlled tasting SOP,Tester signoff
+BL-040,P0,Reports,Professional PDF renderer,A4 QA
+BL-042,P0,Security,Authorized report downloads,Cross-account tests
+BL-045,P1,Blending,Versioned formulation workspace,Approved revisions
+BL-050,P1,Fulfillment,Outbound samples tracking,Carrier evidence
+BL-054,P1,Commercial,Quote approval and expiry,Data/expiry tests
+BL-060,P0,QA,Payment/webhook regression,Staging passing
+BL-065,P0,Release,Flagged rollout and rollback,Launch gate signed

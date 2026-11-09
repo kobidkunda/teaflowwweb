@@ -1,0 +1,21 @@
+'use client';
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import type { Policy } from '@/lib/subscriptions/model';
+import type { PlanView } from './SubscriptionAccount';
+import { dateLabel, money } from './shared';
+import styles from './Subscriptions.module.css';
+async function request(method = 'GET', data?: unknown) { const r = await fetch('/api/admin/subscriptions', { method, headers: { 'Content-Type': 'application/json' }, ...(data ? { body: JSON.stringify(data) } : {}) }); const result = await r.json(); if (!r.ok) throw new Error(result.error || 'Unable to load subscription operations.'); return result; }
+export function SubscriptionAdmin() {
+  const [policy, setPolicy] = useState<Policy | null>(null), [plans, setPlans] = useState<PlanView[]>([]), [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
+  async function refresh() { const data = await request(); setPolicy(data.policy); setPlans(data.subscriptions); }
+  async function run(work: () => Promise<void>) { setBusy(true); setMessage(''); try { await work(); } catch (e) { setMessage(e instanceof Error ? e.message : 'Operation failed.'); } finally { setBusy(false); } }
+  useEffect(() => { void run(refresh); }, []);
+  return <div className={styles.page}><p className="eyebrow">Commerce operations</p><h1>Product subscriptions</h1><p>All catalog variants support replenishment every 3, 7, 14, 30 or 60 days. Accepted plans retain their discount rates. New settings apply to new plans.</p>{message && <p role="status" className={styles.message}>{message}</p>}
+    {!policy ? <p role="status">{busy ? 'Loading settings…' : 'Settings unavailable.'}</p> : <form className={styles.card} onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); void run(async () => { const data = await request('PUT', { enabled: f.get('enabled') === 'on', renewalsEnabled: f.get('renewalsEnabled') === 'on', baseBps: Math.round(Number(f.get('base')) * 100), prepaidBps: Math.round(Number(f.get('prepaid')) * 100), version: policy.version }); setPolicy(data.policy); setMessage('Settings saved. Existing discount promises are preserved.'); }); }} key={policy.version}>
+      <h2>Discounts &amp; availability</h2><div className={styles.fields}><label>Subscription product discount (%)<input type="number" name="base" min="0" max="99" step="0.01" defaultValue={policy.baseBps / 100} required /></label><label>Additional prepaid product discount (%)<input type="number" name="prepaid" min="0" max="99" step="0.01" defaultValue={policy.prepaidBps / 100} required /></label></div><label className={styles.check}><input type="checkbox" name="enabled" defaultChecked={policy.enabled} />Offer subscriptions to customers</label><label className={styles.check}><input type="checkbox" name="renewalsEnabled" defaultChecked={policy.renewalsEnabled} />Generate scheduled renewals (global stop leaves existing orders intact)</label><p>Discounts add on the same product subtotal. Coupons and standard payment discounts are excluded. Existing shipping settings apply after both discounts. Configure the commerce worker and renewal email delivery before enabling.</p><button type="submit" disabled={busy}>Save subscription settings</button>
+    </form>}
+    <div className={styles.actions}><button disabled={busy} className={styles.secondary} onClick={() => void run(refresh)}>Refresh plans</button><button disabled={busy} onClick={() => void run(async () => { await request('POST', { action: 'scan' }); setMessage('Renewal scan queued for the commerce worker.'); })}>Queue renewal scan</button><Link href="/admin/fulfillment">Orders, refunds &amp; worker failures →</Link></div>
+    {!plans.length && <p>No subscription plans yet.</p>}{plans.map(p => <section className={styles.card} key={p.id}><h2>{p.input.address.name} · every {p.intervalDays} days</h2><p>{p.id} · {p.status} · {dateLabel(p.nextMs)}</p><p>{p.input.address.email} · {p.input.address.postcode} · {p.input.method}</p>{p.cycles.map(c => <p key={c.id}>Cycle {c.sequence} · {c.status} · {c.paymentStatus || 'not ordered'}{c.totalPaise !== undefined ? ` · ${money(c.totalPaise)}` : ''}{c.blocked_reason ? ` · ${c.blocked_reason}` : ''}</p>)}</section>)}
+  </div>;
+}

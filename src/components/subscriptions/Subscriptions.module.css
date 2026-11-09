@@ -1,0 +1,26 @@
+.page { max-width: 1080px; margin: 0 auto; padding: 48px 20px 80px; color: #171713; }
+.page h1 { font-size: clamp(30px, 5vw, 48px); margin: 10px 0 16px; }
+.page h2 { font-size: 24px; margin: 0 0 16px; }
+.page h3 { font-size: 19px; margin: 0 0 12px; }
+.page p { line-height: 1.65; margin: 10px 0; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 24px; align-items: start; margin-top: 28px; }
+.card { background: #fbf8f1; border: 1px solid #c9c2b6; padding: 24px; margin: 20px 0; border-radius: 8px; min-width: 0; overflow-wrap: anywhere; }
+.grid .card { margin: 0; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 18px 0; }
+.page label { display: grid; gap: 7px; font-size: 14px; font-weight: 600; }
+.page input:not([type=checkbox]), .page select { width: 100%; min-height: 46px; padding: 10px; border: 1px solid #8a8a7e; border-radius: 4px; background: #fffefa; color: #171713; font: inherit; min-width: 0; }
+.check { display: flex !important; align-items: flex-start; gap: 12px !important; font-weight: 400 !important; line-height: 1.6; }
+.check input { width: 22px; height: 22px; flex: none; margin-top: 3px; accent-color: #23483a; }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 18px 0 0; }
+.page button, .link { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 10px 16px; border-radius: 4px; border: 1px solid #23483a; background: #23483a; color: white; font: inherit; font-size: 14px; cursor: pointer; text-decoration: none; text-align: center; }
+.page button:disabled { opacity: .55; cursor: wait; }
+.page a { text-underline-offset: 4px; }
+.secondary { background: transparent !important; color: #23483a !important; }
+.message { background: #f1e9db; color: #31271b; padding: 14px; border-left: 3px solid #8d6339; margin: 18px 0; }
+.breakdown { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 16px 0; border-block: 1px solid #c9c2b6; }
+.breakdown dt, .breakdown dd { margin: 0; }
+.breakdown dd { text-align: right; font-variant-numeric: tabular-nums; }
+.note { color: #485347; font-size: 14px; }
+.item { display: flex; gap: 12px; justify-content: space-between; margin: 12px 0; }
+.page :is(input, select, button, a):focus-visible { outline: 3px solid #966b38; outline-offset: 4px; }
+@media (max-width: 700px) { .grid, .fields { grid-template-columns: minmax(0, 1fr); } .page { padding: 30px 16px 60px; } .card { padding: 18px; } .actions > * { flex: 1 1 150px; } }

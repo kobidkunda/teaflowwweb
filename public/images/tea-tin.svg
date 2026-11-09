@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="580" viewBox="0 0 480 580">
+<defs><linearGradient id="tin" x1="0" x2="1"><stop stop-color="#263e31"/><stop offset=".48" stop-color="#385643"/><stop offset="1" stop-color="#1c3026"/></linearGradient><linearGradient id="cap" x1="0" x2="1"><stop stop-color="#476650"/><stop offset=".5" stop-color="#6b866c"/><stop offset="1" stop-color="#2c4838"/></linearGradient></defs>
+<ellipse cx="240" cy="531" rx="152" ry="22" fill="#24342b" opacity=".14"/>
+<rect x="112" y="105" width="256" height="390" rx="18" fill="url(#tin)"/>
+<ellipse cx="240" cy="105" rx="128" ry="25" fill="#49644d"/>
+<rect x="104" y="90" width="272" height="38" rx="10" fill="url(#cap)"/>
+<ellipse cx="240" cy="90" rx="136" ry="23" fill="#617e63"/>
+<rect x="140" y="182" width="200" height="224" fill="#f2eddf"/>
+<path d="M159 201H321M159 386H321" stroke="#b3a88c" stroke-width="1"/>
+<g fill="none" stroke="#46634d" stroke-width="2"><path d="M240 246c-40-30-55-4-22 24 17 15 22 33 22 53"/><path d="M240 246c40-30 55-4 22 24-17 15-22 33-22 53"/><path d="M240 246v91"/><path d="M218 270c13-2 22-10 22-24M262 270c-13-2-22-10-22-24"/></g>
+<text x="240" y="221" text-anchor="middle" font-family="Georgia,serif" font-size="14" letter-spacing="3" fill="#263e31">TEAFLOWW</text>
+<text x="240" y="358" text-anchor="middle" font-family="Georgia,serif" font-size="17" fill="#263e31">HIMALAYAN</text>
+<text x="240" y="376" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" letter-spacing="3" fill="#5e6c60">FINE LEAF COLLECTION</text>
+<path d="M125 135v337" stroke="#ffffff" opacity=".08" stroke-width="12"/>
+</svg>
