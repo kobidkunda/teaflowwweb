@@ -108,7 +108,6 @@ export function WholesaleForm({ onSuccess, className = "", defaultCategory }: Wh
 
       if (res.ok && data?.ok && data.whatsappUrl) {
         trackLead("wholesale_inquiry", {
-          business_name: businessName.trim(),
           interest,
           estimated_volume: estimatedVolume,
         });

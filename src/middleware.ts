@@ -37,8 +37,20 @@ export function middleware(request: NextRequest) {
     path === "/site.webmanifest" ||
     /\.(jpg|jpeg|png|webp|avif|svg|ico|css|js|woff2?)$/i.test(path);
 
-  if (!isStaticPublicAsset) {
+  const isPrivateOrAdmin =
+    path.startsWith("/admin") ||
+    path.startsWith("/account") ||
+    path.startsWith("/checkout") ||
+    path.startsWith("/cart") ||
+    path.startsWith("/order") ||
+    path.startsWith("/purchase") ||
+    path.startsWith("/api/");
+
+  if (isPrivateOrAdmin) {
     response.headers.set("Cache-Control", "private, no-store");
+  } else if (!isStaticPublicAsset) {
+    // Public indexable storefront pages and feeds: allow edge CDN caching while enforcing browser revalidation
+    response.headers.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
   }
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(name, value);

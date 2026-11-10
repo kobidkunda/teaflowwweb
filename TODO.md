@@ -1,5 +1,163 @@
 # Prioritized Development Checklist
 
+## Admin Online Payment Master Toggle & COD-Only Storefront Mode — 2026-11-11
+- [x] Database & Persistence:
+  - Added additive migration `scripts/migrations/051_online_payment_toggle.mjs` initializing `online_payment_enabled = '1'` in `store_settings`.
+  - Added PostgreSQL schema parity in `scripts/apply-all-pg-migrations.mjs`.
+- [x] Core Payment Settings Engine (`src/lib/paymentSettings.ts`):
+  - Updated `paymentSettingsSchema` with `online_payment_enabled: z.boolean().default(true)`.
+  - Updated `getPaymentSettings()` and `updatePaymentSettings()` to read and persist the toggle.
+  - Updated `calculatePaymentMethodDiscountPaise()` to yield zero discount when online payments are disabled.
+- [x] Commerce APIs & Backend Gates:
+  - Updated `/api/commerce/payment-methods` to expose `onlinePaymentEnabled: boolean`.
+  - Protected `createQuote()` in `src/lib/international/quotes.ts`: rejects non-COD quotes with clear error when online payment is disabled.
+  - Protected `startPayment()` and `retryOrderPayment()` in `src/lib/international/orders.ts`: rejects online payment order initialization when online payment is disabled.
+  - Protected `/api/commerce/payment` endpoint against online payment requests when disabled.
+- [x] Admin Payment Settings Suite (`src/components/admin/settings/PaymentSettingsForm.tsx`):
+  - Added Master "Online Payment Acceptance" control card at the top with dual mode selector (Enable Online Payments vs Disable Online Payments / COD Only Mode).
+  - Live status badge indicating active storefront mode.
+  - Warning alert if Cash on Delivery is also disabled.
+  - Paused badges displayed on Razorpay and YouPI gateway cards when COD-only mode is active.
+- [x] Storefront Checkout (`src/components/international/LiveCheckout.tsx`):
+  - When online payments are disabled, automatically defaults and locks payment choice to Cash on Delivery (COD).
+  - Hides UPI, Credit/Debit cards, and Net Banking cards; presents COD as the sole payment method.
+  - Updates helper text and action button ("Place Cash on Delivery Order →").
+  - Clear alerts for international orders or if all payment methods are turned off.
+- [x] Payment Methods Information Page (`src/app/payment-methods/page.tsx`, `src/components/payment-methods/PaymentMethodsInteractiveHub.tsx`):
+  - Informs shoppers when online payments are paused and orders are accepted exclusively via Cash on Delivery.
+- [x] Unit Test Suite:
+  - Added `tests/unit/online-payment-toggle.test.ts` (5 tests) and updated `tests/unit/payment-settings-discounts.test.ts` (11 tests). All pass cleanly.
+
+## Downloadable Brochure & Product Catalogue System — 2026-11-11
+- [x] Database & Persistence:
+  - Added migration `050_brochure_catalog.mjs` storing brochure configuration (`brochure_url`, `brochure_title`, `brochure_description`, `brochure_button_label`, `brochure_enabled`, `brochure_file_size`) in `store_settings`.
+  - Maintained PostgreSQL schema parity in `scripts/apply-all-pg-migrations.mjs` and `scripts/migrate-to-postgres.mjs`.
+  - Created high-quality default PDF brochure `public/uploads/teafloww-tea-catalog-brochure-2026.pdf` with origin, grades, and Siliguri hub verification.
+- [x] Core Library & Safe Path Resolution (`src/lib/brochure.ts`):
+  - Created `getBrochureSettings()`, `updateBrochureSettings()`, `getBrochureLocalPath()`, and `formatBytes()`.
+  - Safe path resolution guarantees strict containment within `public/uploads/` directory, preventing directory traversal.
+- [x] Admin Brochure Management Suite (`src/app/admin/brochure/`, `src/components/admin/brochure/BrochureManager.tsx`):
+  - Built full admin management interface with drag-and-drop PDF upload (up to 15MB), magic-bytes validation, metadata editor, active brochure status, test download, and selection from existing uploaded PDFs.
+  - Registered `/admin/brochure` under "Storefront & Catalog" in `src/components/admin/layout/navConfig.ts`.
+  - Linked from operational settings in `src/components/admin/settings/StoreSettingsForm.tsx`.
+- [x] Public Download & Metadata APIs (`src/app/api/brochure/route.ts`, `src/app/api/brochure/download/route.ts`):
+  - `GET /api/brochure`: Returns public brochure metadata with caching headers.
+  - `GET /api/brochure/download`: Direct PDF download streaming with `Content-Disposition: attachment; filename="TeaFloww-Brochure-Catalog.pdf"` and inline preview support (`?view=1`).
+- [x] Website Storefront Options:
+  - Dedicated SEO landing page at `/brochure` with harvest highlights, cupping specifications, and instant download.
+  - Added "Download Brochure" link in `StorefrontHeader` top announcement bar and mobile drawer.
+  - Added "Download Brochure Catalog (PDF)" in `Footer` discovery links.
+  - Added wholesale brochure download CTA in `/wholesale` hero.
+  - Added catalog PDF link in `/shop` toolbar.
+  - Added `/brochure` to sitemap in `src/lib/seo/sitemap.ts`.
+- [x] Comprehensive Test Coverage (`tests/unit/brochure-catalog.test.ts`):
+  - 16/16 unit and integration tests passing covering settings CRUD, path traversal protection, auth gating, file upload, public metadata, direct downloads, and landing page rendering.
+
+## TeaFloww Private Label Studio Implementation & Production Deployment — 2026-11-10
+- [x] Milestone M1: Core Schemas, Data Models & Seeding (`scripts/migrations/045_private_label_core.mjs`, `scripts/apply-all-pg-migrations.mjs`):
+  - Normalized schema across 11 core tables (`pl_clients`, `pl_brands`, `pl_tea_options`, `pl_packaging_families`, `pl_packaging_variants`, `pl_print_methods`, `pl_packaging_compatibility`, `pl_moq_rules`, `pl_price_books`, `pl_price_book_tiers`, `pl_audit`).
+  - Implemented multi-dimensional MOQ engine (`moq.ts`) with unit-basis matching (`kg`, `units`, `orders`), tier aggregation, and packaging/print method constraints.
+  - Implemented tiered pricing quotation engine (`pricing.ts`) with dual-rate Indian GST (5% tea, 18% packaging/services) and integer paise accuracy.
+  - Seeded 6 packaging families, 5 variants, 5 single-estate tea options, 6 print methods, and default 2026 INR price book on both SQLite and production PostgreSQL.
+- [x] Milestone M2: Admin Private Label Suite (`src/app/admin/private-label/`, `src/components/admin/private-label/`):
+  - Built dedicated admin management views: Catalogue, Packaging Variants & Dielines, Price Books & Tiers, MOQ Rules, and Transactional Audit Log.
+  - Registered "Private Label Studio" as a first-class navigation section in `navConfig.ts`.
+  - Implemented optimistic revision CAS locking (`PrivateLabelRevisionConflictError` returning HTTP 409).
+- [x] Milestone M3: Storefront Catalogue & SEO Discovery (`src/app/private-label/`, `src/components/private-label/`):
+  - Built `/private-label` landing page, filterable `/private-label/packaging` explorer, and rich `/private-label/packaging/[slug]` PDP.
+  - Integrated JSON-LD structured data (`Product`, `CollectionPage`, `BreadcrumbList`) and dynamic sitemap integration.
+  - Whitelist DTO projections (`public-dto.ts`) redacting internal supplier margins, costs, and SKUs.
+- [x] Milestone M4: Interactive 5-Step Studio Configurator (`src/app/private-label/studio/`):
+  - Responsive 5-step studio wizard: 1. Tea Selection, 2. Packaging Silhouette, 3. Custom Branding & Artwork, 4. Order Volume, 5. Instant Breakdown.
+  - Pure Node.js branded PDF-1.4 quotation generator (`pdf.ts`) embedding Nirva entity credentials, GSTIN `19CTHPK8646J2ZY`, 14-day price lock, and 50/50 payment milestone terms.
+- [x] Milestone M5: 2D Visual Composition Canvas & Preflight Engine (`src/components/private-label/studio/StudioCanvas2D.tsx`, `src/lib/private-label/preflight.ts`):
+  - Responsive pure CSS/DOM visual canvas supporting 5 packaging silhouettes without heavy WebGL dependencies.
+  - Pure TypeScript preflight asset validation enforcing ≥300 DPI, <150 DPI hard rejection, ≤25MB boundary, and strict SVG security sanitization (blocking `<script>`, inline event handlers, and XXE).
+  - Versioned digital proof approval modal with legal IP indemnity attestation (`ProofApprovalModal.tsx`).
+- [x] Milestone M6: Sample Kit Ordering & Production Lifecycle (`src/app/private-label/samples/`, `src/app/private-label/orders/[id]/`):
+  - Sample kit ordering flow (`/private-label/samples`) with address capture and payment routing.
+  - Industrial production order release gate requiring digital proof sign-off and 50% deposit before launching manufacturing jobs.
+  - 7-stage QC milestone release tracker (`pl_qc_milestones`).
+- [x] Milestone M7: 100% MCP Tools Parity & Adversarial Hardening (`src/lib/mcp.ts`, `src/lib/private-label/mcp-tools.ts`):
+  - Registered 28 Private Label MCP tools (total server tools: 159).
+  - Enforced JSON-RPC 2.0 error contract (`-32009` revision conflict, `-32004` invalid state transition, `-32602` invalid params).
+  - 100% passing tests across 162 unit test suites (2,817 passing tests) and 345 Playwright E2E tests.
+- [x] Production Deployment & Live Verification:
+  - Database & source backups created in `/www/backup/teafloww-deploy-*-privatelabel/`.
+  - PostgreSQL migrations 044–049 executed on `localhost:5433` (exit 0).
+  - Zero-downtime atomic swap from `.next-staging` into `.next` with static asset retention.
+  - PM2 process 13 (`teafloww`) reloaded and verified live with HTTP 200 across `/private-label`, `/private-label/packaging`, `/private-label/studio`, `/api/v1/private-label/catalogue`, `/admin/private-label`, `/sitemap.xml`, and `/llms.txt`.
+
+
+## YouPI-PG Backup Gateway & Multi-Stream Payment Routing — 2026-11-10
+- [x] YouPI-PG Client & Verification (`src/lib/youpi/client.ts`, `src/lib/youpi/config.ts`):
+  - Created zero-fee self-hosted UPI client with session generation (`POST /api/v1/payments`).
+  - Cryptographic HMAC-SHA256 signature verification supporting standard and timestamped headers with replay protection.
+  - Health and admin credential verification for `https://pay-api.biolastic.co.in`.
+- [x] Multi-Stream Gateway Routing (`src/lib/paymentSettings.ts`):
+  - Added independent routing controls for Direct Purchases, Sample Kits, and Subscriptions.
+  - Implemented dynamic fallback to Razorpay if YouPI is disabled or unconfigured.
+  - Added secret masking (`••••••••••••`) for tokens and webhook secrets in admin views.
+- [x] Storefront Checkout & Subscriptions Integration (`src/lib/international/orders.ts`, `src/components/international/LiveCheckout.tsx`, `src/components/subscriptions/shared.ts`):
+  - In `startPayment()`, dynamically route between Razorpay and YouPI based on stream type (`q.subscription`, trial pouch items in `q.lines`, or direct cart purchases).
+  - Hosted UPI checkout redirection for customer payment sessions.
+  - Idempotent inbound webhook processor (`applyYoupiPaymentEvent()`) to capture payments, advance subscriptions, and dispatch Shiprocket shipping.
+- [x] Inbound Webhook Endpoint & Security (`src/app/api/webhooks/youpi/route.ts`, `src/lib/security.ts`):
+  - Added secure webhook receiver verifying HMAC signatures against stored merchant secret.
+  - Updated CSP headers for `pay-api.biolastic.co.in`, `pay.biolastic.co.in`, and `pay-admin.biolastic.co.in`.
+- [x] Admin Panel Configuration & Live Test (`src/components/admin/settings/PaymentSettingsForm.tsx`, `src/app/api/admin/settings/payment/verify-youpi/route.ts`):
+  - Added Payment Gateway Routing radio selectors per stream.
+  - Added YouPI settings form with live "Test Connection" button against `pay-api.biolastic.co.in`.
+- [x] Testing & Verification (`tests/unit/youpi-gateway.test.ts`):
+  - 23/23 tests passing across HMAC validation, multi-stream settings, webhook lifecycle, live API connectivity, COD gateway bypass, and COD conversion routes.
+  - TypeScript compilation verified (`0` errors).
+
+- [x] YouPI Gateway COD Isolation & Payment Failure Recovery — 2026-11-11:
+  - **COD Gateway Bypass**: Ensured Cash on Delivery orders never route to YouPI or external gateways. In `LiveCheckout.tsx`, guarded payment submission against mismatched quotes, generated fresh idempotency keys on method switch, and strictly blocked payment gateway redirection if method is COD.
+  - **Server-Side Quote Reconciliation**: In `/api/commerce/payment`, accepts client `method` and auto-recreates quote as COD if requested, guaranteeing `startPayment` returns `gateway: 'cod'`, `paymentStatus: 'cod_due'`, and `checkoutUrl: undefined`.
+  - **Active YouPI Status Sync (`syncYoupiOrderStatus`)**: Proactively queries YouPI API (`client.getPaymentSession`) on `/purchase/[id]` and `GET /api/commerce/order` for pending orders to reconcile capture or cancellation in real-time even before webhooks arrive.
+  - **Honest Order UI (`src/app/purchase/[id]/page.tsx`)**: Replaced premature "Thank you for your order" message on unpaid orders. Now displays a clear warning card for pending or failed payments without misleading the customer.
+  - **One-Click Recovery Controls (`src/components/international/PurchaseStatus.tsx`)**: Added interactive "Change to Cash on Delivery (COD)" and "Retry Online Payment" actions, backed by `POST /api/commerce/change-to-cod` and `POST /api/commerce/retry-payment`.
+
+## Full-Website SEO Audit & Site-Wide SEO Remediation — 2026-11-10
+- [x] Marketing & SEO Audit Skill Installation: Installed `.agents/skills/seo-audit` from `https://github.com/coreyhaines31/marketingskills`.
+- [x] Complete Storefront SEO Audit: Audited 10 core dimensions across all routes (Technical, Crawlability/Indexation, Canonical Stability, Information Architecture, On-Page & Headings, Image/Asset SEO, Schema.org Structured Data, International & Locale Hreflang, Local SEO & Dual-Facility Footprint, AI Search & LLMO). Documented all findings in `SEO_AUDIT_REPORT.md` and artifact `seo-audit-report.md`.
+- [x] Edge Middleware Caching Architecture (`src/middleware.ts`): Replaced blunt `Cache-Control: private, no-store` on all storefront routes with CDN-optimized edge headers (`public, max-age=0, s-maxage=3600, stale-while-revalidate=86400`) for public HTML, sitemaps, RSS/Atom feeds, robots, and manifest, while strictly retaining `private, no-store` for authenticated routes, checkout, cart, and admin portals.
+- [x] Crawl Budget & Robots Directives (`src/app/robots.ts`): Added crawl exclusions for user account routes (`/account`, `/account/*`), login (`/login`), and purchase/checkout (`/purchase`, `/purchase/*`) to prevent Googlebot crawl budget waste on private dynamic states.
+- [x] Dynamic XML Sitemap Optimization (`src/lib/seo/sitemap.ts`):
+  - Added key commerce and tool routes: `/blend-lab`, `/blend-lab/start`, `/trials`, `/payment-methods`.
+  - Added published trial products (`/trials/[slug]`) and CMS content pages (`/pages/[slug]`).
+  - Added product-count filter on categories (`(SELECT COUNT(*) FROM products WHERE (category_id = categories.id OR category = categories.name)) > 0`) to prevent duplicate thin-content category indexing.
+- [x] Schema.org Structured Data Refinement (`src/lib/seo/schema.ts`, `src/lib/seo/site.ts`):
+  - Fixed 404 image reference in tasting room local business schema (`/images/about/siliguri-packaging-craft.jpg`).
+  - Standardized PostalAddress country to ISO 3166-1 alpha-2 (`IN`).
+  - Enriched Product schema with `priceValidUntil: "2027-12-31"` and top-level `sku`.
+  - Fixed Article schema path resolution for comparison pages (`/compare/[slug]`).
+  - Hooked Organization schema to dynamic site configuration.
+- [x] Semantic Headings & Accessibility Tree (`src/app/shop/page.tsx`, `src/components/shop/ShopExplorer.tsx`, `src/components/home/HomeHero.tsx`, `src/components/ProductGallery.tsx`):
+  - Added semantic `<h1>` with `<StorefrontText id="shop_primary_h1" ... />` to `/shop`.
+  - Resolved dual `h1` on homepage hero by setting mobile presentation title to `aria-hidden="true"` `div`.
+  - Resolved decorative image alt clutter on shop capsules and PDP thumbnail buttons with `aria-hidden="true"`.
+- [x] Canonical URL Stability Across Locales (`src/app/page.tsx`, `src/app/tea/[slug]/page.tsx`, `src/app/collections/[slug]/page.tsx`, `src/app/blog/[slug]/page.tsx`, `src/app/blend-lab/page.tsx`):
+  - Decoupled canonical URL generation from browser `Accept-Language` headers, using explicitly requested URL path (`ctx.requestedLocale || "en"`).
+  - Converted `/blend-lab` relative canonical into absolute URL via `constructMetadata`.
+- [x] Private & Sensitive Route Indexation Prevention (`src/app/**/layout.tsx`, `src/app/order/[id]/page.tsx`):
+  - Added `noindex, nofollow` metadata to account, login, cart, order confirmation, track, and private-label sample/quote/order management layouts.
+- [x] Local SEO & Dual-Facility Footprint (`src/app/locations/siliguri/page.tsx`, `LOCAL_SEO.md`):
+  - Clarified TeaFloww's dual facility structure: Packaging Works at Fulbari Bypass (734015) and Corporate Office at Sukantapally (734005).
+  - Synchronized visible on-page copy with Schema.org LocalBusiness JSON-LD markup and AGENTS.md.
+- [x] Catalog SEO Metadata & Brand Consistency (`data/store.sqlite`):
+  - Updated store settings and site pages from legacy naming to official TeaFloww / Nirva brand identity.
+  - Authored optimal-length, click-through-optimized `seo_title` (50–60 chars) and `seo_description` (128–147 chars) across all 11 core signature teas.
+  - Trimmed oversized meta description in `/ways-to-make-ctc-tea` to 157 characters.
+- [x] AI Search & Generative Engine Optimization (`public/llms.txt`, `public/llms-full.txt`):
+  - Fixed 404 links, added canonical single-estate collection paths, trials, and Blend Lab links.
+- [x] Verification & Test Suite Parity:
+  - Fixed TypeScript definition in `playwright.config.ts`.
+  - Verified `npm run typecheck` passes with zero errors.
+  - Verified all 68 Vitest SEO tests pass: `seo-metadata-schema.test.ts`, `international-seo-hreflang.test.ts`, `feeds-verification.test.ts`, `blog-routes.test.ts`.
+
+
 ## Trial Optical Studio Multi-Pouch Imagery & Asset Resolution Fix — 2026-11-09
 - [x] Studio Tab Switching Bug Fixed: Removed rogue `useEffect` auto-resetting `selectedStage` to `packaging` whenever a stage lacked an asset in `src/components/trials/TrialOpticalStudio.tsx`. Preserved user selection across pouch tabs and display truthful "Photo pending verification" fallback without trapping.
 - [x] DOM Identity & Re-render Isolation: Added explicit composite `key` attributes to Next.js `<Image>` elements for stage and gallery transitions, eliminating sticky/stale image display.
@@ -629,7 +787,7 @@ product API/MCP suite passed 26 tests. No deployment was needed.
   - Upgraded customer account orders (`/account/orders`, `src/lib/customerOrders.ts`) to seamlessly aggregate and display orders placed via modern international and domestic checkout (`commerce_orders`).
 - [x] **Checkout Resilience & UUID Relaxation**:
   - Relaxed tasting kit / trial ID validation in quotes to accept alphanumeric trial slugs, preventing false `Invalid UUID` rejections during kit checkout.
-- [x] **Full Production Rollout (`teafloww.com` on `43.230.200.121`)**:
+- [x] Full production rollout (`teafloww.com` on `43.230.200.121`):
   - Generated pre-deploy PostgreSQL dump backup (`/www/backup/teafloww-deploy-20261107-trials-orders/teafloww_backup.sql`).
   - Executed additive migrations 034 through 039 on production PostgreSQL (`localhost:5433`).
   - Rsynced codebase cleanly to `/www/wwwroot/teafloww.com/`.
@@ -637,4 +795,67 @@ product API/MCP suite passed 26 tests. No deployment was needed.
   - Restarted PM2 process 13 (`teafloww`) and saved process table.
   - Verified live endpoints: HTTP 200 on `/api/ready`, `/api/health`, `/trials`, `/account/orders`, and confirmed order lookup via full UUID, 8-char, and `TF-` prefix.
 
+## Production Hotfix: PostgreSQL Column Alias Lowercasing & Checkout Quote "Invalid conversion." (2026-11-10)
+- [x] **Root Cause Resolution**:
+  - PostgreSQL folds unquoted column aliases (`AS pricePaise`, `AS variantId`) to lowercase, resulting in `undefined` properties in JavaScript, which caused arithmetic to yield `NaN` and `convertPaise(NaN)` to throw `Invalid conversion.`.
+- [x] **Driver & Query Hardening**:
+  - Enhanced `normalizeSql` in `src/lib/postgresDriver.ts` to automatically double-quote mixed-case aliases (`AS "pricePaise"`) while ignoring uppercase SQL types (`INTEGER`, `TEXT`).
+  - Added `wrapRow` Proxy wrapper in `src/lib/postgresDriver.ts` providing transparent case-insensitive property access on all PostgreSQL rows.
+  - Double-quoted aliases and added defensive nullish fallbacks in `src/lib/international/quotes.ts`, `src/app/subscribe/page.tsx`, and `src/lib/leads.ts`.
+  - Added unit test `tests/unit/postgres-proxy.test.ts`.
+- [x] **Production Deployment (`teafloww.com` on `43.230.200.121`)**:
+  - Timestamped pre-deploy PostgreSQL dump created at `/www/backup/teafloww-deploy-20261110-checkout-fix/teafloww_backup.dump`.
+  - Backed up previous `.next` build to `.next-previous-20261110-predeploy` and backed up source files.
+  - Deployed updated source files (`postgresDriver.ts`, `quotes.ts`, `subscribe/page.tsx`, `leads.ts`, `postgres-proxy.test.ts`).
+  - Executed clean production build (`npm run build`) on server.
+  - Restarted PM2 process 13 (`teafloww`) and saved process table.
+  - Verified live: HTTP 200 on `/api/health`, `/api/ready`, `/`, `/shop`, `/checkout`, and verified the exact checkout quote payload over live public HTTPS returning HTTP 200 with accurate calculation (₹120 merchandise, ₹-2.40 UPI 2% discount, ₹99 shipping, ₹216.60 total).
 
+
+
+
+## Header logo clipping — 2026-11-11
+
+- [x] Preserve the complete header wordmark and tagline by preventing brand shrink, widening the header to 1440px and using the existing menu below 1400px.
+- [x] Review real Chromium captures from 320–1512px, verify no clipping/overflow, sticky layout, menu opening and Escape closing.
+- [x] Run TypeScript and production build; record full check limitations in docs/TESTING.md.
+- [ ] Deploy only on an explicit deployment request.
+
+## Private-label flow repairs — 2026-11-11
+
+- [x] Replace simulated consultation success with validated enquiry persistence, failure/retry and stored reference.
+- [x] Fix step resets, locked packaging links, quote prerequisites, current-item saves and revision handling.
+- [x] Remove internal cost props and request current server-calculated estimates.
+- [x] Generate optimized, disclosed hero and family packaging concepts; preserve operator images.
+- [x] Add saved-project resume, honest empty/error states, associated sample field labels and keyboard tab navigation.
+- [x] Separate artwork previews from production proof approval and remove unsupported licence/dispatch guarantees in touched copy.
+- [ ] Populate and review the real private-label tea/packaging/print catalogue before enabling commercial production.
+- [ ] Confirm production artwork handling, material documentation, sample contents and fulfillment terms with operators.
+- [ ] Deploy only on a separate explicit request.
+
+## Cart product photos — 2026-11-11
+
+- [x] Replace name-based stock photo guesses with current catalogue images keyed by variant/trial identity, including saved and recovered carts.
+- [x] Match the selected SKU/pack using the same image selection as the product gallery; use published kit hero images.
+- [x] Show an accessible neutral placeholder for missing or failed images in cart and legacy checkout summaries.
+- [x] Add regression coverage and review real desktop/mobile browser captures.
+- [ ] Deploy only on an explicit deployment request.
+
+## GTM conversion and retargeting audit — 2026-11-11
+
+- [x] Read live published GTM resource and connected GA4 stream/event reports.
+- [x] Repair local event ownership, consent, route/product/cart/checkout events,
+  false lead successes, duplicate/COD/demo purchases and server quote revenue.
+- [x] Preserve catalog SKUs and add isolated tracking regression coverage.
+- [x] Document GTM tag/trigger mappings, consent checks and retargeting audiences
+  in `docs/analytics/TRACKING_AUDIT_2026-11-11.md`.
+- [ ] Sign in to GTM and inspect the unpublished workspace. Published version 2
+  currently contains only the base Google tag.
+- [ ] Configure/review GA4 ecommerce, Meta and Google Ads tags inside GTM;
+  verify intended TeaFloww destination IDs, catalog matching and audiences.
+- [ ] Resolve the full repository check's private-label release-gate failure.
+- [ ] Explicitly authorized application deployment and GTM publication, followed
+  by Tag Assistant, destination DebugView/Test Events and verified-payment
+  reconciliation. No production deployment performed in this audit.
+- [ ] Separately design consent-aware server-side purchase delivery/retries,
+  refunds and business-specific subscription/private-label/Blend Lab payments.

@@ -2,8 +2,21 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 
 export const paymentSettingsSchema = z.object({
+  online_payment_enabled: z.boolean().default(true),
   payment_mode: z.enum(["test", "production"]).default("test"),
   razorpay_enabled: z.boolean().default(true),
+  // Gateway Routing Controls
+  gateway_direct_purchase: z.enum(["razorpay", "youpi"]).default("razorpay"),
+  gateway_sample_kit: z.enum(["razorpay", "youpi"]).default("razorpay"),
+  gateway_subscription: z.enum(["razorpay", "youpi"]).default("razorpay"),
+  // YouPI Configuration
+  youpi_enabled: z.boolean().default(true),
+  youpi_api_url: z.string().url().default("https://pay-api.biolastic.co.in"),
+  youpi_checkout_url: z.string().url().default("https://pay.biolastic.co.in"),
+  youpi_admin_url: z.string().url().default("https://pay-admin.biolastic.co.in"),
+  youpi_merchant_id: z.string().default("00000000-0000-0000-0000-000000000001"),
+  youpi_api_token: z.string().max(200).optional(),
+  youpi_webhook_secret: z.string().max(200).optional(),
   // Active/Legacy fields for backwards compatibility
   razorpay_key_id: z.string().max(100).optional(),
   razorpay_key_secret: z.string().max(200).optional(),
@@ -56,7 +69,40 @@ export type PaymentSettings = PaymentSettingsInput & {
   razorpay_prod_webhook_configured: boolean;
   webhook_url: string;
   cod_fee_paise: number;
+  // YouPI status
+  youpi_api_token_configured: boolean;
+  youpi_webhook_configured: boolean;
+  youpi_webhook_url: string;
 };
+
+export type CommerceStream = "direct_purchase" | "sample_kit" | "subscription";
+
+export function resolveActiveGateway(stream: CommerceStream): "razorpay" | "youpi" {
+  try {
+    const db = getDb();
+    const rows = db.prepare(
+      "SELECT key, value FROM store_settings WHERE key IN ('gateway_direct_purchase', 'gateway_sample_kit', 'gateway_subscription', 'youpi_enabled', 'razorpay_enabled')"
+    ).all() as Array<{ key: string; value: string }>;
+    const map = new Map(rows.map((r) => [r.key, r.value]));
+
+    const youpiEnabled = map.get("youpi_enabled") !== "0";
+    const razorpayEnabled = map.get("razorpay_enabled") !== "0";
+
+    const keyName = `gateway_${stream}`;
+    const selected = (map.get(keyName) as "razorpay" | "youpi" | undefined) || "razorpay";
+
+    if (selected === "youpi") {
+      if (youpiEnabled) return "youpi";
+      if (razorpayEnabled) return "razorpay";
+      return "youpi";
+    }
+
+    if (!razorpayEnabled && youpiEnabled) return "youpi";
+    return "razorpay";
+  } catch {
+    return "razorpay";
+  }
+}
 
 export function getActiveRazorpayCredentials(): {
   mode: "test" | "production";
@@ -116,6 +162,7 @@ export function getPaymentSettings(baseUrl = "https://teafloww.com"): PaymentSet
   }>;
   const map = new Map(rows.map((r) => [r.key, r.value]));
 
+  const onlinePaymentEnabled = map.get("online_payment_enabled") !== "0";
   const rzpEnabled = map.get("razorpay_enabled") !== "0";
   const activeCreds = getActiveRazorpayCredentials();
 
@@ -139,11 +186,38 @@ export function getPaymentSettings(baseUrl = "https://teafloww.com"): PaymentSet
   const codMinPaise = Number(map.get("cod_min_paise") || "10000");
   const codMaxPaise = Number(map.get("cod_max_paise") || "500000");
 
+  const youpiEnabled = map.get("youpi_enabled") !== "0";
+  const gatewayDirect = (map.get("gateway_direct_purchase") as "razorpay" | "youpi" | undefined) || "razorpay";
+  const gatewaySample = (map.get("gateway_sample_kit") as "razorpay" | "youpi" | undefined) || "razorpay";
+  const gatewaySubscription = (map.get("gateway_subscription") as "razorpay" | "youpi" | undefined) || "razorpay";
+
+  const youpiApiUrl = map.get("youpi_api_url") || process.env.YOUPI_API_URL || process.env.BASE_PAYMENT_API_URL || "https://pay-api.biolastic.co.in";
+  const youpiCheckoutUrl = map.get("youpi_checkout_url") || process.env.YOUPI_CHECKOUT_URL || process.env.BASE_CHECKOUT_URL || "https://pay.biolastic.co.in";
+  const youpiAdminUrl = map.get("youpi_admin_url") || process.env.YOUPI_ADMIN_URL || process.env.BASE_ADMIN_URL || "https://pay-admin.biolastic.co.in";
+  const youpiMerchantId = map.get("youpi_merchant_id") || process.env.YOUPI_MERCHANT_ID || "00000000-0000-0000-0000-000000000001";
+  const youpiApiToken = map.get("youpi_api_token") || process.env.YOUPI_API_TOKEN || process.env.ADMIN_API_TOKEN || "";
+  const youpiWebhookSecret = map.get("youpi_webhook_secret") || process.env.YOUPI_WEBHOOK_SECRET || "12ce536e9cff839f2ab5a1cbfb5af3ceb4bb0ea56b06b3f5b890acde47908667";
+
   const normalizedBase = (process.env.APP_BASE_URL || baseUrl).replace(/\/+$/, "");
 
   return {
+    online_payment_enabled: onlinePaymentEnabled,
     payment_mode: activeCreds.mode,
     razorpay_enabled: rzpEnabled,
+    gateway_direct_purchase: gatewayDirect,
+    gateway_sample_kit: gatewaySample,
+    gateway_subscription: gatewaySubscription,
+    youpi_enabled: youpiEnabled,
+    youpi_api_url: youpiApiUrl,
+    youpi_checkout_url: youpiCheckoutUrl,
+    youpi_admin_url: youpiAdminUrl,
+    youpi_merchant_id: youpiMerchantId,
+    youpi_api_token: youpiApiToken ? "••••••••••••" : "",
+    youpi_webhook_secret: youpiWebhookSecret ? "••••••••••••" : "",
+    youpi_api_token_configured: Boolean(youpiApiToken),
+    youpi_webhook_configured: Boolean(youpiWebhookSecret),
+    youpi_webhook_url: `${normalizedBase}/api/webhooks/youpi`,
+
     razorpay_key_id: rzpLegacyKeyId,
     razorpay_key_secret: rzpLegacySecret ? "••••••••••••" : "",
     razorpay_webhook_secret: rzpLegacyWebhook ? "••••••••••••" : "",
@@ -204,6 +278,7 @@ export function updatePaymentSettings(rawInput: unknown): PaymentSettings {
   const db = getDb();
 
   const updates: Array<[string, string]> = [
+    ["online_payment_enabled", parsed.online_payment_enabled ? "1" : "0"],
     ["payment_mode", parsed.payment_mode],
     ["razorpay_enabled", parsed.razorpay_enabled ? "1" : "0"],
     ["cod_enabled", parsed.cod_enabled ? "1" : "0"],
@@ -228,7 +303,22 @@ export function updatePaymentSettings(rawInput: unknown): PaymentSettings {
     ["prepaid_discount_max_rupees", String(parsed.prepaid_discount_max_rupees)],
     ["min_order_for_discount_rupees", String(parsed.min_order_for_discount_rupees)],
     ["payment_discount_badge_text", parsed.payment_discount_badge_text],
+    ["gateway_direct_purchase", parsed.gateway_direct_purchase],
+    ["gateway_sample_kit", parsed.gateway_sample_kit],
+    ["gateway_subscription", parsed.gateway_subscription],
+    ["youpi_enabled", parsed.youpi_enabled ? "1" : "0"],
+    ["youpi_api_url", parsed.youpi_api_url.trim()],
+    ["youpi_checkout_url", parsed.youpi_checkout_url.trim()],
+    ["youpi_admin_url", parsed.youpi_admin_url.trim()],
+    ["youpi_merchant_id", parsed.youpi_merchant_id.trim()],
   ];
+
+  if (parsed.youpi_api_token && !parsed.youpi_api_token.startsWith("•••")) {
+    updates.push(["youpi_api_token", parsed.youpi_api_token.trim()]);
+  }
+  if (parsed.youpi_webhook_secret && !parsed.youpi_webhook_secret.startsWith("•••")) {
+    updates.push(["youpi_webhook_secret", parsed.youpi_webhook_secret.trim()]);
+  }
 
   // If specific test/prod keys provided, save them
   if (parsed.razorpay_test_key_id !== undefined) {
@@ -325,7 +415,7 @@ export function calculatePaymentMethodDiscountPaise(
   merchandisePaise: number,
   settings: PaymentSettings
 ): { discountPaise: number; label: string; ratePercent?: number } {
-  if (method === "cod" || merchandisePaise <= 0) {
+  if (!settings.online_payment_enabled || method === "cod" || merchandisePaise <= 0) {
     return { discountPaise: 0, label: "No payment discount" };
   }
   const minOrderPaise = Math.round(settings.min_order_for_discount_rupees * 100);

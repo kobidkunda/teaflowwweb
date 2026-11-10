@@ -6,8 +6,22 @@ import {
 
 function mockSettings(overrides: Partial<PaymentSettings> = {}): PaymentSettings {
   return {
+    online_payment_enabled: true,
     payment_mode: "test",
     razorpay_enabled: true,
+    gateway_direct_purchase: "razorpay",
+    gateway_sample_kit: "razorpay",
+    gateway_subscription: "razorpay",
+    youpi_enabled: true,
+    youpi_api_url: "https://pay-api.biolastic.co.in",
+    youpi_checkout_url: "https://pay.biolastic.co.in",
+    youpi_admin_url: "https://pay-admin.biolastic.co.in",
+    youpi_merchant_id: "00000000-0000-0000-0000-000000000001",
+    youpi_api_token: "",
+    youpi_webhook_secret: "",
+    youpi_api_token_configured: false,
+    youpi_webhook_configured: false,
+    youpi_webhook_url: "https://teafloww.com/api/webhooks/youpi",
     razorpay_key_id: "rzp_test_123",
     razorpay_key_secret: "secret",
     razorpay_webhook_secret: "webhook",
@@ -147,6 +161,17 @@ describe("calculatePaymentMethodDiscountPaise", () => {
     });
     const result = calculatePaymentMethodDiscountPaise("upi", 100000, settings);
     expect(result.discountPaise).toBe(0);
+  });
+
+  it("returns zero discount when online payments are disabled altogether", () => {
+    const settings = mockSettings({
+      online_payment_enabled: false,
+      upi_discount_enabled: true,
+      upi_discount_value: 2,
+    });
+    const result = calculatePaymentMethodDiscountPaise("upi", 100000, settings);
+    expect(result.discountPaise).toBe(0);
+    expect(result.label).toContain("No payment discount");
   });
 
   it("never lets discount exceed the total merchandise amount", () => {

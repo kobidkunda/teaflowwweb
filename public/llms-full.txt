@@ -16,17 +16,20 @@
 
 ## Product Lines & Navigation
 1. Shop All Teas: https://teafloww.com/shop
-2. Darjeeling First Flush: https://teafloww.com/collections/darjeeling-first-flush
-3. Reserve Black Teas: https://teafloww.com/collections/black-tea
-4. Green & White Teas: https://teafloww.com/shop?category=green-tea
-5. Oolong & Specialty: https://teafloww.com/shop?category=oolong-tea
-6. Gift Sets: https://teafloww.com/gifts
-7. Wholesale & Bulk Orders: https://teafloww.com/wholesale
-8. Tea Finder Quiz: https://teafloww.com/tea-finder
-9. Compare Cupping Profiles: https://teafloww.com/compare
-10. Order Tracking: https://teafloww.com/track
-11. Leaf to Cup Journey: https://teafloww.com/leaf-to-cup
-12. Journal & Articles: https://teafloww.com/blog
+2. Darjeeling Spring First Flush: https://teafloww.com/tea/darjeeling-spring
+3. Single-Estate Black Teas: https://teafloww.com/collections/black
+4. High-Mountain Green Teas: https://teafloww.com/collections/green
+5. Oolong & Specialty: https://teafloww.com/collections/oolong
+6. Tea Trials Discovery Kits: https://teafloww.com/trials
+7. Blend Lab Atelier: https://teafloww.com/blend-lab
+8. Gift Sets & Flights: https://teafloww.com/gifts
+9. Wholesale & Bulk Orders: https://teafloww.com/wholesale
+10. Tea Finder Quiz: https://teafloww.com/tea-finder
+11. Compare Cupping Profiles: https://teafloww.com/compare
+12. 7 Ways to Make CTC Tea: https://teafloww.com/ways-to-make-ctc-tea
+13. Order Tracking: https://teafloww.com/track
+14. Leaf to Cup Journey: https://teafloww.com/leaf-to-cup
+15. Journal & Articles: https://teafloww.com/blog
 
 ## Shipping & Dispatch
 - Fast 24–48h dispatch across India via Blue Dart and Delhivery.

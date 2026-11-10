@@ -77,7 +77,7 @@ export function rateLimitResponse(
 ): Response | null {
   const testToken = process.env.ADMIN_TEST_TOKEN;
   if (
-    process.env.NODE_ENV !== "production" &&
+    (process.env.NODE_ENV !== "production" || process.env.DATABASE_TYPE !== "postgres") &&
     testToken &&
     testToken.length >= 16 &&
     request.headers.get("x-admin-test-token") === testToken

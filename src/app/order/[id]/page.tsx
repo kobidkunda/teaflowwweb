@@ -3,11 +3,19 @@ import { notFound } from "next/navigation";
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
 import { CheckCircle2 } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
-import { getPublicOrder, getPublicOrderTrackingItems } from "@/lib/storefront";
+import { getPublicOrder } from "@/lib/storefront";
 import { formatINR } from "@/lib/money";
-import { OrderPurchaseTracker } from "@/components/analytics/OrderPurchaseTracker";
 import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
+import { constructMetadata } from "@/lib/seo/metadata";
+import type { Metadata } from "next";
+
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = constructMetadata({
+  title: "Order Confirmation",
+  path: "/order",
+  noindex: true,
+});
 
 const DISPATCH_STEPS = ["unfulfilled", "preparing", "shipped", "delivered"] as const;
 
@@ -20,18 +28,10 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const order = getPublicOrder(id);
   if (!order) notFound();
-  const trackingItems = getPublicOrderTrackingItems(order.id);
   const reference = order.id.slice(0, 8).toUpperCase();
   const step = dispatchStepIndex(order.dispatch_status);
   const cancelled = order.dispatch_status === "cancelled" || order.dispatch_status === "returned";
   return <div className="container page-shell order-page">
-    <OrderPurchaseTracker
-      orderId={order.id}
-      totalPaise={order.total_paise}
-      shippingPaise={order.shipping_paise}
-      taxPaise={order.tax_paise}
-      items={trackingItems}
-    />
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
         <BrandLogo variant="symbol" size={16} aria-hidden={true} />

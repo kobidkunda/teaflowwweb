@@ -141,7 +141,7 @@ export function StickyPurchaseBar({
     setIsAdding(true);
     try {
       add({
-        variantId: currentVariant.id,
+        variantId: currentVariant.id, sku: currentVariant.sku?.trim() || `HTH-${product.id}-${currentVariant.id}`,
         slug: product.slug,
         name: product.name,
         grams: currentVariant.grams,

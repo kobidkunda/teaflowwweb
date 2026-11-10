@@ -8,6 +8,7 @@ import { SESSION_COOKIE, verifySessionValue } from "@/lib/adminSessions";
 import { TrialService } from "@/lib/trials/service";
 import { DraftPreviewBanner } from "@/components/trials/DraftPreviewBanner";
 import { TrialPDPInteractiveView } from "@/components/trials/TrialPDPInteractiveView";
+import { PDPTracker } from "@/components/analytics/PDPTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -170,6 +171,20 @@ export default async function TrialPDPPage({
           revision={trial.revision}
         />
       )}
+
+      <PDPTracker
+        product={{
+          id: 9000,
+          slug: `trials/${publicDto.slug}`,
+          name: publicDto.title,
+          category: "Trial Kit",
+        }}
+        variant={{
+          id: 1,
+          sku: publicDto.sku,
+          price_paise: publicDto.price_paise,
+        }}
+      />
 
       <TrialPDPInteractiveView trial={publicDto} />
     </div>

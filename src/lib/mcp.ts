@@ -3,6 +3,16 @@ import { HOME_TRIAL_MEDIA_GUIDANCE } from "@/lib/homeTrialsPresentation";
 import { z } from "zod";
 import { logger } from "@/lib/logger";
 import {
+  PRIVATE_LABEL_TOOL_DEFINITIONS,
+  PRIVATE_LABEL_TOOL_ALIASES,
+} from "@/lib/private-label/mcp-tools";
+import {
+  PrivateLabelRevisionConflictError,
+  PrivateLabelNotFoundError,
+  PrivateLabelGateError,
+  PrivateLabelStateTransitionError,
+} from "@/lib/private-label/types";
+import {
   listProducts,
   getProductBySlug,
   getProduct,
@@ -189,6 +199,18 @@ function parse<T>(schema: z.ZodType<T>, args: unknown): T {
 function serviceError(error: unknown): never {
   logger.error("MCP Service Error: " + (error instanceof Error ? error.message : String(error)));
   if (error instanceof McpError) throw error;
+  if (error instanceof PrivateLabelRevisionConflictError) {
+    throw new McpError(-32009, error.message);
+  }
+  if (error instanceof PrivateLabelGateError) {
+    throw new McpError(-32009, error.message);
+  }
+  if (error instanceof PrivateLabelStateTransitionError) {
+    throw new McpError(-32009, error.message);
+  }
+  if (error instanceof PrivateLabelNotFoundError) {
+    throw new McpError(-32004, error.message);
+  }
   const msg = error instanceof Error ? error.message : "";
   if (error instanceof TrialRevisionConflictError || /revision conflict/i.test(msg)) {
     throw new McpError(-32009, "Conflict: revision mismatch");
@@ -414,7 +436,7 @@ const updateMetadataArgs = z.object({
 
 const associateMediaArgs = z.object({
   media_id: z.number().int().positive(),
-  entity_type: z.enum(["product", "category", "slider", "site_placement", "blog", "page"]),
+  entity_type: z.enum(["product", "category", "slider", "site_placement", "blog", "page", "packaging", "packaging_variant"]),
   entity_id: z.union([z.number().int(), z.string().min(1)]),
   slot: z.enum(["bg", "fg", "hero", "cover"]).optional(),
   target: z.enum(["bg", "fg", "hero", "cover"]).optional(),
@@ -3159,9 +3181,9 @@ export const TOOL_DEFINITIONS: ToolDef[] = [
       required: ["media_id", "entity_type", "entity_id"],
       properties: {
         media_id: { type: "integer" },
-        entity_type: { type: "string", enum: ["product", "category", "slider", "site_placement", "blog", "page"] },
+        entity_type: { type: "string", enum: ["product", "category", "slider", "site_placement", "blog", "page", "packaging", "packaging_variant"] },
         entity_id: {},
-        slot: { type: "string", enum: ["bg", "fg", "hero", "cover"], description: "For sliders: 'bg' or 'fg'. For pages: 'hero'. Defaults to 'bg'." },
+        slot: { type: "string", enum: ["bg", "fg", "hero", "cover"], description: "For sliders: 'bg' or 'fg'. For pages/packaging: 'hero' or 'cover'. Defaults to 'bg' (or 'hero')." },
         target: { type: "string", enum: ["bg", "fg", "hero", "cover"], description: "Alias for slot" },
         is_primary: { type: "boolean" },
       },
@@ -3217,6 +3239,12 @@ export const TOOL_DEFINITIONS: ToolDef[] = [
         const pageSlug = String(entity_id).trim().toLowerCase();
         db.prepare("UPDATE site_pages SET hero_media_id = ?, hero_image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE slug = ?").run(media.id, media.url, pageSlug);
         extra = { page_slug: pageSlug, associated: true };
+      } else if (entity_type === "packaging" || entity_type === "packaging_variant") {
+        const packId = String(entity_id).trim();
+        const field = slot === "cover" || slot === "fg" ? "dieline_url" : "hero_image_url";
+        const res = db.prepare(`UPDATE pl_packaging_variants SET ${field} = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? OR slug = ? OR sku = ?`).run(media.url, packId, packId, packId);
+        if (res.changes === 0) throw new McpError(-32004, `Packaging variant '${packId}' not found.`);
+        extra = { packaging_id: packId, url: media.url, field, associated: true };
       }
 
       return {
@@ -5543,6 +5571,7 @@ export const TOOL_DEFINITIONS: ToolDef[] = [
       return { history, total: history.length };
     },
   },
+  ...PRIVATE_LABEL_TOOL_DEFINITIONS,
 ];
 
 export function listToolDefinitions() {
@@ -5924,6 +5953,8 @@ const TOOL_ALIASES: Record<string, string> = {
   "admin.trial_history": "trial_history",
   "admin.trial.history": "trial_history",
   "admin.trialHistory": "trial_history",
+
+  ...PRIVATE_LABEL_TOOL_ALIASES,
 };
 
 export function dispatchToolCall(name: unknown, args: unknown): unknown {

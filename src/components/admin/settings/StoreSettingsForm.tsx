@@ -303,6 +303,20 @@ export function StoreSettingsForm() {
                   Manage Delivery Settings →
                 </a>
               </div>
+
+              <div style={{ gridColumn: "span 2", background: "#fdf8f0", padding: "16px", borderRadius: "8px", border: "1px solid #e2d2ba", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                <div>
+                  <h3 style={{ margin: "0 0 4px 0", fontSize: "14px", fontWeight: 700, color: "#1d2a24" }}>
+                    Brochure &amp; Product Catalogue (PDF)
+                  </h3>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#61523c" }}>
+                    Upload your official tea catalogue document and enable instant PDF downloads across the header, footer, and wholesale pages.
+                  </p>
+                </div>
+                <a href="/admin/brochure" className="button button-outline" style={{ whiteSpace: "nowrap", padding: "8px 14px", fontSize: "12px", fontWeight: 600 }}>
+                  Manage Brochure Catalog →
+                </a>
+              </div>
             </div>
 
             {/* Security Notice */}

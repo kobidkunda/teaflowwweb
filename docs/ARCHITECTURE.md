@@ -206,3 +206,24 @@ transaction. Omitted top-level writes preserve content, null clears, supplied
 objects replace. Product PATCH discards defaults for omitted keys before merging
 with stored values to protect hidden sourcing fields. No pricing/payment paths
 are changed. See `docs/TEA_MOMENTS.md`.
+
+## Cart imagery
+
+`GET /api/cart/images` accepts a bounded, validated JSON list of variant/trial
+identities in the `items` query parameter and returns public image URLs only.
+CartProvider fetches this metadata on identity changes and enriches its display
+items without changing persisted prices, quantities or server-sync payloads.
+Published/enabled product images use the product gallery's SKU/format selection;
+published kits use their hero image. Missing or failed images render an accessible
+neutral placeholder. Product names and slugs never select substitute photos.
+
+## GTM event ownership and consent — 2026-11-11
+
+`trackingBootstrap` establishes denied consent synchronously before vendor code.
+The client runtime loads one GTM container after opt-in and emits sanitized route
+views. When GTM is active, direct GA4, Meta and custom-script injection are
+suppressed. `seo/tracking.ts` owns the ecommerce data-layer contract; server
+quote analytics supply purchase amounts. PurchaseStatus is the sole active paid
+retail conversion source; demo and unpaid COD confirmations do not emit purchase.
+Catalog SKUs match feed identifiers. See the [audit and GTM setup contract](analytics/TRACKING_AUDIT_2026-11-11.md)
+for event definitions, verification evidence, platform release gates and limits.

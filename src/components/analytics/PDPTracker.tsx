@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { trackViewItem } from "@/lib/seo/tracking";
+import { useEffect, useRef } from "react";
+import { catalogItem, trackViewItem } from "@/lib/seo/tracking";
+
+import { CONSENT_EVENT } from "@/lib/seo/consent";
 
 export interface PDPTrackerProps {
   product: {
@@ -18,19 +20,17 @@ export interface PDPTrackerProps {
 }
 
 export function PDPTracker({ product, variant }: PDPTrackerProps) {
+  const recorded = useRef("");
+  const item = variant ? catalogItem(product, variant) : null;
+  const signature = JSON.stringify(item);
   useEffect(() => {
-    if (!product) return;
-
-    const price = (variant?.price_paise ?? 0) / 100;
-    const itemId = variant?.sku || String(variant?.id ?? product.id);
-
-    trackViewItem({
-      item_id: itemId,
-      item_name: product.name,
-      item_category: product.category,
-      price,
-    });
-  }, [product, variant]);
-
+    const record = () => {
+      if (item && recorded.current !== signature && trackViewItem(item)) recorded.current = signature;
+    };
+    record(); window.addEventListener(CONSENT_EVENT, record);
+    return () => window.removeEventListener(CONSENT_EVENT, record);
+    // The serialized item captures the complete tracking payload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature]);
   return null;
 }

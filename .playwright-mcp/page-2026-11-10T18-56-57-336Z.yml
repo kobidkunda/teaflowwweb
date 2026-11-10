@@ -1,0 +1,331 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - region "Announcement" [ref=e3]:
+    - generic [ref=e4]:
+      - link "✨ FREE SHIPPING ON ORDERS ABOVE ₹999" [ref=e5] [cursor=pointer]:
+        - /url: /shop
+      - generic [aria-hidden] [ref=e6]: "|"
+      - link "Track Order" [ref=e7] [cursor=pointer]:
+        - /url: /track
+      - generic [aria-hidden] [ref=e8]: "|"
+      - link "Help" [ref=e9] [cursor=pointer]:
+        - /url: /contact
+      - generic [aria-hidden] [ref=e10]: "|"
+      - button "Deliver to IN · INR · en" [disabled] [ref=e12] [cursor=pointer]:
+        - generic [ref=e18]: IN · INR · EN
+  - banner [ref=e19]:
+    - generic [ref=e20]:
+      - button "Toggle navigation" [ref=e21] [cursor=pointer]
+      - link "TEAFLOWW Orthodox & CTC Teas from Origin homepage" [ref=e23] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e37]:
+          - generic [ref=e38]: TEAFLOWW
+          - generic [ref=e39]: Orthodox & CTC Teas from Origin
+        - generic [ref=e40]: homepage
+      - generic [ref=e41]:
+        - button "Wholesale & Bulk — Open purchase inquiry" [ref=e42] [cursor=pointer]
+        - button "Search teas (⌘K)" [ref=e46] [cursor=pointer]
+        - generic [aria-hidden] [ref=e50] [cursor=pointer]
+        - link "Shopping bag with 0 items" [ref=e54] [cursor=pointer]:
+          - /url: /cart
+          - generic [aria-hidden] [ref=e58]: "0"
+  - main [ref=e59]:
+    - main [ref=e60]:
+      - generic [ref=e61]:
+        - generic [ref=e63]:
+          - generic [ref=e65]:
+            - generic [ref=e66]: TeaFloww Private Label Atelier
+            - heading "Bespoke Tea & Packaging Configurator" [level=1] [ref=e67]
+          - navigation "Configurator steps" [ref=e68]:
+            - list [ref=e69]:
+              - listitem [ref=e70]:
+                - button "1 Tea Selection Estate & Grade" [ref=e71] [cursor=pointer]:
+                  - generic [ref=e72]:
+                    - generic [ref=e73]: "1"
+                    - generic [ref=e74]: Tea Selection
+                  - generic [ref=e75]: Estate & Grade
+              - listitem [ref=e76]:
+                - button "2 Packaging Structure & Barrier" [disabled] [ref=e77]:
+                  - generic [ref=e78]:
+                    - generic [ref=e79]: "2"
+                    - generic [ref=e80]: Packaging
+                  - generic [ref=e81]: Structure & Barrier
+              - listitem [ref=e82]:
+                - button "3 Print Method Colors & Finish" [disabled] [ref=e83]:
+                  - generic [ref=e84]:
+                    - generic [ref=e85]: "3"
+                    - generic [ref=e86]: Print Method
+                  - generic [ref=e87]: Colors & Finish
+              - listitem [ref=e88]:
+                - button "4 2D Studio Artwork & Preflight" [disabled] [ref=e89]:
+                  - generic [ref=e90]:
+                    - generic [ref=e91]: "4"
+                    - generic [ref=e92]: 2D Studio
+                  - generic [ref=e93]: Artwork & Preflight
+              - listitem [ref=e94]:
+                - button "5 Quantity & Quote Live 12-Component" [disabled] [ref=e95]:
+                  - generic [ref=e96]:
+                    - generic [ref=e97]: "5"
+                    - generic [ref=e98]: Quantity & Quote
+                  - generic [ref=e99]: Live 12-Component
+          - generic [ref=e100]:
+            - 'region "Step 1: Select Single-Estate Tea Recipe" [ref=e102]':
+              - generic [ref=e103]:
+                - 'heading "Step 1: Select Single-Estate Tea Recipe" [level=2] [ref=e104]'
+                - paragraph [ref=e105]: Choose from verified high-altitude Himalayan estates in Darjeeling, Assam, and Kangra. All teas are fresh harvest with direct origin provenance.
+              - group "Tea categories" [ref=e106]:
+                - button "all" [ref=e107] [cursor=pointer]
+                - button "black" [ref=e108] [cursor=pointer]
+                - button "green" [ref=e109] [cursor=pointer]
+                - button "white" [ref=e110] [cursor=pointer]
+                - button "oolong" [ref=e111] [cursor=pointer]
+                - button "chai" [ref=e112] [cursor=pointer]
+              - generic [ref=e113]:
+                - generic [ref=e114]: "Pack Net Fill Weight (grams per pouch/tin):"
+                - generic [ref=e115]:
+                  - button "50g" [ref=e116] [cursor=pointer]
+                  - button "100g" [ref=e117] [cursor=pointer]
+                  - button "250g" [ref=e118] [cursor=pointer]
+                  - button "500g" [ref=e119] [cursor=pointer]
+                  - button "1000g" [ref=e120] [cursor=pointer]
+                - generic [ref=e121]:
+                  - spinbutton "Pack Net Fill Weight (grams per pouch/tin):" [ref=e122]: "100"
+                  - generic [ref=e123]: grams per unit
+              - button "Continue to Packaging ›" [ref=e125] [cursor=pointer]
+            - generic [ref=e126]:
+              - generic [ref=e127]:
+                - generic [ref=e129]:
+                  - tablist "Package orientations" [ref=e130]:
+                    - tab "Front" [selected] [ref=e131] [cursor=pointer]
+                    - tab "Back" [ref=e132] [cursor=pointer]
+                    - tab "Top" [ref=e133] [cursor=pointer]
+                    - tab "Dieline" [ref=e134] [cursor=pointer]
+                  - generic [ref=e135]:
+                    - button "Toggle safe-zone guides" [pressed] [ref=e136] [cursor=pointer]: Hide Safe Zones
+                    - link "Technical Dieline" [ref=e137] [cursor=pointer]:
+                      - /url: /api/v1/private-label/packaging/default/dieline
+                - img "2D preview of Stand-Up Pouch front view with custom brand design. Use arrow keys to nudge placement by 1mm, Shift+Arrow for 10mm, plus and minus keys to zoom." [ref=e138]:
+                  - generic [ref=e139]:
+                    - generic [aria-hidden]:
+                      - generic: SEAL RESERVE
+                    - generic [ref=e141]:
+                      - generic [ref=e142]: YOUR BRAND
+                      - generic [ref=e143]: SINGLE ESTATE ARTISANAL TEA
+                      - generic [ref=e144]: "Net Wt: 100g"
+                - generic [ref=e146]:
+                  - note [ref=e147]: Digital Mockup — Illustrative Only
+                  - generic [ref=e148]: Stand-Up Pouch • 160 × 230 mm
+              - generic [ref=e149]:
+                - generic [ref=e150]:
+                  - generic [ref=e151]:
+                    - heading "Live Quotation Estimate" [level=3] [ref=e152]
+                    - text: 12-Component Tiered Cost Engine • Price Lock Guarantee
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: —
+                    - generic [ref=e155]: per pack
+                - generic [ref=e156]:
+                  - generic [ref=e157]:
+                    - generic [ref=e158]: ESTIMATED BATCH TOTAL (1,000 units)
+                    - generic [ref=e159]: Inclusive of 5% Tea + 18% GST • Ex-works Siliguri
+                  - generic [ref=e160]: —
+                - button "▲ Hide 12-Component Breakdown" [ref=e162] [cursor=pointer]
+                - generic [ref=e164]:
+                  - button "Generate Official Quotation" [disabled] [ref=e165]
+                  - generic [ref=e166]:
+                    - button "Save Draft" [ref=e167] [cursor=pointer]
+                    - button "Download PDF" [ref=e168] [cursor=pointer]
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - generic [ref=e172]: STEP 1 OF 5
+            - generic [ref=e173]: Custom Estimate
+          - button "Next Step &rsaquo;" [ref=e174] [cursor=pointer]
+  - contentinfo "Site footer" [ref=e175]:
+    - generic [ref=e176]:
+      - generic [ref=e177]:
+        - generic [ref=e178]:
+          - link "TEAFLOWW · Nirva homepage" [ref=e179] [cursor=pointer]:
+            - /url: /
+            - generic [ref=e193]:
+              - text: TEAFLOWW
+              - generic [ref=e194]: · Nirva
+          - paragraph [ref=e195]: Single-estate loose leaf teas direct from small Himalayan tea makers.
+        - region "Brand standards" [ref=e196]:
+          - generic [ref=e201]:
+            - generic [ref=e202]: 100% Single-Estate
+            - generic [ref=e203]: Unblended orthodox lots direct from Himalayan gardens.
+          - generic [ref=e207]:
+            - generic [ref=e208]: Sealed at Origin
+            - generic [ref=e209]: Graded and packaged at our Siliguri origin facility.
+          - generic [ref=e215]:
+            - generic [ref=e216]: 24–48h Dispatch
+            - generic [ref=e217]: Fast courier delivery across India via Blue Dart & Delhivery.
+          - generic [ref=e222]:
+            - generic [ref=e223]: Freshness Guarantee
+            - generic [ref=e224]: 14-day freshness and transit resolution assurance.
+      - generic [ref=e225]:
+        - generic [ref=e226]:
+          - heading "Shop Teas" [level=3] [ref=e227]
+          - navigation "Shop Teas" [ref=e228]:
+            - list [ref=e229]:
+              - listitem [ref=e230]:
+                - link "Shop All Teas" [ref=e231] [cursor=pointer]:
+                  - /url: /shop
+              - listitem [ref=e232]:
+                - link "Darjeeling First Flush" [ref=e233] [cursor=pointer]:
+                  - /url: /collections/darjeeling-first-flush
+              - listitem [ref=e234]:
+                - link "Reserve Black Teas" [ref=e235] [cursor=pointer]:
+                  - /url: /collections/black-tea
+              - listitem [ref=e236]:
+                - link "Green & White Teas" [ref=e237] [cursor=pointer]:
+                  - /url: /shop?category=green-tea
+              - listitem [ref=e238]:
+                - link "Oolong & Specialty" [ref=e239] [cursor=pointer]:
+                  - /url: /shop?category=oolong-tea
+              - listitem [ref=e240]:
+                - link "Trials & Samples" [ref=e241] [cursor=pointer]:
+                  - /url: /trials
+              - listitem [ref=e242]:
+                - link "Wholesale & Bulk Orders" [ref=e243] [cursor=pointer]:
+                  - /url: /wholesale
+              - listitem [ref=e244]:
+                - link "Blend Lab (Custom Tea Atelier)" [ref=e245] [cursor=pointer]:
+                  - /url: /blend-lab
+        - generic [ref=e246]:
+          - heading "Discovery & Tools" [level=3] [ref=e247]
+          - navigation "Discovery & Tools" [ref=e248]:
+            - list [ref=e249]:
+              - listitem [ref=e250]:
+                - link "Tea Finder (Flavor Quiz)" [ref=e251] [cursor=pointer]:
+                  - /url: /tea-finder
+              - listitem [ref=e252]:
+                - link "Compare Cupping Profiles" [ref=e253] [cursor=pointer]:
+                  - /url: /compare
+              - listitem [ref=e254]:
+                - link "Track Your Order" [ref=e255] [cursor=pointer]:
+                  - /url: /track
+              - listitem [ref=e256]:
+                - link "Shopping Bag" [ref=e257] [cursor=pointer]:
+                  - /url: /cart
+              - listitem [ref=e258]:
+                - link "Product Feeds (Google & CSV)" [ref=e259] [cursor=pointer]:
+                  - /url: /feeds
+        - generic [ref=e260]:
+          - heading "Journal & Heritage" [level=3] [ref=e261]
+          - navigation "Journal & Heritage" [ref=e262]:
+            - list [ref=e263]:
+              - listitem [ref=e264]:
+                - link "Tea Journal & Articles Stories" [ref=e265] [cursor=pointer]:
+                  - /url: /blog
+                  - generic [ref=e266]: Tea Journal & Articles
+                  - generic [ref=e267]: Stories
+              - listitem [ref=e268]:
+                - link "Tea Education & Brewing" [ref=e269] [cursor=pointer]:
+                  - /url: /learn
+              - listitem [ref=e271]:
+                - link "Leaf-to-Cup Craft Story" [ref=e272] [cursor=pointer]:
+                  - /url: /leaf-to-cup
+              - listitem [ref=e274]:
+                - link "Ways to Make CTC Tea" [ref=e275] [cursor=pointer]:
+                  - /url: /ways-to-make-ctc-tea
+              - listitem [ref=e277]:
+                - link "Siliguri Origin & Tasting Room" [ref=e278] [cursor=pointer]:
+                  - /url: /locations/siliguri
+              - listitem [ref=e280]:
+                - link "Our Heritage & Estates" [ref=e281] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e283]:
+                - link "Brand Assets & Media Kit" [ref=e284] [cursor=pointer]:
+                  - /url: /brand
+        - generic [ref=e286]:
+          - heading "Customer Care" [level=3] [ref=e287]
+          - navigation "Customer Care" [ref=e288]:
+            - list [ref=e289]:
+              - listitem [ref=e290]:
+                - link "Contact Us" [ref=e291] [cursor=pointer]:
+                  - /url: /contact
+              - listitem [ref=e292]:
+                - link "Payment Methods & Discounts" [ref=e293] [cursor=pointer]:
+                  - /url: /payment-methods
+              - listitem [ref=e294]:
+                - link "Shipping & Dispatch Policy" [ref=e295] [cursor=pointer]:
+                  - /url: /shipping
+              - listitem [ref=e296]:
+                - link "14-Day Returns & Guarantee" [ref=e297] [cursor=pointer]:
+                  - /url: /returns
+              - listitem [ref=e298]:
+                - link "Privacy Policy" [ref=e299] [cursor=pointer]:
+                  - /url: /privacy
+              - listitem [ref=e300]:
+                - link "Terms of Service" [ref=e301] [cursor=pointer]:
+                  - /url: /terms
+          - generic [ref=e302]:
+            - heading "Featured Topics" [level=4] [ref=e303]
+            - navigation "Featured Topics" [ref=e304]:
+              - list [ref=e305]:
+                - listitem [ref=e306]:
+                  - link "Shop Tea" [ref=e307] [cursor=pointer]:
+                    - /url: /shop
+                - listitem [ref=e308]:
+                  - link "Wholesale & Bulk" [ref=e309] [cursor=pointer]:
+                    - /url: /wholesale
+                - listitem [ref=e310]:
+                  - link "Private Label" [ref=e311] [cursor=pointer]:
+                    - /url: /private-label
+                - listitem [ref=e312]:
+                  - link "Product Feeds" [ref=e313] [cursor=pointer]:
+                    - /url: /feeds
+                - listitem [ref=e314]:
+                  - link "Brand Assets" [ref=e315] [cursor=pointer]:
+                    - /url: /brand
+                - listitem [ref=e316]:
+                  - link "Shipping" [ref=e317] [cursor=pointer]:
+                    - /url: /shipping
+                - listitem [ref=e318]:
+                  - link "Returns" [ref=e319] [cursor=pointer]:
+                    - /url: /returns
+                - listitem [ref=e320]:
+                  - link "Privacy Policy" [ref=e321] [cursor=pointer]:
+                    - /url: /privacy
+                - listitem [ref=e322]:
+                  - link "Terms of Service" [ref=e323] [cursor=pointer]:
+                    - /url: /terms
+                - listitem [ref=e324]:
+                  - link "Contact Us" [ref=e325] [cursor=pointer]:
+                    - /url: /contact
+        - generic [ref=e326]:
+          - heading "Company & Origin" [level=3] [ref=e327]
+          - generic [ref=e328]:
+            - generic [ref=e333]:
+              - strong [ref=e334]: Nirva
+              - text: "(Brand: TeaFloww)"
+              - generic [ref=e335]: "GSTIN: 19CTHPK8646J2ZY"
+            - generic [ref=e340]:
+              - strong [ref=e341]: "Works / Facility:"
+              - generic [ref=e342]: 00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri, Dist Jalpaiguri, Siliguri, West Bengal, 734015
+            - generic [ref=e347]:
+              - strong [ref=e348]: "Office:"
+              - generic [ref=e349]: Shiv Shakti Kali Bari Rd, Sukantapally East, Siliguri 734005, West Bengal
+            - link "Contact us" [ref=e355] [cursor=pointer]:
+              - /url: /contact
+            - link "+91 7001304853" [ref=e360] [cursor=pointer]:
+              - /url: tel:+917001304853
+            - generic [ref=e361]: Mon – Sat · 09:00 – 18:00 IST
+      - generic [ref=e366]:
+        - generic [ref=e367]:
+          - generic [ref=e368]: © 2026 TEAFLOWW · Nirva. All rights reserved.
+          - button "Deliver to IN · INR · en" [disabled] [ref=e370] [cursor=pointer]:
+            - generic [ref=e376]: IN · INR · EN
+          - navigation "Legal navigation" [ref=e377]:
+            - link "Privacy Policy" [ref=e378] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=e379] [cursor=pointer]:
+              - /url: /terms
+            - link "Shipping Policy" [ref=e380] [cursor=pointer]:
+              - /url: /shipping
+            - link "Returns Guarantee" [ref=e381] [cursor=pointer]:
+              - /url: /returns
+            - link "Product Feeds" [ref=e382] [cursor=pointer]:
+              - /url: /feeds
+        - paragraph [ref=e383]: Direct from origin. Graded and packaged at our Siliguri headquarters.

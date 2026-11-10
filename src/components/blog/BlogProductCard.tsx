@@ -42,6 +42,7 @@ export function BlogProductCard({
     pricePaise: number;
     imageUrl: string;
     variantId: number;
+    sku?: string;
     grams: number;
   } | null>(
     initialName && initialPrice
@@ -99,6 +100,7 @@ export function BlogProductCard({
                   ? "/images/assam-brewing-guide.jpg"
                   : "/images/orthodox-vs-ctc.jpg"),
               variantId: v.id,
+              sku: (v as { sku?: string }).sku || `HTH-${found.id}-${v.id}`,
               grams: v.grams || 100,
             });
           }
@@ -120,6 +122,7 @@ export function BlogProductCard({
     if (!product) return;
     add({
       variantId: product.variantId,
+      sku: product.sku || `HTH-${product.id}-${product.variantId}`,
       slug: product.slug,
       name: product.name,
       grams: product.grams,

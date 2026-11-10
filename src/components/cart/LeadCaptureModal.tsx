@@ -1,4 +1,5 @@
 "use client";
+import { trackLead } from "@/lib/seo/tracking";
 
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -196,6 +197,7 @@ export function LeadCaptureModal() {
         return;
       }
 
+      trackLead("cart_recovery");
       // Record suppression and store coupon code in cookies
       try {
         const subExpires = new Date(Date.now() + 30 * 864e5).toUTCString();

@@ -813,14 +813,14 @@ export function HomeHero({
           <div key={`mobile-card-${safeIdx}`} className="tf-hero-mobile-card tf-slide-content-fade">
             <span className="tf-mobile-overline">{currentSlide.overline}</span>
 
-            <h1 className="tf-mobile-title">
+            <div className="tf-mobile-title" aria-hidden="true">
               <span>{mainHeading.trim()}</span>
               {accentSubheading && (
                 <span className="tf-mobile-title-accent">
                   {" "}— <em>{accentSubheading.trim()}</em>
                 </span>
               )}
-            </h1>
+            </div>
 
             <p className="tf-mobile-desc">{currentSlide.subtitle}</p>
 

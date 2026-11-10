@@ -13,11 +13,11 @@ import { AdminMobileDrawer } from "../../src/components/admin/layout/AdminMobile
 import { AdminShell } from "../../src/components/admin/layout/AdminShell";
 
 describe("Admin Navigation Configuration & Helpers", () => {
-  it("defines exactly 5 distinct grouped navigation sections with expected entities", () => {
-    expect(NAV_GROUPS).toHaveLength(5);
+  it("defines exactly 6 distinct grouped navigation sections with expected entities", () => {
+    expect(NAV_GROUPS).toHaveLength(6);
 
     const groupIds = NAV_GROUPS.map((g) => g.id);
-    expect(groupIds).toEqual(["catalog", "sales", "editorial", "system", "settings"]);
+    expect(groupIds).toEqual(["catalog", "private-label", "sales", "editorial", "system", "settings"]);
 
     const catalogGroup = NAV_GROUPS.find((g) => g.id === "catalog")!;
     expect(catalogGroup.title).toBe("Storefront & Catalog");
@@ -27,10 +27,21 @@ describe("Admin Navigation Configuration & Helpers", () => {
       "/admin/variants",
       "/admin/bulk-pricing",
       "/admin/feeds",
+      "/admin/brochure",
       "/admin/media",
       "/admin/sliders",
       "/admin/blend-lab",
       "/admin/trials",
+    ]);
+
+    const privateLabelGroup = NAV_GROUPS.find((g) => g.id === "private-label")!;
+    expect(privateLabelGroup.title).toBe("Private Label Studio");
+    expect(privateLabelGroup.items.map((i) => i.href)).toEqual([
+      "/admin/private-label",
+      "/admin/private-label/catalogue",
+      "/admin/private-label/price-books",
+      "/admin/private-label/quotes",
+      "/admin/private-label/jobs",
     ]);
 
     const salesGroup = NAV_GROUPS.find((g) => g.id === "sales")!;

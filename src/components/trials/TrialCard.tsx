@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowRight, ImageOff } from "lucide-react";
 import type { TrialPublicDto } from "@/lib/trials/types";
 import { formatINR } from "@/lib/trials/storefront-helpers";
+import { ProductImpression } from "@/components/analytics/ProductImpression";
 import styles from "./TrialsCollection.module.css";
 
 export interface TrialCardProps { trial: TrialPublicDto }
@@ -19,6 +20,7 @@ export function TrialCard({ trial }: TrialCardProps) {
 
   return (
     <article data-testid="trial-card" className={`trial-card ${styles.card}`}>
+      <ProductImpression item={{ item_id: trial.sku, item_name: trial.title, item_category: "Trial", price: trial.price_paise / 100 }} list="Trials Explorer" />
       <Link href={href} className={styles.cardImage} tabIndex={-1} aria-hidden="true">
         {imageUrl ? (
           <Image src={imageUrl}

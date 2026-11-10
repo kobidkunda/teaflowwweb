@@ -169,6 +169,7 @@ export function getSiteNavigation(): SiteNavigation {
     { label: "Leaf to Cup", href: "/leaf-to-cup" },
     { label: "Black Teas", href: "/collections/black-tea" },
     { label: "Wholesale & Bulk", href: "/wholesale" },
+    { label: "Private Label", href: "/private-label" },
     { label: "Blend Lab", href: "/blend-lab" },
     { label: "Tea Finder", href: "/tea-finder" },
     { label: "Trials & Samples", href: "/trials" },
@@ -177,6 +178,7 @@ export function getSiteNavigation(): SiteNavigation {
   const defaultFooterLinks: NavLinkItem[] = [
     { label: "Shop Tea", href: "/shop" },
     { label: "Wholesale & Bulk", href: "/wholesale" },
+    { label: "Private Label", href: "/private-label" },
     { label: "Product Feeds", href: "/feeds" },
     { label: "Brand Assets", href: "/brand" },
     { label: "Shipping", href: "/shipping" },

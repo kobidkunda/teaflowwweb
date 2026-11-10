@@ -23,14 +23,14 @@ export async function generateMetadata() {
       "Explore the 7 iconic traditions of brewing CTC black tea: from classic rolling-boil Kadak Chai and Royal Masala Chai to Kolkata earthen Kulhads, golden Sulaimani, Adrak-Tulsi tonics, chilled lattes, and Himalayan butter tea.",
     meta_title: "7 Authentic Ways to Make CTC Tea — Master Brewing Guide | TeaFloww",
     meta_description:
-      "Explore the 7 iconic ways to brew CTC black tea: Classic Kadak Chai, Royal Masala, Kolkata Street Kulhad, Pahari Sulaimani, Adrak-Tulsi, Iced Chai Latte, and Himalayan Butter Brew. Includes interactive recipe scaler & boiling science.",
+      "Master 7 iconic ways to brew CTC black tea: Kadak Chai, Royal Masala, Kolkata Kulhad, Sulaimani, Adrak-Tulsi, Iced Latte & Butter Brew with recipe scalers.",
   });
 
   return constructMetadata({
-    title: page.meta_title || "7 Authentic Ways to Make CTC Tea — Master Brewing Guide",
+    title: page.meta_title || "7 Authentic Ways to Make CTC Tea — Master Brewing Guide | TeaFloww",
     description:
       page.meta_description ||
-      "Master the 7 iconic traditions of brewing CTC black tea: from classic rolling-boil Kadak Chai and Royal Masala to Kolkata earthen Kulhads and golden Sulaimani.",
+      "Master 7 iconic ways to brew CTC black tea: Kadak Chai, Royal Masala, Kolkata Kulhad, Sulaimani, Adrak-Tulsi, Iced Latte & Butter Brew with recipe scalers.",
     path: "/ways-to-make-ctc-tea",
     ogImage: "/images/ctc-brew/method-01-kadak-chai.jpg",
   });

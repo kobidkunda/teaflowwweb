@@ -1,4 +1,6 @@
 "use client";
+import { ProductImpression } from "@/components/analytics/ProductImpression";
+import { catalogItem } from "@/lib/seo/tracking";
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { useDisplayMoney } from "@/components/international/InternationalProvider";
 
@@ -84,7 +86,7 @@ export function ShopProductCard({
   const handleAddToCart = () => {
     if (activeVariant.stock < 1) return;
     add({
-      variantId: activeVariant.id,
+      variantId: activeVariant.id, sku: activeVariant.sku?.trim() || `HTH-${product.id}-${activeVariant.id}`,
       slug: product.slug,
       name: product.name,
       grams: activeVariant.grams,
@@ -100,6 +102,7 @@ export function ShopProductCard({
         className="shop-product-card tf-mockup-product-card"
         data-testid={`shop-card-${product.slug}`}
       >
+        <ProductImpression item={catalogItem(product, activeVariant)} list="Shop" />
         {/* 1. Visual Artwork Container */}
         <div
           className={`shop-card-art art-${colorClass} tf-mockup-card-art`}

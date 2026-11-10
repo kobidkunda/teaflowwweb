@@ -1,40 +1,41 @@
-import { SITE_CONFIG, getSiteUrl } from "./site";
+import { SITE_CONFIG, getSiteUrl, getDynamicSiteConfig } from "./site";
 import { buildCanonicalUrl } from "./canonical";
 import type { Product, Variant } from "@/lib/productModels";
 
 /**
- * Returns JSON-LD Organization and OnlineStore schema representing Himalayan Tea House.
+ * Returns JSON-LD Organization and OnlineStore schema representing the brand entity.
  */
 export function getOrganizationSchema() {
   const siteUrl = getSiteUrl();
+  const config = getDynamicSiteConfig();
 
   return {
     "@context": "https://schema.org",
     "@type": ["Organization", "OnlineStore"],
     "@id": `${siteUrl}/#organization`,
-    name: SITE_CONFIG.name,
-    legalName: SITE_CONFIG.legalName,
+    name: config.name || SITE_CONFIG.name,
+    legalName: config.legalName || SITE_CONFIG.legalName,
     url: siteUrl,
     logo: `${siteUrl}/images/logo.png`,
-    description: SITE_CONFIG.description,
+    description: config.description || SITE_CONFIG.description,
     address: {
       "@type": "PostalAddress",
-      streetAddress: SITE_CONFIG.address.streetAddress,
-      addressLocality: SITE_CONFIG.address.addressLocality,
-      addressRegion: SITE_CONFIG.address.addressRegion,
-      postalCode: SITE_CONFIG.address.postalCode,
-      addressCountry: SITE_CONFIG.address.addressCountry,
+      streetAddress: config.address.streetAddress,
+      addressLocality: config.address.addressLocality,
+      addressRegion: config.address.addressRegion,
+      postalCode: config.address.postalCode,
+      addressCountry: config.address.addressCountry,
     },
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: SITE_CONFIG.contact.telephone,
-        contactType: SITE_CONFIG.contact.contactType,
-        email: SITE_CONFIG.contact.email,
-        availableLanguage: SITE_CONFIG.contact.availableLanguage,
+        telephone: config.contact.telephone,
+        contactType: config.contact.contactType,
+        email: config.contact.email,
+        availableLanguage: config.contact.availableLanguage,
       },
     ],
-    sameAs: [...SITE_CONFIG.sameAs],
+    sameAs: [...config.sameAs],
   };
 }
 
@@ -51,7 +52,7 @@ export function getLocalBusinessSchema() {
     "@type": ["Store", "LocalBusiness"],
     "@id": `${siteUrl}/locations/siliguri#store`,
     name: `${SITE_CONFIG.name} — Siliguri Tasting Room & Sourcing Hub`,
-    image: `${siteUrl}/images/siliguri-tasting-room.jpg`,
+    image: `${siteUrl}/images/about/siliguri-packaging-craft.jpg`,
     url: `${siteUrl}/locations/siliguri`,
     telephone: SITE_CONFIG.contact.telephone,
     email: SITE_CONFIG.contact.email,
@@ -171,6 +172,7 @@ export function getProductSchema(
       availability: inStock
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
+      priceValidUntil: "2027-12-31",
       seller: {
         "@type": "Organization",
         name: SITE_CONFIG.name,
@@ -226,6 +228,7 @@ export function getProductSchema(
       "@type": "Brand",
       name: SITE_CONFIG.brand,
     },
+    ...(activeVariants[0]?.sku ? { sku: activeVariants[0].sku } : {}),
     offers: offers.length === 1 ? offers[0] : offers,
     additionalProperty: [
       {
@@ -301,9 +304,15 @@ export function getArticleSchema(article: {
   cover_image_url?: string | null;
   published_at?: string | null;
   updated_at?: string | null;
+  pathOverride?: string;
 }) {
   const siteUrl = getSiteUrl();
-  const canonicalUrl = buildCanonicalUrl(`/blog/${article.slug}`);
+  const articlePath = article.pathOverride
+    ? article.pathOverride
+    : article.slug.startsWith("compare/") || article.slug.startsWith("/compare/")
+    ? `/${article.slug.replace(/^\/+/, "")}`
+    : `/blog/${article.slug.replace(/^\/+/, "")}`;
+  const canonicalUrl = buildCanonicalUrl(articlePath);
 
   let coverImage = `${siteUrl}/images/tea-education-hero.jpg`;
   if (article.cover_image_url) {

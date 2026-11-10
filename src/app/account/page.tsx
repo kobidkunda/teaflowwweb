@@ -247,6 +247,27 @@ export default function AccountPage() {
           </div>
         </Link>
 
+        {/* Private Label Studio Card */}
+        <Link
+          href="/account/private-label"
+          className="p-6 rounded-2xl border border-[#ded7cb] bg-[#fffefa] hover:border-[#23483a] transition-all group shadow-sm flex items-start gap-4"
+        >
+          <div className="w-12 h-12 rounded-xl bg-[#f4f7f2] border border-[#dce5da] text-[#23483a] flex items-center justify-center flex-none group-hover:scale-105 transition-transform">
+            <Sparkles size={24} />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors">
+                Private Label Studio
+              </h3>
+              <ChevronRight size={18} className="text-[#a8a499] group-hover:text-[#23483a] transition-colors" />
+            </div>
+            <p className="text-xs text-[#5c6659] mt-1">
+              Custom branded packaging runs, trial sample kits, 7-stage QC tracking, and B2B contracts.
+            </p>
+          </div>
+        </Link>
+
         {/* Saved Addresses Card */}
         <Link
           href="/account/addresses"

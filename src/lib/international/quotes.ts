@@ -27,15 +27,18 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   for (const [key, quantity] of combined) {
     if (key.startsWith("trial:")) {
       const trialId = key.slice(6);
-      const row = db.prepare("SELECT price_paise AS pricePaise,net_weight_g AS grams,sku,title AS name,inventory_quantity AS stock,inventory_policy AS policy FROM trials WHERE id=? AND status='published' AND (SELECT COUNT(*) FROM trial_components WHERE trial_id=trials.id)=4").get(trialId) as { pricePaise: number; grams: number; sku: string; name: string; stock: number; policy: string } | undefined;
+      const row = db.prepare("SELECT price_paise AS \"pricePaise\",net_weight_g AS grams,sku,title AS name,inventory_quantity AS stock,inventory_policy AS policy FROM trials WHERE id=? AND status='published' AND (SELECT COUNT(*) FROM trial_components WHERE trial_id=trials.id)=4").get(trialId) as { pricePaise?: number; pricepaise?: number; grams: number; sku: string; name: string; stock: number; policy: string } | undefined;
       if (!row || quantity > 20 || (row.policy === "track" && row.stock < quantity) || m.blockedSkus.includes(row.sku)) throw new CommerceError("A selected tasting kit is unavailable for this destination or quantity.");
-      lines.push({ variantId: 0, trialId, trialTracked: row.policy === "track", quantity, pricePaise: row.pricePaise, grams: row.grams, sku: row.sku, name: row.name });
+      const pricePaise = row.pricePaise ?? row.pricepaise ?? 0;
+      lines.push({ variantId: 0, trialId, trialTracked: row.policy === "track", quantity, pricePaise, grams: row.grams, sku: row.sku, name: row.name });
       continue;
     }
     const id = Number(key.slice(8));
-    const row = db.prepare(`SELECT v.id AS variantId,v.price_paise AS pricePaise,v.grams,v.sku,v.stock,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=? AND ${enabledProductCondition("p")} AND p.status='published'`).get(id) as (QuoteLine & { stock: number }) | undefined;
+    const row = db.prepare(`SELECT v.id AS "variantId",v.product_id AS "productId",v.price_paise AS "pricePaise",v.grams,v.sku,v.stock,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=? AND ${enabledProductCondition("p")} AND p.status='published'`).get(id) as (QuoteLine & { stock: number; pricepaise?: number; variantid?: number; productId?: number; productid?: number }) | undefined;
     if (!row || quantity > 20 || row.stock < quantity || m.blockedSkus.includes(row.sku)) throw new CommerceError("A selected tea is unavailable for this destination or quantity.");
-    lines.push({ variantId: id, quantity, pricePaise: row.pricePaise, grams: row.grams, sku: row.sku, name: row.name });
+    const pricePaise = row.pricePaise ?? row.pricepaise ?? 0;
+    const variantId = row.variantId ?? row.variantid ?? id;
+    lines.push({ variantId, quantity, pricePaise, grams: row.grams, sku: row.sku?.trim() || `HTH-${row.productId ?? row.productid}-${variantId}`, name: row.name });
   }
   const subtotalPaise = lines.reduce((s, l) => s + l.pricePaise * l.quantity, 0);
   const coupon = input.coupon ? validateCouponServer(input.coupon, subtotalPaise) : null;
@@ -51,6 +54,11 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   let freeAbovePaise = m.freeAbovePaise;
   let flatShippingPaise = m.flatPaise;
   let codFeePaise = m.cod.feePaise;
+
+  const paySettings = getPaymentSettings();
+  if (!paySettings.online_payment_enabled && input.method !== "cod") {
+    throw new CommerceError("Online payment is currently disabled. Please checkout using Cash on Delivery.");
+  }
 
   if (m.code === "IN") {
     try {
@@ -155,7 +163,7 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   const q: Quote = { ...(subscription ? { subscription, subscriptionDiscountPaise: subscriptionSavings.base } : {}), id: randomUUID(), owner, fingerprint: hash(input), input, lines, marketVersion: m.version, currency: input.currency, rate: fx.rate, rateId: fx.id,
     expires: Math.min(Date.now() + 15 * 60000, rate.expires), created: Date.now(), carrier: rate.id, carrierCostPaise: rate.costPaise, dutiesPaise: rate.dutiesPaise,
     subtotalPaise, discountPaise, paymentDiscountPaise, shippingPaise, taxPaise, totalPaise,
-    components, totalMinor: Object.values(components).reduce((s, v) => s + v, 0), package: pack };
+    analyticsTaxMinor: convert(taxPaise), components, totalMinor: Object.values(components).reduce((s, v) => s + v, 0), package: pack };
   db.prepare("INSERT INTO commerce_quotes (id,owner,document,expires_ms) VALUES (?,?,?,?)").run(q.id, owner, JSON.stringify(q), q.expires);
   return q;
 }

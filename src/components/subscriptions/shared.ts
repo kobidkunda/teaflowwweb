@@ -5,9 +5,24 @@ export async function subscriptionRequest(action: string, data?: unknown) {
   if (!response.ok) throw new Error(result.error || 'Unable to complete this request.');
   return result;
 }
-export type Payment = { orderId: string; token: string; keyId: string; gatewayOrderId: string | null; amount: number; currency: string; paymentStatus: string; expires: number };
+export type Payment = {
+  orderId: string;
+  token: string;
+  keyId: string;
+  gatewayOrderId: string | null;
+  amount: number;
+  currency: string;
+  paymentStatus: string;
+  expires: number;
+  gateway?: "razorpay" | "youpi";
+  checkoutUrl?: string;
+};
 export async function openSubscriptionPayment(p: Payment, changed: () => void) {
   if (p.paymentStatus !== 'payment_pending' || !p.gatewayOrderId) { changed(); return; }
+  if (p.gateway === 'youpi' && p.checkoutUrl) {
+    window.location.assign(p.checkoutUrl);
+    return;
+  }
   await loadCheckout();
   if (!window.Razorpay) throw new Error('Payment checkout is unavailable. Please retry.');
   const checkout = new window.Razorpay({ key: p.keyId, order_id: p.gatewayOrderId, amount: p.amount, currency: p.currency, name: 'TeaFloww', handler: () => changed(), modal: { ondismiss: changed } });

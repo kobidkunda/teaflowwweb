@@ -1,0 +1,71 @@
+{
+  "inspectedOn": "2026-11-11",
+  "publicId": "GTM-M5G27HSQ",
+  "source": "https://www.googletagmanager.com/gtm.js?id=GTM-M5G27HSQ",
+  "resource": {
+    "version": "2",
+    "macros": [
+      {
+        "function": "__e"
+      },
+      {
+        "function": "__u",
+        "vtp_component": "URL",
+        "vtp_enableMultiQueryKeys": false,
+        "vtp_enableIgnoreEmptyQueryParam": false
+      },
+      {
+        "function": "__u",
+        "vtp_component": "HOST",
+        "vtp_enableMultiQueryKeys": false,
+        "vtp_enableIgnoreEmptyQueryParam": false
+      },
+      {
+        "function": "__u",
+        "vtp_component": "PATH",
+        "vtp_enableMultiQueryKeys": false,
+        "vtp_enableIgnoreEmptyQueryParam": false
+      },
+      {
+        "function": "__f",
+        "vtp_component": "URL"
+      },
+      {
+        "function": "__e"
+      }
+    ],
+    "tags": [
+      {
+        "function": "__googtag",
+        "metadata": [
+          "map"
+        ],
+        "once_per_event": true,
+        "vtp_tagId": "G-62FDHK0EQ6",
+        "tag_id": 3
+      }
+    ],
+    "predicates": [
+      {
+        "function": "_eq",
+        "arg0": [
+          "macro",
+          0
+        ],
+        "arg1": "gtm.init"
+      }
+    ],
+    "rules": [
+      [
+        [
+          "if",
+          0
+        ],
+        [
+          "add",
+          0
+        ]
+      ]
+    ]
+  }
+}

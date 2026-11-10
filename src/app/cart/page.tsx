@@ -1,18 +1,19 @@
 "use client";
 import { SubscribeLink } from "@/components/subscriptions/SubscribeLink";
-import Image from "next/image";
+import { CartItemImage } from "@/components/CartItemImage";
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { useDisplayMoney } from "@/components/international/InternationalProvider";
 
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
 import { Check, Lock, ShieldCheck, Trash2, ArrowRight } from "lucide-react";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { CouponField } from "@/components/CouponField";
 import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
 import { getCartItemImage } from "@/lib/cartImageHelper";
 
+import { CONSENT_EVENT } from "@/lib/seo/consent";
 import { trackViewCart } from "@/lib/seo/tracking";
 
 function CartPageContent() {
@@ -54,7 +55,7 @@ function CartPageContent() {
               name: item.name,
               grams: item.grams,
               pricePaise: item.pricePaise,
-            });
+            }, false);
             if (item.quantity > 1) {
               changeQuantity(item.variantId, item.quantity);
             }
@@ -132,20 +133,16 @@ function CartPageContent() {
     }
   }, [couponCode, subtotal]);
 
-  // 3. Analytics Tracking
+  const trackedCart = useRef("");
+  const trackingItems = JSON.stringify(items.map(line => ({ item_id: line.sku || (line.trialId ? line.trialId : (line.variantId ? `HTH-${line.variantId}` : "")), item_name: line.name, price: line.pricePaise / 100, quantity: line.quantity })));
   useEffect(() => {
-    if (items.length > 0) {
-      trackViewCart(
-        items.map((line) => ({
-          item_id: line.trialId || String(line.variantId),
-          item_name: line.name,
-          price: line.pricePaise / 100,
-          quantity: line.quantity,
-        })),
-        subtotal / 100
-      );
-    }
-  }, [items, subtotal]);
+    const record = () => {
+      const lines = JSON.parse(trackingItems);
+      if (lines.length && lines.every((line: { item_id: string }) => line.item_id) && trackedCart.current !== trackingItems && trackViewCart(lines, subtotal / 100)) trackedCart.current = trackingItems;
+    };
+    record(); window.addEventListener(CONSENT_EVENT, record);
+    return () => window.removeEventListener(CONSENT_EVENT, record);
+  }, [trackingItems, subtotal]);
 
   return (
     <div className="container page-shell cart-page">
@@ -198,14 +195,11 @@ function CartPageContent() {
                     className="cart-thumbnail-wrapper"
                     aria-label={`View details for ${line.name}`}
                   >
-                    <Image
-                      src={itemImg || "/images/product-darjeeling-tin.jpg"}
-                      alt={line.name || "Tea selection"}
-                      width={64}
-                      height={64}
-                      sizes="64px"
+                    <CartItemImage
+                      src={itemImg}
+                      name={line.name || "Tea selection"}
+                      size={64}
                       className="cart-thumbnail-img object-cover rounded-md"
-                      loading="lazy"
                     />
                   </Link>
 

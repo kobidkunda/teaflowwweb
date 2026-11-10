@@ -6046,14 +6046,14 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
     min-height: 54px;
   }
 }
-@media (min-width: 1024px) {
+@media (min-width: 1400px) {
   .ritual-nav-wholesale-link {
     display: none !important;
   }
 }
 
 .ritual-header .ritual-nav-row {
-  max-width: 1280px;
+  max-width: 1440px;
   width: 100%;
   margin-inline: auto;
   padding-inline: clamp(10px, 2vw, 36px);
@@ -6071,7 +6071,8 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
   align-items: center;
   gap: clamp(6px, 1.2vw, 10px);
   color: #17221c;
-  flex-shrink: 1;
+  /* Keep the complete wordmark and tagline; collapse navigation first. */
+  flex-shrink: 0;
   min-width: 0;
   text-decoration: none;
 }
@@ -6542,7 +6543,7 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
 .ritual-footer p:not(.eyebrow){color:#2e3b30;font-size:13px;max-width:none}
 .ritual-footer p.ritual-disclosure{font-size:11px}
 .ritual-tile .ritual-eyebrow{white-space:normal;overflow-wrap:anywhere}
-@media(max-width:1023px){
+@media(max-width:1399px){
   .ritual-menu{display:inline-flex}
   .ritual-nav{
     display:none;
@@ -7682,3 +7683,12 @@ dialog.tf-pdf-dialog[open]::backdrop {
 }
 
 
+
+/* Tracking preferences remain keyboard accessible and fit narrow screens. */
+.tracking-consent-panel { position: fixed; z-index: 200; bottom: 1rem; left: 1rem; right: 1rem; max-width: 46rem; padding: 1.25rem; background: #fbf8f1; color: #171713; border: 1px solid #697a55; box-shadow: 0 8px 32px #17171326; max-height: 80svh; overflow: auto; }
+.tracking-consent-panel h2 { margin: 0 0 .5rem; font-size: 1.2rem; }
+.tracking-consent-panel p { font-size: .875rem; margin: 0 0 1rem; }
+.tracking-consent-panel a { text-decoration: underline; }
+.tracking-consent-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.tracking-consent-actions button { min-height: 44px; }
+.tracking-cookie-settings { position: fixed; bottom: .5rem; left: .5rem; z-index: 80; background: #fbf8f1; color: #23483a; border: 1px solid #697a55; padding: .5rem .75rem; min-height: 44px; font-size: .75rem; cursor: pointer; }

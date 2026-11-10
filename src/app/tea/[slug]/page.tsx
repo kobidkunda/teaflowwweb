@@ -60,7 +60,7 @@ export async function generateMetadata({
     ogImage: primaryImg,
     canonicalOverride: p.canonical_override,
     noindex: p.is_enabled === 0 || p.status !== "published" || Boolean(p.noindex),
-    locale: ctx.requestedLocale || ctx.locale,
+    locale: ctx.requestedLocale || "en",
     resource: `product:${p.id}`,
   });
 }
@@ -89,10 +89,14 @@ export default async function ProductPage({
 
   const images = getProductImages(p.id);
   const productJsonLd = getProductSchema(p, p.variants, images);
+  const categorySlug = p.category
+    ? p.category.toLowerCase().replace(/&/g, "").replace(/\s+/g, "-").replace(/--+/g, "-").replace(/^-|-$/g, "")
+    : "";
+  const categoryCrumbUrl = categorySlug ? `/collections/${categorySlug}` : "/shop";
   const breadcrumbJsonLd = getBreadcrumbSchema([
     { name: "Home", url: "/" },
     { name: "Teas", url: "/shop" },
-    { name: `${p.category} Tea`, url: `/shop?category=${encodeURIComponent(p.category)}` },
+    { name: `${p.category} Tea`, url: categoryCrumbUrl },
     { name: p.name, url: `/tea/${p.slug}` },
   ]);
 

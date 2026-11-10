@@ -7,10 +7,12 @@ TeaFloww is an artisanal tea brand by Nirva, headquartered in Siliguri, West Ben
 
 ## Primary Products & Collections
 - [All Teas & Single Estates](https://teafloww.com/shop): Explore the full catalog of orthodox black, high-grown green, delicate white, and complex oolong teas.
-- [Darjeeling First Flush](https://teafloww.com/collections/darjeeling-first-flush): Rare spring harvests plucked at dawn above 6,000 ft, featuring crisp floral and muscatel aromatics.
-- [Reserve Black Teas](https://teafloww.com/collections/black-tea): Bold orthodox lots and golden-tipped flushes from Upper Assam and Darjeeling.
-- [Green & White Teas](https://teafloww.com/shop?category=green-tea): Steamed and pan-fired lots rich in antioxidants, vegetal sweetness, and clean finishes.
-- [Curated Gift Sets](https://teafloww.com/gifts): Tasting flights and boxed collections for ceremonies and connoisseurs.
+- [Darjeeling Spring First Flush](https://teafloww.com/tea/darjeeling-spring): Rare spring harvest from Risheehat, featuring crisp floral and muscatel aromatics.
+- [Single-Estate Black Teas](https://teafloww.com/collections/black): Bold orthodox lots and golden-tipped flushes from Upper Assam and Darjeeling.
+- [High-Mountain Green Teas](https://teafloww.com/collections/green): Steamed and pan-fired lots rich in antioxidants, vegetal sweetness, and clean finishes.
+- [Curated Gift Sets & Flights](https://teafloww.com/gifts): Tasting flights and boxed collections for ceremonies and connoisseurs.
+- [Tea Trials Discovery Kits](https://teafloww.com/trials): 4x50g craft discovery sets to sample and compare regional garden flushes at home.
+- [TeaFloww Blend Lab](https://teafloww.com/blend-lab): Professional sensory tea evaluation and custom blend development.
 
 ## Discovery & Brewing Tools
 - [Interactive Tea Finder](https://teafloww.com/tea-finder): A 4-step palate quiz matching elevation, caffeine preference, and flavor notes to your ideal harvest.

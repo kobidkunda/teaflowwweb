@@ -232,13 +232,13 @@ export function getCartByRecoveryToken(
   const rawItems = db
     .prepare(`
       SELECT 
-        ci.variant_id AS variantId,
+        ci.variant_id AS "variantId",
         ci.quantity,
         ci.unit_price_paise,
-        v.name AS variantName,
+        v.name AS "variantName",
         v.grams,
-        v.price_paise AS currentPricePaise,
-        p.name AS productName,
+        v.price_paise AS "currentPricePaise",
+        p.name AS "productName",
         p.slug
       FROM cart_items ci
       JOIN variants v ON ci.variant_id = v.id
@@ -249,15 +249,20 @@ export function getCartByRecoveryToken(
     .all(cart.id) as RawItemRow[];
 
   const items: RecoveredCartItem[] = rawItems.map((item) => {
-    const pricePaise = Number(item.unit_price_paise || item.currentPricePaise || 0);
+    const raw = item as RawItemRow & { currentpricepaise?: number; variantid?: number; productname?: string; variantname?: string };
+    const currentPrice = raw.currentPricePaise ?? raw.currentpricepaise;
+    const pricePaise = Number(raw.unit_price_paise || currentPrice || 0);
+    const variantId = Number(raw.variantId ?? raw.variantid);
+    const productName = raw.productName ?? raw.productname;
+    const variantName = raw.variantName ?? raw.variantname;
     return {
-      variantId: Number(item.variantId),
-      slug: String(item.slug),
-      name: String(item.productName || item.variantName || "Himalayan Tea"),
-      grams: Number(item.grams || 100),
+      variantId,
+      slug: String(raw.slug),
+      name: String(productName || variantName || "Himalayan Tea"),
+      grams: Number(raw.grams || 100),
       pricePaise,
-      quantity: Number(item.quantity),
-      lineTotalPaise: pricePaise * Number(item.quantity),
+      quantity: Number(raw.quantity),
+      lineTotalPaise: pricePaise * Number(raw.quantity),
     };
   });
 

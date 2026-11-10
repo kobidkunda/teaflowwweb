@@ -21,6 +21,7 @@ export const DEFAULT_NAV = [
   { label: "Leaf to Cup", href: "/leaf-to-cup" },
   { label: "Black Teas", href: "/collections/black-tea" },
   { label: "Wholesale & Bulk", href: "/wholesale" },
+  { label: "Private Label", href: "/private-label" },
   { label: "Blend Lab", href: "/blend-lab" },
   { label: "Tea Finder", href: "/tea-finder" },
   { label: "Trials & Samples", href: "/trials" },
@@ -139,6 +140,12 @@ export function StorefrontHeader({
             <span className="tf-announcement-divider" aria-hidden="true">
               |
             </span>
+            <Link href="/brochure" className="tf-announcement-link">
+              <StorefrontText id="copy_download_brochure" fallback="Download Brochure" />
+            </Link>
+            <span className="tf-announcement-divider" aria-hidden="true">
+              |
+            </span>
             <Link href="/track" className="tf-announcement-link"> <StorefrontText id="copy_73a75653065cfd73" fallback="Track Order" /> </Link>
             <span className="tf-announcement-divider" aria-hidden="true">
               |
@@ -219,6 +226,14 @@ export function StorefrontHeader({
               })}
             {menuOpen && (
               <div className="ritual-mobile-auth-links mt-4 pt-3 border-t border-[#e6dfd2] flex flex-col gap-2">
+                <Link
+                  href="/brochure"
+                  onClick={() => setMenuOpen(false)}
+                  className="text-xs font-semibold text-[#1d2a24] hover:text-[#23483a] py-1 flex items-center gap-1.5"
+                >
+                  <span>📄</span>
+                  <span><StorefrontText id="copy_download_brochure_mobile" fallback="Download Brochure Catalog" /></span>
+                </Link>
                 <Link
                   href="/account/orders"
                   onClick={() => setMenuOpen(false)}

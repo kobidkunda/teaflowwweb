@@ -72,6 +72,11 @@ export default async function Shop({
         <span aria-current="page"> <StorefrontText id="copy_9e85a7ef54d14494" fallback="Shop Fine Teas" /> </span>
       </nav>
 
+      {/* Primary Semantic H1 for Search Engine Indexing and Screen Readers */}
+      <h1 className="sr-only">
+        <StorefrontText id="shop_primary_h1" fallback="Fine Tea Collection — Single-Estate Flushes & Artisanal Blends" />
+      </h1>
+
       {/* Main Interactive Catalog Island with Hero Showcase */}
       <main id="catalog-content" className="tf-shop-catalog-main">
         <ShopExplorer

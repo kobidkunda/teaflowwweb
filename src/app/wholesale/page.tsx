@@ -10,6 +10,8 @@ import {
   Coffee,
   Mail,
   ArrowRight,
+  Download,
+  FileText,
 } from "lucide-react";
 
 import { getPageOrDefault } from "@/lib/pages";
@@ -126,6 +128,27 @@ export default function WholesalePage() {
                 <div style={{ fontSize: "22px", fontWeight: 700, color: "#ffffff" }}>100%</div>
                 <div style={{ fontSize: "12px", color: "#b8c4b2" }}> <StorefrontText id="copy_d5b27921245ad623" fallback="Garden Traceability" /> </div>
               </div>
+            </div>
+
+            <div style={{ marginTop: "24px" }}>
+              <a
+                href="/brochure"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: "rgba(255, 255, 255, 0.12)",
+                  border: "1px solid rgba(255, 255, 255, 0.25)",
+                  color: "#ffffff",
+                  padding: "10px 18px",
+                  borderRadius: "8px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                <Download size={15} /> <StorefrontText id="copy_wholesale_brochure_cta" fallback="Download Wholesale Brochure &amp; Catalogue (PDF)" />
+              </a>
             </div>
           </div>
 

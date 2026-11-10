@@ -25,7 +25,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const ctx = await requestContext();
-  return constructMetadata({ path: "/", locale: ctx.requestedLocale || ctx.locale, resource: "homepage" });
+  return constructMetadata({ path: "/", locale: ctx.requestedLocale || "en", resource: "homepage" });
 }
 
 export default async function Home() {

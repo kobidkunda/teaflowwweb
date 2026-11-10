@@ -43,6 +43,12 @@ export function getCatalogSitemapEntries(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: `${siteUrl}/brochure`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
       url: `${siteUrl}/blog`,
       lastModified: staticLastMod,
       changeFrequency: "weekly",
@@ -131,6 +137,42 @@ export function getCatalogSitemapEntries(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/private-label`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    },
+    {
+      url: `${siteUrl}/private-label/packaging`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/blend-lab`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/blend-lab/start`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
+      url: `${siteUrl}/trials`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${siteUrl}/payment-methods`,
+      lastModified: staticLastMod,
+      changeFrequency: "monthly",
+      priority: 0.5,
     }
   );
 
@@ -181,6 +223,8 @@ export function getCatalogSitemapEntries(): MetadataRoute.Sitemap {
       if (catCols.has("noindex")) {
         whereConditions.push("noindex = 0");
       }
+      // Only include active categories that have products associated with them to prevent thin duplicate pages
+      whereConditions.push("(SELECT COUNT(*) FROM products WHERE (category_id = categories.id OR category = categories.name)) > 0");
       const categories = db
         .prepare(`SELECT slug, created_at FROM categories WHERE ${whereConditions.join(" AND ")} ORDER BY sort_order ASC`)
         .all() as Array<{ slug: string; created_at?: string }>;
@@ -256,6 +300,124 @@ export function getCatalogSitemapEntries(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     });
+  }
+
+  // 6. Published Private Label Packaging Formats
+  try {
+    const hasPack = Boolean(
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pl_packaging_variants'").get()
+    );
+    if (hasPack) {
+      const packVariants = db
+        .prepare("SELECT slug, updated_at, created_at FROM pl_packaging_variants WHERE status = 'published' ORDER BY created_at DESC")
+        .all() as Array<{ slug: string; updated_at?: string; created_at?: string }>;
+
+      for (const v of packVariants) {
+        let vDate = staticLastMod;
+        const rawDate = v.updated_at || v.created_at;
+        if (rawDate) {
+          const parsed = new Date(rawDate);
+          if (!isNaN(parsed.getTime())) {
+            vDate = parsed;
+          }
+        }
+        entries.push({
+          url: `${siteUrl}/private-label/packaging/${v.slug}`,
+          lastModified: vDate,
+          changeFrequency: "weekly",
+          priority: 0.75,
+        });
+      }
+    }
+  } catch {
+    // Graceful fallback
+  }
+
+  // 7. Published Discovery Kit Trials
+  try {
+    const hasTrials = Boolean(
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='trials'").get()
+    );
+    if (hasTrials) {
+      const trialCols = new Set(
+        (db.prepare("PRAGMA table_info(trials)").all() as { name: string }[]).map((c) => c.name)
+      );
+      const whereConditions = ["status = 'published'"];
+      if (trialCols.has("noindex")) {
+        whereConditions.push("noindex = 0");
+      }
+      const trials = db
+        .prepare(`SELECT slug, updated_at, created_at FROM trials WHERE ${whereConditions.join(" AND ")} ORDER BY published_at DESC`)
+        .all() as Array<{ slug: string; updated_at?: string; created_at?: string }>;
+
+      for (const t of trials) {
+        let tDate = staticLastMod;
+        const rawDate = t.updated_at || t.created_at;
+        if (rawDate) {
+          const parsed = new Date(rawDate);
+          if (!isNaN(parsed.getTime())) {
+            tDate = parsed;
+          }
+        }
+        entries.push({
+          url: `${siteUrl}/trials/${t.slug}`,
+          lastModified: tDate,
+          changeFrequency: "weekly",
+          priority: 0.75,
+        });
+      }
+    }
+  } catch {
+    // Graceful fallback
+  }
+
+  // 8. Published Custom CMS Pages
+  try {
+    const hasPages = Boolean(
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='site_pages'").get()
+    );
+    if (hasPages) {
+      const coreKnownSlugs = [
+        "about",
+        "contact",
+        "shipping",
+        "returns",
+        "privacy",
+        "terms",
+        "brand",
+        "wholesale",
+        "leaf-to-cup",
+        "gifts",
+        "locations-siliguri",
+        "tea-finder",
+        "ways-to-make-ctc-tea",
+      ];
+      const placeholders = coreKnownSlugs.map(() => "?").join(",");
+      const customPages = db
+        .prepare(
+          `SELECT slug, updated_at, created_at FROM site_pages WHERE is_published = 1 AND slug NOT IN (${placeholders})`
+        )
+        .all(...coreKnownSlugs) as Array<{ slug: string; updated_at?: string; created_at?: string }>;
+
+      for (const p of customPages) {
+        let pDate = staticLastMod;
+        const rawDate = p.updated_at || p.created_at;
+        if (rawDate) {
+          const parsed = new Date(rawDate);
+          if (!isNaN(parsed.getTime())) {
+            pDate = parsed;
+          }
+        }
+        entries.push({
+          url: `${siteUrl}/pages/${p.slug}`,
+          lastModified: pDate,
+          changeFrequency: "monthly",
+          priority: 0.6,
+        });
+      }
+    }
+  } catch {
+    // Graceful fallback
   }
 
   return entries;

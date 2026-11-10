@@ -22,6 +22,8 @@ import {
   Truck,
   CreditCard,
   Boxes,
+  Briefcase,
+  FileText,
 } from "lucide-react";
 
 export type NavItem = {
@@ -55,10 +57,48 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/variants", label: "Variants", icon: Layers, section: "Storefront & Catalog" },
       { href: "/admin/bulk-pricing", label: "Bulk Pricing", icon: FileSpreadsheet, section: "Storefront & Catalog" },
       { href: "/admin/feeds", label: "Product Feeds", icon: Rss, section: "Storefront & Catalog" },
+      { href: "/admin/brochure", label: "Brochure Catalog", icon: FileText, section: "Storefront & Catalog" },
       { href: "/admin/media", label: "Media", icon: ImageIcon, section: "Storefront & Catalog" },
       { href: "/admin/sliders", label: "Hero Sliders", icon: Sliders, section: "Storefront & Catalog" },
       { href: "/admin/blend-lab", label: "Blend Lab (Atelier)", icon: FlaskConical, section: "Storefront & Catalog" },
       { href: "/admin/trials", label: "Trials", icon: Boxes, section: "Storefront & Catalog" },
+    ],
+  },
+  {
+    id: "private-label",
+    title: "Private Label Studio",
+    items: [
+      {
+        href: "/admin/private-label",
+        label: "Studio Overview",
+        icon: Briefcase,
+        section: "Private Label Studio",
+      },
+      {
+        href: "/admin/private-label/catalogue",
+        label: "PL Catalogue",
+        icon: Boxes,
+        section: "Private Label Studio",
+      },
+      {
+        href: "/admin/private-label/price-books",
+        label: "Price Books & MOQs",
+        icon: FileSpreadsheet,
+        section: "Private Label Studio",
+      },
+      {
+        href: "/admin/private-label/quotes",
+        label: "Quote Queue",
+        icon: FileText,
+        badge: "Review",
+        section: "Private Label Studio",
+      },
+      {
+        href: "/admin/private-label/jobs",
+        label: "Production & QC",
+        icon: Truck,
+        section: "Private Label Studio",
+      },
     ],
   },
   {
@@ -152,40 +192,53 @@ export function getBreadcrumbs(pathname: string): BreadcrumbItem[] {
     return crumbs;
   }
 
-  // Find matching nav item
+  // Find matching nav item (prefer exact match, otherwise longest matching href)
+  let bestMatch: { group: NavGroup; item: NavItem } | null = null;
   for (const group of SIDEBAR_NAV_GROUPS) {
     for (const item of group.items) {
-      if (pathname === item.href || pathname.startsWith(`${item.href}/`)) {
-        crumbs.push({ label: group.title });
-        const isItemPage = pathname === item.href;
-        crumbs.push({
-          label: item.label,
-          href: isItemPage ? undefined : item.href,
-          current: isItemPage,
-        });
-
-        // Add subpath actions (e.g., /new, /[id], /[id]/edit)
-        const subpath = pathname.slice(item.href.length).replace(/^\//, "");
-        if (subpath) {
-          const parts = subpath.split("/").filter(Boolean);
-          parts.forEach((part, idx) => {
-            const isLast = idx === parts.length - 1;
-            let partLabel = part;
-            if (part === "new") partLabel = "New";
-            else if (part === "edit") partLabel = "Edit";
-            else if (part === "delete") partLabel = "Delete";
-            else if (/^\d+$/.test(part)) partLabel = `#${part}`;
-            else partLabel = part.charAt(0).toUpperCase() + part.slice(1);
-
-            crumbs.push({
-              label: partLabel,
-              current: isLast,
-            });
-          });
+      if (pathname === item.href) {
+        bestMatch = { group, item };
+        break;
+      }
+      if (pathname.startsWith(`${item.href}/`)) {
+        if (!bestMatch || item.href.length > bestMatch.item.href.length) {
+          bestMatch = { group, item };
         }
-        return crumbs;
       }
     }
+    if (bestMatch && pathname === bestMatch.item.href) break;
+  }
+
+  if (bestMatch) {
+    const { group, item } = bestMatch;
+    crumbs.push({ label: group.title });
+    const isItemPage = pathname === item.href;
+    crumbs.push({
+      label: item.label,
+      href: isItemPage ? undefined : item.href,
+      current: isItemPage,
+    });
+
+    // Add subpath actions (e.g., /new, /[id], /[id]/edit)
+    const subpath = pathname.slice(item.href.length).replace(/^\//, "");
+    if (subpath) {
+      const parts = subpath.split("/").filter(Boolean);
+      parts.forEach((part, idx) => {
+        const isLast = idx === parts.length - 1;
+        let partLabel = part;
+        if (part === "new") partLabel = "New";
+        else if (part === "edit") partLabel = "Edit";
+        else if (part === "delete") partLabel = "Delete";
+        else if (/^\d+$/.test(part)) partLabel = `#${part}`;
+        else partLabel = part.charAt(0).toUpperCase() + part.slice(1);
+
+        crumbs.push({
+          label: partLabel,
+          current: isLast,
+        });
+      });
+    }
+    return crumbs;
   }
 
   // Fallback for unmatched subpaths under /admin

@@ -59,5 +59,5 @@ export type QuoteLine = { trialId?: string; trialTracked?: boolean; variantId: n
 export type Quote = { subscription?: import("@/lib/subscriptions/model").SubscriptionQuote; subscriptionDiscountPaise?: number; id: string; owner: string; fingerprint: string; input: QuoteInput; lines: QuoteLine[]; marketVersion: number;
   currency: string; rate: string; rateId: string | null; expires: number; created: number; carrier: string; carrierCostPaise: number;
   dutiesPaise: number; subtotalPaise: number; discountPaise: number; paymentDiscountPaise?: number; shippingPaise: number; taxPaise: number; totalPaise: number;
-  components: { merchandise: number; shipping: number; duties: number; tax: number; cod: number; paymentDiscount?: number }; totalMinor: number; package: Package;
+  analyticsTaxMinor?: number; components: { merchandise: number; shipping: number; duties: number; tax: number; cod: number; paymentDiscount?: number }; totalMinor: number; package: Package;
 };

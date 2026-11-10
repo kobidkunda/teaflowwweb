@@ -10,12 +10,13 @@ import { listPlans } from "@/lib/blend-lab/plans";
 import { getBlendLabContent } from "@/lib/blend-lab/content";
 import "@/components/blend-lab/blend-lab.css";
 
-export const metadata: Metadata = {
-  title: "TeaFloww Blend Lab — Tea Evaluation & Custom Blending",
+import { constructMetadata } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = constructMetadata({
+  title: "TeaFloww Blend Lab — Professional Tea Evaluation & Blending",
   description: "Understand your tea from dry leaf to infusion, liquor and milk response. Explore professional sensory evaluation and custom blend development with TeaFloww.",
-  alternates: { canonical: "/blend-lab" },
-  openGraph: { title: "TeaFloww Blend Lab — Your next signature tea starts here", description: "Professional tea evaluation and custom blend development for cafés, tea brands and bulk buyers.", url: "https://teafloww.com/blend-lab", siteName: "TeaFloww" },
-};
+  path: "/blend-lab",
+});
 
 export default function BlendLabPage() {
   const plans = listPlans({ activeOnly: true });

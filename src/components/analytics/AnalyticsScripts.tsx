@@ -1,130 +1,67 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Script from "next/script";
 import type { PublicTrackingConfig } from "@/lib/trackingSettings";
+import { CONSENT_EVENT, CONSENT_KEY, gtmLoaderScript, DENIED_CONSENT, readTrackingConsent, trackingRouteAllowed, updateTrackingConsent, type TrackingConsent } from "@/lib/seo/consent";
+import { ensureMetaQueue, trackPageView } from "@/lib/seo/tracking";
 
 export function AnalyticsHeadScripts({ config }: { config: PublicTrackingConfig }) {
-  const {
-    gtmContainerId,
-    gtmEnabled,
-    ga4MeasurementId,
-    ga4Enabled,
-    metaPixelId,
-    metaPixelEnabled,
-    customHeadScript,
-  } = config;
+  const pathname = usePathname();
+  const [consent, setConsent] = useState<TrackingConsent>(DENIED_CONSENT);
+  const [chosen, setChosen] = useState(true);
+  const [settings, setSettings] = useState(false);
+  const lastPage = useRef({ path: "", analytics: false, marketing: false });
+  useEffect(() => {
+    const sync = () => {
+      setConsent(readTrackingConsent());
+      try { const saved = JSON.parse(localStorage.getItem(CONSENT_KEY) || "null"); setChosen(saved?.version === 1 && typeof saved.analytics === "boolean" && typeof saved.marketing === "boolean"); } catch { setChosen(false); }
+    };
+    sync();
+    window.addEventListener(CONSENT_EVENT, sync);
+    return () => window.removeEventListener(CONSENT_EVENT, sync);
+  }, []);
 
-  return (
-    <>
-      {/* Next schedules lazyOnload after load and idle. Preserve queued events. */}
-      {gtmEnabled && gtmContainerId ? (
-        <Script
-          id="google-tag-manager"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];
-(function(){
-    if(window.__gtm_loaded) return;
-    window.__gtm_loaded = true;
-    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','${gtmContainerId}');
-})();`,
-          }}
-        />
-      ) : null}
+  useEffect(() => {
+    if (!pathname || !trackingRouteAllowed(pathname)) return;
+    // Set sanitized Google defaults before rendering/loading the vendor scripts below.
+    ensureMetaQueue();
+    const current = readTrackingConsent();
+    const previous = lastPage.current;
+    const google = current.analytics && (previous.path !== pathname || !previous.analytics);
+    const meta = current.marketing && (previous.path !== pathname || !previous.marketing);
+    if (google || meta) trackPageView(undefined, undefined, { google, meta });
+    lastPage.current = { path: pathname, ...current };
+  }, [pathname, consent.analytics, consent.marketing]);
 
-      {/* GTM owns Google tags when active; direct GA4 is the standalone fallback. */}
-      {ga4Enabled && ga4MeasurementId && !(gtmEnabled && gtmContainerId) ? (
-        <>
-          <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4MeasurementId)}`}
-            strategy="lazyOnload"
-          />
-          <Script
-            id="google-analytics-gtag"
-            strategy="lazyOnload"
-            dangerouslySetInnerHTML={{
-              __html: `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${ga4MeasurementId}', { send_page_view: false });`,
-            }}
-          />
-        </>
-      ) : null}
-
-      {/* 3. Meta / Facebook Pixel if enabled */}
-      {metaPixelEnabled && metaPixelId ? (
-        <Script
-          id="meta-pixel"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{
-            __html: `!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '${metaPixelId}');
-fbq('track', 'PageView');`,
-          }}
-        />
-      ) : null}
-
-      {/* 4. Custom Head Script (if configured) */}
-      {customHeadScript ? (
-        <Script
-          id="custom-head-tracking"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{ __html: customHeadScript }}
-        />
-      ) : null}
-    </>
-  );
+  const choose = (next: TrackingConsent) => {
+    updateTrackingConsent(next); setConsent(next); setChosen(true); setSettings(false);
+  };
+  if (!pathname || !trackingRouteAllowed(pathname)) return null;
+  const googleAllowed = consent.analytics || consent.marketing;
+  const gtm = config.gtmEnabled && /^GTM-[A-Z0-9]+$/.test(config.gtmContainerId);
+  const ga4 = config.ga4Enabled && /^G-[A-Z0-9]+$/.test(config.ga4MeasurementId);
+  const meta = config.metaPixelEnabled && /^\d+$/.test(config.metaPixelId);
+  return <>
+    {googleAllowed && gtm && <Script id="google-tag-manager" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: gtmLoaderScript(config.gtmContainerId) }} />}
+    {consent.analytics && !gtm && ga4 && <>
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${config.ga4MeasurementId}`} strategy="afterInteractive" />
+    </>}
+    {consent.marketing && !gtm && meta && <Script src="https://connect.facebook.net/en_US/fbevents.js" strategy="afterInteractive" />}
+    {consent.marketing && !gtm && config.customHeadScript && <Script id="custom-head-tracking" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: config.customHeadScript }} />}
+    {consent.marketing && !gtm && config.customBodyScript && <div id="custom-body-tracking" dangerouslySetInnerHTML={{ __html: config.customBodyScript }} />}
+    {(!chosen || settings) ? <section aria-label="Cookie preferences" className="tracking-consent-panel">
+      <h2>Choose your cookies</h2>
+      <p>Essential cookies keep your bag and checkout working. Optional analytics help us improve TeaFloww; marketing cookies help Google and Meta show relevant ads. <a href="/privacy">Privacy policy</a></p>
+      <div className="tracking-consent-actions">
+        <button type="button" className="button button-outline" onClick={() => choose(DENIED_CONSENT)}>Essential only</button>
+        <button type="button" className="button button-outline" onClick={() => choose({ analytics: true, marketing: false })}>Analytics only</button>
+        <button type="button" className="button button-primary" onClick={() => choose({ analytics: true, marketing: true })}>Accept all</button>
+      </div>
+    </section> : <button type="button" className="tracking-cookie-settings" onClick={() => setSettings(true)}>Cookie settings</button>}
+  </>;
 }
 
-export function AnalyticsBodyNoScript({ config }: { config: PublicTrackingConfig }) {
-  const { gtmContainerId, gtmEnabled, metaPixelId, metaPixelEnabled, customBodyScript } = config;
-
-  return (
-    <>
-      {/* 1. Google Tag Manager (noscript) */}
-      {gtmEnabled && gtmContainerId ? (
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${encodeURIComponent(gtmContainerId)}`}
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
-      ) : null}
-
-      {/* 2. Meta Pixel (noscript) */}
-      {metaPixelEnabled && metaPixelId ? (
-        <noscript>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            src={`https://www.facebook.com/tr?id=${encodeURIComponent(metaPixelId)}&ev=PageView&noscript=1`}
-            alt=""
-          />
-        </noscript>
-      ) : null}
-
-      {/* 3. Custom Body Script (if configured) */}
-      {customBodyScript ? (
-        <div
-          id="custom-body-tracking"
-          dangerouslySetInnerHTML={{ __html: customBodyScript }}
-        />
-      ) : null}
-    </>
-  );
-}
+/** Without JavaScript there is no verified optional-cookie consent; do not bypass it with pixels. */
+export function AnalyticsBodyNoScript() { return null; }

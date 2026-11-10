@@ -1,13 +1,14 @@
-# Local SEO & Geographic Profile — Himalayan Tea House
+# Local SEO & Geographic Profile — TeaFloww (Nirva)
 
-**Version:** 2026-10-11  
-**Operating Facility:** Siliguri Tasting Room, Laboratory & Packaging Headquarters  
-**Legal Entity:** Himalayan Tea House Private Limited  
-**Address:** Hill Cart Road, Near Tea Auction Centre, Matigara, Siliguri, Darjeeling District, West Bengal 734010, India  
+**Version:** 2026-11-10  
+**Brand:** TeaFloww  
+**Legal Entity:** Nirva  
+**Origin Works & Packaging Facility:** 00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri, Dist Jalpaiguri, Siliguri, West Bengal, 734015, India  
+**Registered Corporate Office:** Shiv Shakti Kali Bari Rd, Sukantapally East, Siliguri, West Bengal 734005, India  
 **Coordinates:** 26.7271° N, 88.3953° E  
-**Telephone:** +91-353-2570112  
-**Email:** support@himalayantea.com  
-**Landing Page:** `https://himalayantea.com/locations/siliguri`
+**Telephone:** +91 7001304853  
+**Email:** info@teafloww.com  
+**Landing Page:** `https://teafloww.com/locations/siliguri`
 
 ---
 
@@ -26,13 +27,17 @@ Siliguri occupies an irreplaceable role in Himalayan tea commerce. Situated in t
 Exact, unvarying business profile information used across Google Business Profile (GBP), Apple Maps, Bing Places, and website Schema.org markup:
 
 ```
-Name:       Himalayan Tea House — Siliguri Tasting Room & Sourcing Hub
-Address:    Hill Cart Road, Near Tea Auction Centre, Matigara
+Name:       TeaFloww — Siliguri Tasting Room & Sourcing Hub
+Legal:      Nirva
+Works:      00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri, Dist Jalpaiguri
 City:       Siliguri
-District:   Darjeeling
 State:      West Bengal
-PIN Code:   734010
+PIN Code:   734015
 Country:    India
+Telephone:  +91 7001304853
+Email:      info@teafloww.com
+Website:    https://teafloww.com/locations/siliguri
+```
 Telephone:  +91-353-2570112
 Website:    https://himalayantea.com/locations/siliguri
 ```

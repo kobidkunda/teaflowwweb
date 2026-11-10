@@ -1,4 +1,5 @@
 "use client";
+import { trackLead } from "@/lib/seo/tracking";
 
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useId } from "react";
@@ -201,6 +202,7 @@ export function ContactStudio({ initialTopic = "brewing", className = "" }: Cont
         throw new Error(data.error || "Failed to send message. Please try again.");
       }
 
+      trackLead("contact_inquiry");
       setSuccessData({
         referenceCode: data.referenceCode,
         whatsappUrl: data.whatsappUrl,

@@ -90,6 +90,7 @@ export function ProductGallery({
         <Image
           src={image.url}
           alt=""
+          aria-hidden="true"
           width={76}
           height={76}
           sizes="76px"

@@ -70,20 +70,18 @@ export default function SiliguriLocationPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <div className="p-6 bg-white border border-[#e4ded0] rounded-xl">
           <h2 className="font-serif text-xl font-bold text-[#18231c] mb-3">
-            Address &amp; Coordinates
+            Origin Works &amp; Packaging Facility
           </h2>
           <address className="not-italic text-sm text-[#52594e] space-y-1 leading-relaxed">
-            <p className="font-semibold text-[#18231c]">{siteConfig.legalName}</p>
-            <p>{siteConfig.address.streetAddress}</p>
-            <p>
-              {siteConfig.address.addressLocality}, {siteConfig.address.addressRegion} — {siteConfig.address.postalCode}
-            </p>
-            <p>{siteConfig.address.addressCountry === "IN" ? "India" : siteConfig.address.addressCountry}</p>
+            <p className="font-semibold text-[#18231c]">{siteConfig.brand || "TeaFloww"} (Nirva)</p>
+            <p>00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri</p>
+            <p>Dist Jalpaiguri, Siliguri, West Bengal — 734015</p>
+            <p>India</p>
           </address>
           <div className="mt-4 pt-4 border-t border-[#f0ede6] text-xs text-[#6e746a] space-y-1">
-            <p><strong> <StorefrontText id="copy_fcb59c0dc63f2e97" fallback="GPS Coordinates:" /> </strong> <StorefrontText id="copy_1dc2f98f4d60e6bf" fallback="26.7271° N, 88.3953° E" /> </p>
-            <p><strong> <StorefrontText id="copy_b87a568d3eba3dae" fallback="Nearest Landmark:" /> </strong> <StorefrontText id="copy_41e088088c64da50" fallback="Near Siliguri Tea Auction Centre (STAC)" /> </p>
-            <p><strong> <StorefrontText id="copy_c3abf0d9547806ea" fallback="Nearest Airport:" /> </strong> <StorefrontText id="copy_4d3ffe42ddbd1906" fallback="Bagdogra International Airport (IXB) — 14 km" /> </p>
+            <p><strong>Registered Office:</strong> Shiv Shakti Kali Bari Rd, Sukantapally East, Siliguri 734005</p>
+            <p><strong>GPS Coordinates:</strong> 26.7271° N, 88.3953° E</p>
+            <p><strong>Nearest Airport:</strong> Bagdogra International Airport (IXB) — 14 km</p>
           </div>
         </div>
 

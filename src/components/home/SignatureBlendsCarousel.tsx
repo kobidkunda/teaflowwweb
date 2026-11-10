@@ -9,6 +9,8 @@ import { ChevronLeft, ChevronRight, Heart, Pause, Play, ArrowRight } from "lucid
 import type { Product, Variant } from "@/lib/products";
 
 import { AddToCart } from "@/components/AddToCart";
+import { ProductImpression } from "@/components/analytics/ProductImpression";
+import { catalogItem } from "@/lib/seo/tracking";
 import styles from "./SignatureBlendsShelf.module.css";
 
 interface SignatureBlendsCarouselProps {
@@ -313,6 +315,7 @@ export function SignatureBlendsCarousel({
                 data-testid={`signature-card-${product.slug}`}
                 aria-label={`${index + 1} of ${products.length}: ${product.name}`}
               >
+                <ProductImpression item={catalogItem(product, variant)} list="Signature Blends" />
                 {/* Visual Tin Container */}
                 <div className="tf-product-card-visual">
                   <div className="tf-card-top-row">

@@ -148,6 +148,35 @@ describe("mcp 100% capabilities: full specification suite", () => {
       "trial_components_replace", "trial_media_attach", "trial_validate",
       "trial_submit_review", "trial_publish", "trial_unpublish",
       "trial_archive", "trial_history",
+      "private_label_list_catalogue",
+      "private_label_get_packaging",
+      "private_label_upsert_packaging",
+      "private_label_upload_packaging_image",
+      "private_label_set_moq",
+      "private_label_upsert_price_rule",
+      "private_label_calculate_moq",
+      "private_label_calculate_quote",
+      "private_label_create_project",
+      "private_label_get_project",
+      "private_label_save_project",
+      "private_label_archive_project",
+      "private_label_create_quote",
+      "private_label_get_quote",
+      "private_label_accept_quote",
+      "private_label_validate_preflight",
+      "private_label_generate_preview",
+      "private_label_approve_proof",
+      "private_label_reject_proof",
+      "private_label_order_sample",
+      "private_label_release_job",
+      "private_label_convert_quote_to_order",
+      "private_label_get_order",
+      "private_label_record_qc",
+      "private_label_get_job",
+      "private_label_get_audit_history",
+      "private_label_report_dashboard",
+      "private_label_validate_publish_gate",
+      "private_label_check_compatibility",
     ]);
   });
 
@@ -639,7 +668,7 @@ describe("mcp 100% capabilities: full specification suite", () => {
       };
     }>;
 
-    expect(tools.length).toBe(131);
+    expect(tools.length).toBe(160);
 
     for (const tool of tools) {
       expect(tool.annotations).toBeDefined();

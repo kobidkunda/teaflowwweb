@@ -19,6 +19,7 @@ export function TrialStickyActionBar({ trial }: TrialStickyActionBarProps) {
     add({
       variantId: 0,
       trialId: trial.id,
+      sku: trial.sku,
       slug: trial.slug,
       name: trial.title,
       grams: trial.net_weight_g || 200,

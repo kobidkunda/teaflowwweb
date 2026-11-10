@@ -35,6 +35,7 @@ const SHOP_LINKS = [
 ];
 
 const DISCOVERY_LINKS = [
+  { label: "Download Brochure Catalog (PDF)", href: "/brochure" },
   { label: "Tea Finder (Flavor Quiz)", href: "/tea-finder" },
   { label: "Compare Cupping Profiles", href: "/compare" },
   { label: "Track Your Order", href: "/track" },

@@ -1,28 +1,8 @@
-/**
- * Resolves high-resolution tea imagery for cart line items and checkout summaries.
- */
-export function getCartItemImage(line: { slug?: string; name?: string; imageUrl?: string }): string {
-  if (line.imageUrl && line.imageUrl.trim().length > 0) {
-    return line.imageUrl;
-  }
+/** Cart imagery is supplied by the catalogue, never guessed from product names. */
+export function getCartItemImage(line: { imageUrl?: string | null }): string | null {
+  return line.imageUrl?.trim() || null;
+}
 
-  const s = ((line.slug || "") + " " + (line.name || "")).toLowerCase();
-
-  if (s.includes("darjeeling")) {
-    return "/images/product-darjeeling-tin.jpg";
-  }
-  if (s.includes("assam")) {
-    return "/images/product-assam-tin.jpg";
-  }
-  if (s.includes("nilgiri")) {
-    return "/images/product-nilgiri-tin.jpg";
-  }
-  if (s.includes("chai") || s.includes("masala")) {
-    return "/images/home/masala-chai.webp";
-  }
-  if (s.includes("peony") || s.includes("white") || s.includes("herbal") || s.includes("infusion")) {
-    return "/images/product-herbal-tin.jpg";
-  }
-
-  return "/images/product-darjeeling-tin.jpg";
+export function cartImageKey(line: { variantId: number; trialId?: string }): string {
+  return line.trialId ? `trial-${line.trialId}` : `var-${line.variantId}`;
 }

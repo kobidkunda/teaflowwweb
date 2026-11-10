@@ -47,18 +47,15 @@ export function NewsletterSection({
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        if (res.status === 400) {
-          setStatus("error");
-          setErrorMessage(data?.error || "Please enter a valid email address.");
-          return;
-        }
+        setStatus("error");
+        setErrorMessage(data?.error || "Unable to subscribe right now. Please try again.");
+        return;
       }
       trackLead("newsletter");
       setStatus("success");
     } catch {
-      // In case of network drops, preserve positive confirmation UX
-      trackLead("newsletter");
-      setStatus("success");
+      setStatus("error");
+      setErrorMessage("Unable to subscribe right now. Please try again.");
     }
   };
 

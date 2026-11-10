@@ -93,8 +93,38 @@ function normalizeSql(sql: string): string {
     return `SELECT column_name AS name FROM information_schema.columns WHERE table_schema='public' AND table_name='${tbl}'`;
   }
 
+  // Preserve mixed-case aliases in SELECT expressions (e.g. AS pricePaise -> AS "pricePaise")
+  s = s.replace(/\bAS\s+((?=[a-zA-Z0-9_]*[a-z])(?=[a-zA-Z0-9_]*[A-Z])[a-zA-Z0-9_]+)\b/g, 'AS "$1"');
+
   return convertPlaceholders(s);
 }
+
+export function wrapRow<T extends Record<string, unknown>>(row: T): T {
+  if (!row || typeof row !== "object") return row;
+  const lowerMap = new Map<string, string>();
+  for (const k of Object.keys(row)) {
+    lowerMap.set(k.toLowerCase(), k);
+  }
+  return new Proxy(row, {
+    get(target, prop, receiver) {
+      if (typeof prop === "string" && !(prop in target)) {
+        const actualKey = lowerMap.get(prop.toLowerCase());
+        if (actualKey !== undefined) {
+          return (target as Record<string, unknown>)[actualKey];
+        }
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+    has(target, prop) {
+      if (typeof prop === "string" && !(prop in target)) {
+        if (lowerMap.has(prop.toLowerCase())) return true;
+      }
+      return Reflect.has(target, prop);
+    },
+  });
+}
+
+export { normalizeSql };
 
 function flattenParams(params: unknown[]): unknown[] {
   if (params.length === 1 && Array.isArray(params[0])) {
@@ -241,12 +271,13 @@ export function getPostgresDb(): SyncDatabase {
         all(...params: unknown[]) {
           const flat = flattenParams(params);
           const res = sendSync("query", normalized, flat);
-          return res.rows || [];
+          const rows = (res.rows || []) as Record<string, unknown>[];
+          return rows.map((r) => wrapRow(r));
         },
         get(...params: unknown[]) {
           const flat = flattenParams(params);
           const res = sendSync("query", normalized, flat);
-          return res.rows && res.rows.length > 0 ? res.rows[0] : undefined;
+          return res.rows && res.rows.length > 0 ? wrapRow(res.rows[0] as Record<string, unknown>) : undefined;
         },
         run(...params: unknown[]) {
           const flat = flattenParams(params);

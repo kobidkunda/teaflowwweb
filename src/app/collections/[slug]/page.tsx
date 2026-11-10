@@ -11,6 +11,8 @@ import { cupsFromGrams } from "@/lib/money";
 import { requestContext } from "@/lib/international/context";
 import { localize } from "@/lib/international/translations";
 import { formatMoney, convertPaise } from "@/lib/international/money";
+import { ProductImpression } from "@/components/analytics/ProductImpression";
+import { catalogItem } from "@/lib/seo/tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -84,7 +86,7 @@ export async function generateMetadata({
     ogImage: cat.cover_image_url || null,
     canonicalOverride: cat.canonical_override,
     noindex: Boolean(cat.noindex),
-    locale: ctx.requestedLocale || ctx.locale,
+    locale: ctx.requestedLocale || "en",
     resource: `category:${rawCat.id}`,
   });
 }
@@ -185,6 +187,7 @@ export default async function CategoryCollectionPage({
                 key={product.id}
                 className="bg-white rounded-lg border border-[#e4ded0] overflow-hidden flex flex-col hover:shadow-md transition-shadow"
               >
+                <ProductImpression item={catalogItem(product, primaryVariant)} list={`Collection: ${cat.name}`} />
                 <Link
                   href={`/tea/${product.slug}`}
                   className="relative aspect-4/3 w-full bg-[#f4f1ea] block overflow-hidden"

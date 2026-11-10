@@ -2,11 +2,10 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { quoteAnalytics } from "@/lib/international/analytics";
 import { notFound } from "next/navigation";
-import { liveOrder, validGuestToken } from "@/lib/international/orders";
-import { convertPaise, currencyDigits, formatMoney } from "@/lib/international/money";
+import { liveOrder, validGuestToken, syncYoupiOrderStatus } from "@/lib/international/orders";
+import { convertPaise, formatMoney } from "@/lib/international/money";
 import type { Quote } from "@/lib/international/models";
 import { PurchaseStatus } from "@/components/international/PurchaseStatus";
-import { OrderPurchaseTracker } from "@/components/analytics/OrderPurchaseTracker";
 import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
 import {
   CheckCircle2,
@@ -19,6 +18,8 @@ import {
   Sparkles,
   Phone,
   Mail,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -45,20 +46,17 @@ export default async function PurchasePage({
   let order;
   try {
     order = liveOrder(id);
+    if (order.payment_status === "payment_pending" || order.payment_status === "creating") {
+      try {
+        order = await syncYoupiOrderStatus(order);
+      } catch {}
+    }
   } catch {
     notFound();
   }
 
   const q = JSON.parse(order.document) as Quote;
-  const isConfirmed = order.payment_status === "paid" || order.payment_status === "cod_due";
-  const divisor = 10 ** currencyDigits(q.currency);
-
-  const items = (q.lines || []).map((line) => ({
-    item_id: line.sku || String(line.variantId),
-    item_name: line.name,
-    price: convertPaise(line.pricePaise, q.rate, q.currency) / divisor,
-    quantity: line.quantity,
-  }));
+  const isConfirmed = order.payment_status === "paid" || order.payment_status === "cod_due" || order.payment_status === "cod_remitted";
 
   const reference = id.slice(0, 8).toUpperCase();
   const formatCur = (minor: number) => formatMoney(minor, q.currency, q.input.locale);
@@ -74,17 +72,6 @@ export default async function PurchasePage({
 
   return (
     <div className="container page-shell py-8 sm:py-12 max-w-5xl mx-auto px-4 sm:px-6">
-      {isConfirmed && (
-        <OrderPurchaseTracker
-          orderId={id}
-          totalMinor={q.totalMinor}
-          shippingMinor={q.components.shipping}
-          taxMinor={q.components.tax + q.components.duties}
-          currency={q.currency}
-          items={items}
-        />
-      )}
-
       {/* Breadcrumb Navigation */}
       <nav className="breadcrumbs mb-4 text-xs text-[#737067]" aria-label="Breadcrumb">
         <Link href="/" className="hover:text-[#171713] transition-colors">
@@ -106,50 +93,92 @@ export default async function PurchasePage({
         <CheckoutSteps currentStep={3} />
       </div>
 
-      {/* Hero Success Confirmation Card */}
-      <div className="p-6 sm:p-8 rounded-2xl border border-[#ded7cb] bg-white shadow-sm mb-8 text-center sm:text-left flex flex-col sm:flex-row items-center sm:items-start gap-6">
-        <div className="w-16 h-16 rounded-full bg-[#e8f5e9] text-[#2e7d32] flex items-center justify-center flex-shrink-0 shadow-xs ring-8 ring-[#f1f8f3]">
-          <CheckCircle2 size={36} strokeWidth={2.4} aria-hidden="true" />
-        </div>
+      {/* Hero Confirmation Card */}
+      {isConfirmed ? (
+        <div className="p-6 sm:p-8 rounded-2xl border border-[#ded7cb] bg-white shadow-sm mb-8 text-center sm:text-left flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <div className="w-16 h-16 rounded-full bg-[#e8f5e9] text-[#2e7d32] flex items-center justify-center flex-shrink-0 shadow-xs ring-8 ring-[#f1f8f3]">
+            <CheckCircle2 size={36} strokeWidth={2.4} aria-hidden="true" />
+          </div>
 
-        <div className="flex-1">
-          <p className="text-[11px] font-bold tracking-widest uppercase text-[#b39156] mb-1">
-            TeaFloww · Direct-from-Origin Harvest
-          </p>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-[#171713] font-normal leading-tight">
-            {order.payment_status === "cod_due"
-              ? "Your order is confirmed."
-              : "Thank you for your order."}
-          </h1>
-          <p className="text-sm text-[#5c6659] mt-2 max-w-2xl">
-            {order.payment_status === "cod_due"
-              ? `We have received your cash-on-delivery order. Please keep the exact amount ready upon delivery.`
-              : `Payment received. Our tea masters at our Siliguri estate hub are preparing your freshly harvested orthodox teas for dispatch within 24–48 hours.`}
-          </p>
+          <div className="flex-1">
+            <p className="text-[11px] font-bold tracking-widest uppercase text-[#b39156] mb-1">
+              TeaFloww · Direct-from-Origin Harvest
+            </p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-[#171713] font-normal leading-tight">
+              {order.payment_status === "cod_due"
+                ? "Your order is confirmed."
+                : "Thank you for your order."}
+            </h1>
+            <p className="text-sm text-[#5c6659] mt-2 max-w-2xl">
+              {order.payment_status === "cod_due"
+                ? "We have received your cash-on-delivery order. Please keep the exact amount ready upon delivery."
+                : "Payment received. Our tea masters at our Siliguri estate hub are preparing your freshly harvested orthodox teas for dispatch within 24–48 hours."}
+            </p>
 
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4 pt-4 border-t border-[#f0ede6]">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f6f1e7] border border-[#ded7cb] text-xs font-mono font-bold text-[#171713]">
-              <span>Reference:</span>
-              <span className="text-[#23483a]">TF-{reference}</span>
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4 pt-4 border-t border-[#f0ede6]">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f6f1e7] border border-[#ded7cb] text-xs font-mono font-bold text-[#171713]">
+                <span>Reference:</span>
+                <span className="text-[#23483a]">TF-{reference}</span>
+              </div>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  order.payment_status === "paid"
+                    ? "bg-[#e8f5e9] text-[#2e7d32]"
+                    : "bg-[#fff8e1] text-[#b39156]"
+                }`}
+              >
+                {order.payment_status === "paid" ? "Paid" : "Payment Due on Delivery"}
+              </span>
             </div>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                order.payment_status === "paid"
-                  ? "bg-[#e8f5e9] text-[#2e7d32]"
-                  : order.payment_status === "cod_due"
-                  ? "bg-[#fff8e1] text-[#b39156]"
-                  : "bg-[#e8f0fe] text-[#1565c0]"
-              }`}
-            >
-              {order.payment_status === "paid"
-                ? "Paid"
-                : order.payment_status === "cod_due"
-                ? "Payment Due on Delivery"
-                : "Payment Processing"}
-            </span>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="p-6 sm:p-8 rounded-2xl border border-[#f5c6cb] bg-[#fffaf9] shadow-sm mb-8 text-center sm:text-left flex flex-col sm:flex-row items-center sm:items-start gap-6">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 shadow-xs ring-8 ${
+            order.payment_status === "payment_failed"
+              ? "bg-[#fde8e8] text-[#c62828] ring-[#fef2f2]"
+              : "bg-[#fff8e1] text-[#b39156] ring-[#fffbeb]"
+          }`}>
+            {order.payment_status === "payment_failed" ? (
+              <XCircle size={36} strokeWidth={2.4} aria-hidden="true" />
+            ) : (
+              <AlertTriangle size={36} strokeWidth={2.4} aria-hidden="true" />
+            )}
+          </div>
+
+          <div className="flex-1">
+            <p className="text-[11px] font-bold tracking-widest uppercase text-[#c62828] mb-1">
+              TeaFloww · Direct-from-Origin Harvest · Action Required
+            </p>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-[#171713] font-normal leading-tight">
+              {order.payment_status === "payment_failed"
+                ? "Payment was not completed"
+                : "Payment verification pending"}
+            </h1>
+            <p className="text-sm text-[#5c6659] mt-2 max-w-2xl">
+              {order.payment_status === "payment_failed"
+                ? "Your online payment could not be completed or was cancelled. If funds were debited, they will be automatically refunded by your bank within 3–5 business days. Please retry paying online or switch this order to Cash on Delivery (COD) below to confirm your order immediately."
+                : "We have not yet received confirmation from your payment provider. If you completed payment, it may take a few moments to sync. You can retry paying online, or switch this order to Cash on Delivery (COD) to prevent dispatch delays."}
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-4 pt-4 border-t border-[#f0ede6]">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#f6f1e7] border border-[#ded7cb] text-xs font-mono font-bold text-[#171713]">
+                <span>Reference:</span>
+                <span className="text-[#23483a]">TF-{reference}</span>
+              </div>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  order.payment_status === "payment_failed"
+                    ? "bg-[#fde8e8] text-[#c62828]"
+                    : "bg-[#fff8e1] text-[#b39156]"
+                }`}
+              >
+                {order.payment_status === "payment_failed" ? "Payment Failed" : "Verification Pending"}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Real-time Order Status & Tracking Banner */}
       <PurchaseStatus

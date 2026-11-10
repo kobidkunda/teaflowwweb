@@ -397,3 +397,111 @@ The working SQLite database was backed up before applying only migration 037.
 Its additive migration body was replayed and a before/after comparison confirmed
 all sourcing fields unchanged. No Tea Moments content was backfilled into the
 working database. Production PostgreSQL migration remains an operator step.
+
+## Header logo clipping — 2026-11-11
+
+The header's 1280px cap and shrinkable brand truncated both TEAFLOWW and its
+admin-authored tagline with the additional Private Label navigation link.
+The header now allows 1440px and preserves the brand width; below 1400px it
+uses the existing navigation drawer, including the Wholesale navigation link.
+
+Real Chromium checks on local SQLite at 1512/1440/1400/1399/1280/1024/768/390/320px
+confirmed the visible wordmark/tagline are not clipped and the page has no
+horizontal overflow. At 1399px and 320px the menu opens with Private Label
+visible and closes with Escape. At 1400px the scrolled sticky header has no
+brand/navigation overlap. Reviewed desktop, intermediate and narrow mobile
+screenshots in `output/playwright/header-logo/`. The before-desktop browser
+capture temporarily reapplies the previous max-width/flex-shrink values;
+after captures use the actual changed CSS. No assets or database changes.
+The design detector reports only two existing Arial font warnings outside
+the changed rules; the incumbent typography is preserved.
+
+Validation: TypeScript passed; all 2,833 unit/integration tests passed (6 skipped);
+production build passed. `npm run check` stops at an existing lint error in
+`src/lib/international/orders.ts:272` (`prefer-const`), with 200 existing warnings.
+Tests and build were therefore executed separately. No production deployment
+or physical Safari/device testing was performed.
+
+## Private-label flow repairs — 2026-11-11
+
+`tests/unit/private-label-flow-repair.test.ts` covers prerequisite clamping,
+invalid numbers, artwork-rights gating, incompatible prints and server-valid
+current-item payloads. The focused storefront/flow run passed 32 tests.
+Browser checks use synthetic contact responses for failure/retry and success, and
+an isolated SQLite copy for catalogue/studio/project/quote journeys; store data
+and production are not modified. See `docs/ui/private-label-flow/README.md` for
+scope and the artwork-preview limitation.
+
+Final executed validation: `npm run check` passed with TypeScript, ESLint (existing
+warnings), 2,840 tests across 164 passing files, six skipped PostgreSQL-live tests,
+and the optimized production build. The post-quote-save regression was observed
+failing before the fix and passing afterward. The rebuilt production app then
+saved an artwork preview after quote creation (HTTP 200, revision 3), enforced
+rights confirmation and restored the preview after reload.
+
+Final real browser captures are in `output/playwright/private-label-*`: landing
+1440/320, studio artwork 1440, studio 320 and quote 1440/320. These are browser
+screenshots, with synthetic records in the isolated studio/quote captures. No live
+payment, production migration or deployment was performed.
+
+## Cart product photos — 2026-11-11
+
+`tests/unit/cart-images.test.ts` covers ID-only saved cart resolution, exact SKU
+assignments, replacement uploads, missing/draft/disabled products, published kit
+image lookup, strict/bounded query validation and accessible empty-image rendering.
+The endpoint returns image URLs only; it does not accept prices or modify carts.
+CartProvider resolves current catalogue images for every add source and restored
+cart; quantity changes do not trigger image refetches. Cart and legacy checkout
+share the neutral missing/broken-image component.
+
+The five focused tests passed. Real Chromium checks at 1440px and 390px restored
+two local catalogue products from browser storage, checked decoded thumbnail URLs
+against the image endpoint and verified the missing-product placeholder and no
+mobile overflow. Reviewed captures: `output/playwright/cart-photos/desktop.png`
+and `mobile.png`. Browser cart sync was intercepted to avoid writing test carts
+to the working database. The signed-out customer endpoint returned its expected
+401. No catalogue edits, payments or deployment were performed.
+
+Quantity increase, item removal and intentionally failed image requests were
+also verified in Chromium; broken images switched to the neutral placeholder.
+Final `npm run check` passed: TypeScript, ESLint (existing warnings), 2,845
+unit/integration tests passed, six PostgreSQL-live tests skipped, and optimized
+production build. No database schema or dependency changes.
+
+## GTM and conversion tracking audit — 2026-11-11
+
+Focused tracking, quote-value, performance-contract, cart-image, tracking-setting
+and trial-cart regressions passed: 6 files / 57 tests. They cover one Google
+transport, GTM ownership of Meta, denied consent, post-consent queues, withdrawal,
+purchase deduplication, PII field exclusion, currency precision and catalog SKUs.
+Tracking settings now use an isolated test database. Browser tests use a SQLite
+copy at `/tmp/teafloww-tracking-browser.sqlite` and vendor request interception;
+they do not claim receipt by production analytics.
+
+Real Chromium checks on localhost confirmed no vendor request before consent;
+one GTM script after opt-in; matching SKU `DJ-SP-50` through list/add/cart/checkout;
+quantity changes emit only their delta; and withdrawing consent suppresses later
+cart events. Consent desktop/mobile captures are in
+`output/playwright/tracking-consent-desktop.png` and
+`output/playwright/tracking-consent-mobile.png`; these are real browser screenshots.
+The mobile consent panel was visually reviewed at 390×844.
+
+`npm run check` executed typecheck, lint and the complete unit suite. Latest full
+suite: 2,862 passed, 1 failed, 6 skipped across 167 files. The remaining failure is
+`private-label-m6-challenger-release-qc.test.ts`, unpaid-deposit release-gate
+scenario 1.7. The full check stopped before build; a production build was run
+separately, with its result recorded below after completion. Existing lint warnings
+remain. Do not describe the full check as passing.
+
+The live production audit and remaining receiving-side verification steps are in
+[the tracking audit](analytics/TRACKING_AUDIT_2026-11-11.md). Neither production
+GTM publication nor application deployment was performed.
+
+Additional browser verification confirmed exactly one page_view for each client
+navigation from product detail to shop, plus consent-triggered view_item with the
+same catalog SKU. Focused ESLint on the tracking modules and new tests passed
+without warnings. The first separate production build compiled
+but failed collecting page data with a missing `.next/server/pages-manifest.json`;
+an isolated `.next-tracking-build` build was then executed to avoid shared-output
+interference. The published container resource is preserved in
+`docs/analytics/published-container-resource.json` for independent inspection.

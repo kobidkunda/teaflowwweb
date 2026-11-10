@@ -17,6 +17,11 @@ import {
   Percent,
   Zap,
   Sparkles,
+  QrCode,
+  ArrowRightLeft,
+  ExternalLink,
+  Activity,
+  Power,
 } from "lucide-react";
 import type { PaymentSettings } from "@/lib/paymentSettings";
 
@@ -25,6 +30,9 @@ export function PaymentSettingsForm() {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+
+  // Master Online Payments Toggle (True = Online + COD, False = COD Only)
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
 
   // Environment Mode: test vs production
   const [paymentMode, setPaymentMode] = useState<"test" | "production">("test");
@@ -80,6 +88,26 @@ export function PaymentSettingsForm() {
   const [minOrderForDiscountRupees, setMinOrderForDiscountRupees] = useState(0);
   const [paymentDiscountBadgeText, setPaymentDiscountBadgeText] = useState("⚡ Instant 2% Off with UPI · 1% Off on Cards");
 
+  // Gateway Routing Controls
+  const [gatewayDirectPurchase, setGatewayDirectPurchase] = useState<"razorpay" | "youpi">("razorpay");
+  const [gatewaySampleKit, setGatewaySampleKit] = useState<"razorpay" | "youpi">("razorpay");
+  const [gatewaySubscription, setGatewaySubscription] = useState<"razorpay" | "youpi">("razorpay");
+
+  // YouPI-PG Configuration
+  const [youpiEnabled, setYoupiEnabled] = useState(true);
+  const [youpiApiUrl, setYoupiApiUrl] = useState("https://pay-api.biolastic.co.in");
+  const [youpiCheckoutUrl, setYoupiCheckoutUrl] = useState("https://pay.biolastic.co.in");
+  const [youpiAdminUrl, setYoupiAdminUrl] = useState("https://pay-admin.biolastic.co.in");
+  const [youpiMerchantId, setYoupiMerchantId] = useState("00000000-0000-0000-0000-000000000001");
+  const [youpiApiToken, setYoupiApiToken] = useState("");
+  const [youpiWebhookSecret, setYoupiWebhookSecret] = useState("");
+  const [youpiApiTokenConfigured, setYoupiApiTokenConfigured] = useState(false);
+  const [youpiWebhookConfigured, setYoupiWebhookConfigured] = useState(false);
+  const [youpiWebhookUrl, setYoupiWebhookUrl] = useState("https://teafloww.com/api/webhooks/youpi");
+  const [copiedYoupiWebhook, setCopiedYoupiWebhook] = useState(false);
+  const [testingYoupi, setTestingYoupi] = useState(false);
+  const [youpiTestResult, setYoupiTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+
   const fetchSettings = async () => {
     setLoading(true);
     setStatusMessage(null);
@@ -88,6 +116,7 @@ export function PaymentSettingsForm() {
       if (!res.ok) throw new Error("Failed to load payment settings.");
       const data = (await res.json()) as { settings: PaymentSettings };
       if (data.settings) {
+        setOnlinePaymentEnabled(data.settings.online_payment_enabled ?? true);
         setPaymentMode(data.settings.payment_mode || "test");
         setRzpEnabled(data.settings.razorpay_enabled ?? true);
 
@@ -136,6 +165,23 @@ export function PaymentSettingsForm() {
 
         setMinOrderForDiscountRupees(Number(data.settings.min_order_for_discount_rupees ?? 0));
         setPaymentDiscountBadgeText(data.settings.payment_discount_badge_text || "⚡ Instant 2% Off with UPI · 1% Off on Cards");
+
+        // Gateway Routing
+        setGatewayDirectPurchase(data.settings.gateway_direct_purchase || "razorpay");
+        setGatewaySampleKit(data.settings.gateway_sample_kit || "razorpay");
+        setGatewaySubscription(data.settings.gateway_subscription || "razorpay");
+
+        // YouPI settings
+        setYoupiEnabled(data.settings.youpi_enabled ?? true);
+        if (data.settings.youpi_api_url) setYoupiApiUrl(data.settings.youpi_api_url);
+        if (data.settings.youpi_checkout_url) setYoupiCheckoutUrl(data.settings.youpi_checkout_url);
+        if (data.settings.youpi_admin_url) setYoupiAdminUrl(data.settings.youpi_admin_url);
+        if (data.settings.youpi_merchant_id) setYoupiMerchantId(data.settings.youpi_merchant_id);
+        setYoupiApiToken(data.settings.youpi_api_token || "");
+        setYoupiWebhookSecret(data.settings.youpi_webhook_secret || "");
+        setYoupiApiTokenConfigured(Boolean(data.settings.youpi_api_token_configured));
+        setYoupiWebhookConfigured(Boolean(data.settings.youpi_webhook_configured));
+        if (data.settings.youpi_webhook_url) setYoupiWebhookUrl(data.settings.youpi_webhook_url);
       }
     } catch {
       setStatusMessage({ type: "error", text: "Unable to load payment settings from database." });
@@ -157,6 +203,39 @@ export function PaymentSettingsForm() {
     }
   };
 
+  const handleCopyYoupiWebhook = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(youpiWebhookUrl).then(() => {
+        setCopiedYoupiWebhook(true);
+        setTimeout(() => setCopiedYoupiWebhook(false), 2000);
+      });
+    }
+  };
+
+  const handleTestYoupiConnection = async () => {
+    setTestingYoupi(true);
+    setYoupiTestResult(null);
+    try {
+      const res = await fetch("/api/admin/settings/payment/verify-youpi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setYoupiTestResult({ ok: false, message: data.error || "Connection failed" });
+      } else {
+        setYoupiTestResult({
+          ok: true,
+          message: `Connected! Service: ${data.health?.service || "payment-api"}, Auth: ${data.authStatus}`,
+        });
+      }
+    } catch (err: unknown) {
+      setYoupiTestResult({ ok: false, message: (err as Error)?.message || "Network error" });
+    } finally {
+      setTestingYoupi(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatusMessage(null);
@@ -164,8 +243,21 @@ export function PaymentSettingsForm() {
 
     try {
       const payload = {
+        online_payment_enabled: onlinePaymentEnabled,
         payment_mode: paymentMode,
         razorpay_enabled: rzpEnabled,
+        // Gateway Routing
+        gateway_direct_purchase: gatewayDirectPurchase,
+        gateway_sample_kit: gatewaySampleKit,
+        gateway_subscription: gatewaySubscription,
+        // YouPI Configuration
+        youpi_enabled: youpiEnabled,
+        youpi_api_url: youpiApiUrl.trim(),
+        youpi_checkout_url: youpiCheckoutUrl.trim(),
+        youpi_admin_url: youpiAdminUrl.trim(),
+        youpi_merchant_id: youpiMerchantId.trim(),
+        youpi_api_token: youpiApiToken.startsWith("•••") ? undefined : youpiApiToken.trim(),
+        youpi_webhook_secret: youpiWebhookSecret.startsWith("•••") ? undefined : youpiWebhookSecret.trim(),
         // Legacy active
         razorpay_key_id: (paymentMode === "test" ? rzpTestKeyId : rzpProdKeyId) || rzpKeyId,
         razorpay_key_secret: (paymentMode === "test" ? rzpTestSecret : rzpProdSecret)?.startsWith("•••") ? undefined : (paymentMode === "test" ? rzpTestSecret : rzpProdSecret),
@@ -275,6 +367,284 @@ export function PaymentSettingsForm() {
       )}
 
       <form onSubmit={handleSubmit}>
+        {/* CARD -1: Master Payment Acceptance Control */}
+        <div
+          className="tf-ops-card"
+          style={{
+            background: onlinePaymentEnabled ? "#fff" : "#fffdf5",
+            border: onlinePaymentEnabled ? "1px solid #e5e2d9" : "2px solid #eab308",
+            borderRadius: "10px",
+            padding: "24px",
+            marginBottom: "24px",
+            boxShadow: onlinePaymentEnabled ? "0 1px 3px rgba(0,0,0,0.05)" : "0 2px 8px rgba(202, 138, 4, 0.12)",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                style={{
+                  background: onlinePaymentEnabled ? "rgba(35, 72, 58, 0.08)" : "rgba(234, 179, 8, 0.15)",
+                  padding: "8px",
+                  borderRadius: "8px",
+                  color: onlinePaymentEnabled ? "#23483a" : "#854d0e",
+                }}
+              >
+                <Power size={20} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#1d2a24" }}>
+                  Online Payment Acceptance
+                </h2>
+                <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>
+                  Master switch to enable or disable digital online payments across the storefront. If disabled, customers can only pay with Cash on Delivery (COD).
+                </p>
+              </div>
+            </div>
+
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: 600,
+                background: onlinePaymentEnabled ? "#eef6f0" : "#fef9c3",
+                color: onlinePaymentEnabled ? "#1e5e34" : "#854d0e",
+                border: `1px solid ${onlinePaymentEnabled ? "#c7e6d0" : "#fde047"}`,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {onlinePaymentEnabled ? (
+                <>
+                  <CheckCircle2 size={14} />
+                  <span>Online Payments Active (Prepaid + COD)</span>
+                </>
+              ) : (
+                <>
+                  <AlertCircle size={14} />
+                  <span>COD Only Mode Active (Online Disabled)</span>
+                </>
+              )}
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px", marginTop: "16px" }}>
+            {/* Mode 1: Enable Online Payments */}
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                padding: "16px",
+                borderRadius: "8px",
+                border: `2px solid ${onlinePaymentEnabled ? "#23483a" : "#e5e2d9"}`,
+                background: onlinePaymentEnabled ? "#f4f7f2" : "#fff",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <input
+                type="radio"
+                name="online_payment_enabled_choice"
+                checked={onlinePaymentEnabled === true}
+                onChange={() => setOnlinePaymentEnabled(true)}
+                style={{ marginTop: "3px", accentColor: "#23483a" }}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: "14px", color: "#1d2a24", marginBottom: "4px" }}>
+                  Enable Online Payments (Default)
+                </div>
+                <p style={{ margin: 0, fontSize: "12px", color: "#555", lineHeight: 1.4 }}>
+                  Accept online payments via UPI, Credit/Debit cards, Netbanking (via Razorpay and YouPI-PG), plus optional Cash on Delivery.
+                </p>
+              </div>
+            </label>
+
+            {/* Mode 2: Disable Online Payments (COD Only) */}
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "12px",
+                padding: "16px",
+                borderRadius: "8px",
+                border: `2px solid ${!onlinePaymentEnabled ? "#ca8a04" : "#e5e2d9"}`,
+                background: !onlinePaymentEnabled ? "#fefce8" : "#fff",
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <input
+                type="radio"
+                name="online_payment_enabled_choice"
+                checked={onlinePaymentEnabled === false}
+                onChange={() => setOnlinePaymentEnabled(false)}
+                style={{ marginTop: "3px", accentColor: "#ca8a04" }}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: "14px", color: "#854d0e", marginBottom: "4px" }}>
+                  Disable Online Payments (COD Only Mode)
+                </div>
+                <p style={{ margin: 0, fontSize: "12px", color: "#666", lineHeight: 1.4 }}>
+                  Completely turn off all digital payment gateways across the storefront. Checkout will exclusively present Cash on Delivery (COD).
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {!onlinePaymentEnabled && (
+            <div
+              style={{
+                marginTop: "16px",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                background: "#fef3c7",
+                border: "1px solid #fde68a",
+                fontSize: "13px",
+                color: "#92400e",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <div>
+                <strong>COD Only Mode is Active:</strong> Online gateways (Razorpay, YouPI) are paused on the storefront. Customers will only see Cash on Delivery at checkout.
+                {!codEnabled && (
+                  <div style={{ marginTop: "6px", color: "#b91c1c", fontWeight: 700 }}>
+                    ⚠️ Warning: Domestic Cash on Delivery is currently disabled below. You must enable COD so customers can complete checkout!
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* CARD 0: Active Payment Gateway Routing & Stream Selection */}
+        <div className="tf-ops-card" style={{ background: "#fff", border: "1px solid #e5e2d9", borderRadius: "10px", padding: "24px", marginBottom: "24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ background: "rgba(35, 72, 58, 0.08)", padding: "8px", borderRadius: "8px", color: "#23483a" }}>
+                <ArrowRightLeft size={20} />
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600 }}>Payment Gateway Routing</h2>
+                  {!onlinePaymentEnabled && (
+                    <span style={{ fontSize: "11px", color: "#854d0e", background: "#fef9c3", border: "1px solid #fde047", padding: "2px 8px", borderRadius: "12px", fontWeight: 600 }}>
+                      Paused (COD Only Mode)
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>
+                  Select which payment processor handles each checkout stream. Switch between Razorpay and YouPI-PG at any time.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
+            {/* Stream 1: Direct Purchase */}
+            <div style={{ background: "#fcfbfa", border: "1px solid #e8e6df", borderRadius: "8px", padding: "16px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "4px", color: "#1d2a24" }}>
+                Direct Store Purchases
+              </label>
+              <p style={{ fontSize: "12px", color: "#666", margin: "0 0 12px 0", minHeight: "32px" }}>
+                Standard cart checkouts and catalog product orders.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="gatewayDirectPurchase"
+                    value="razorpay"
+                    checked={gatewayDirectPurchase === "razorpay"}
+                    onChange={() => setGatewayDirectPurchase("razorpay")}
+                  />
+                  <span><strong>Razorpay</strong> (Cards, UPI, Netbanking)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="gatewayDirectPurchase"
+                    value="youpi"
+                    checked={gatewayDirectPurchase === "youpi"}
+                    onChange={() => setGatewayDirectPurchase("youpi")}
+                  />
+                  <span><strong>YouPI-PG</strong> (Zero-Fee Direct UPI)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Stream 2: Sample Kit */}
+            <div style={{ background: "#fcfbfa", border: "1px solid #e8e6df", borderRadius: "8px", padding: "16px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "4px", color: "#1d2a24" }}>
+                Sample & Trial Kits
+              </label>
+              <p style={{ fontSize: "12px", color: "#666", margin: "0 0 12px 0", minHeight: "32px" }}>
+                4x50g discovery kit tastings and sample orders.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="gatewaySampleKit"
+                    value="razorpay"
+                    checked={gatewaySampleKit === "razorpay"}
+                    onChange={() => setGatewaySampleKit("razorpay")}
+                  />
+                  <span><strong>Razorpay</strong> (Cards, UPI, Netbanking)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="gatewaySampleKit"
+                    value="youpi"
+                    checked={gatewaySampleKit === "youpi"}
+                    onChange={() => setGatewaySampleKit("youpi")}
+                  />
+                  <span><strong>YouPI-PG</strong> (Zero-Fee Direct UPI)</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Stream 3: Subscriptions */}
+            <div style={{ background: "#fcfbfa", border: "1px solid #e8e6df", borderRadius: "8px", padding: "16px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "4px", color: "#1d2a24" }}>
+                Subscriptions & Renewals
+              </label>
+              <p style={{ fontSize: "12px", color: "#666", margin: "0 0 12px 0", minHeight: "32px" }}>
+                Scheduled tea replenishment plans and cycle renewals.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="gatewaySubscription"
+                    value="razorpay"
+                    checked={gatewaySubscription === "razorpay"}
+                    onChange={() => setGatewaySubscription("razorpay")}
+                  />
+                  <span><strong>Razorpay</strong> (Cards, UPI)</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="gatewaySubscription"
+                    value="youpi"
+                    checked={gatewaySubscription === "youpi"}
+                    onChange={() => setGatewaySubscription("youpi")}
+                  />
+                  <span><strong>YouPI-PG</strong> (UPI Per Billing Cycle)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* CARD 1: Gateway Environment & Razorpay Configuration */}
         <div className="tf-ops-card" style={{ background: "#fff", border: "1px solid #e5e2d9", borderRadius: "10px", padding: "24px", marginBottom: "24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
@@ -283,7 +653,14 @@ export function PaymentSettingsForm() {
                 <CreditCard size={20} />
               </div>
               <div>
-                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600 }}>Razorpay Payment Gateway</h2>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600 }}>Razorpay Payment Gateway</h2>
+                  {!onlinePaymentEnabled && (
+                    <span style={{ fontSize: "11px", color: "#854d0e", background: "#fef9c3", border: "1px solid #fde047", padding: "2px 8px", borderRadius: "12px", fontWeight: 600 }}>
+                      Paused (COD Only Mode)
+                    </span>
+                  )}
+                </div>
                 <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>
                   Primary online checkout processor for UPI, Credit/Debit cards, and Indian Netbanking.
                 </p>
@@ -553,6 +930,230 @@ export function PaymentSettingsForm() {
             </div>
             <p style={{ margin: "8px 0 0", fontSize: "12px", color: "#6c757d" }}>
               Subscribed events: <code>payment.captured</code>, <code>payment.failed</code>, <code>refund.processed</code>.
+            </p>
+          </div>
+        </div>
+
+        {/* CARD 1.5: YouPI-PG Gateway Configuration */}
+        <div className="tf-ops-card" style={{ background: "#fff", border: "1px solid #e5e2d9", borderRadius: "10px", padding: "24px", marginBottom: "24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ background: "rgba(16, 185, 129, 0.1)", padding: "8px", borderRadius: "8px", color: "#059669" }}>
+                <QrCode size={20} />
+              </div>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600 }}>YouPI-PG Gateway Settings</h2>
+                  {!onlinePaymentEnabled && (
+                    <span style={{ fontSize: "11px", color: "#854d0e", background: "#fef9c3", border: "1px solid #fde047", padding: "2px 8px", borderRadius: "12px", fontWeight: 600 }}>
+                      Paused (COD Only Mode)
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: 0, fontSize: "13px", color: "#666" }}>
+                  Self-hosted zero-fee UPI payment gateway with automated observer payment verification.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={handleTestYoupiConnection}
+                disabled={testingYoupi}
+                className="button"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 12px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  background: "#f0fdf4",
+                  color: "#166534",
+                  border: "1px solid #bbf7d0",
+                  cursor: testingYoupi ? "wait" : "pointer",
+                }}
+              >
+                {testingYoupi ? <RefreshCw className="spin" size={13} /> : <Activity size={13} />}
+                <span>{testingYoupi ? "Testing..." : "Test Connection"}</span>
+              </button>
+
+              <label style={{ display: "inline-flex", alignItems: "center", gap: "8px", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={youpiEnabled}
+                  onChange={(e) => setYoupiEnabled(e.target.checked)}
+                  style={{ width: "16px", height: "16px" }}
+                />
+                <span>Enabled</span>
+              </label>
+            </div>
+          </div>
+
+          {youpiTestResult && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 14px",
+                borderRadius: "6px",
+                marginBottom: "16px",
+                fontSize: "13px",
+                background: youpiTestResult.ok ? "#f0fdf4" : "#fef2f2",
+                color: youpiTestResult.ok ? "#166534" : "#991b1b",
+                border: `1px solid ${youpiTestResult.ok ? "#bbf7d0" : "#fecaca"}`,
+              }}
+            >
+              {youpiTestResult.ok ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              <span>{youpiTestResult.message}</span>
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#333", marginBottom: "4px" }}>
+                Base Payment API URL
+              </label>
+              <input
+                type="url"
+                value={youpiApiUrl}
+                onChange={(e) => setYoupiApiUrl(e.target.value)}
+                placeholder="https://pay-api.biolastic.co.in"
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px" }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#333", marginBottom: "4px" }}>
+                Hosted Checkout URL
+              </label>
+              <input
+                type="url"
+                value={youpiCheckoutUrl}
+                onChange={(e) => setYoupiCheckoutUrl(e.target.value)}
+                placeholder="https://pay.biolastic.co.in"
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px" }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#333", marginBottom: "4px" }}>
+                Admin Portal URL
+              </label>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <input
+                  type="url"
+                  value={youpiAdminUrl}
+                  onChange={(e) => setYoupiAdminUrl(e.target.value)}
+                  placeholder="https://pay-admin.biolastic.co.in"
+                  style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px" }}
+                />
+                {youpiAdminUrl && (
+                  <a
+                    href={youpiAdminUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open YouPI Admin"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "8px 10px",
+                      background: "#f3f4f6",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      color: "#374151",
+                    }}
+                  >
+                    <ExternalLink size={14} />
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "#333", marginBottom: "4px" }}>
+                Merchant ID / UUID
+              </label>
+              <input
+                type="text"
+                value={youpiMerchantId}
+                onChange={(e) => setYoupiMerchantId(e.target.value)}
+                placeholder="00000000-0000-0000-0000-000000000001"
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px" }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#333" }}>
+                  Admin API Token / Merchant Key
+                </label>
+                {youpiApiTokenConfigured && (
+                  <span style={{ fontSize: "11px", color: "#166534", fontWeight: 600 }}>● Configured</span>
+                )}
+              </div>
+              <input
+                type="password"
+                value={youpiApiToken}
+                onChange={(e) => setYoupiApiToken(e.target.value)}
+                placeholder={youpiApiTokenConfigured ? "••••••••••••••••" : "Paste API Token"}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px" }}
+              />
+            </div>
+
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#333" }}>
+                  Webhook HMAC Secret
+                </label>
+                {youpiWebhookConfigured && (
+                  <span style={{ fontSize: "11px", color: "#166534", fontWeight: 600 }}>● Configured</span>
+                )}
+              </div>
+              <input
+                type="password"
+                value={youpiWebhookSecret}
+                onChange={(e) => setYoupiWebhookSecret(e.target.value)}
+                placeholder={youpiWebhookConfigured ? "••••••••••••••••" : "Paste Webhook Secret"}
+                style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px", fontSize: "13px" }}
+              />
+            </div>
+          </div>
+
+          {/* Webhook endpoint copy */}
+          <div style={{ background: "#f8f7f2", border: "1px solid #e7e5dc", borderRadius: "8px", padding: "12px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: "block", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "#666", marginBottom: "2px" }}>
+                  TeaFloww YouPI Webhook Target URL
+                </span>
+                <code style={{ fontSize: "12px", color: "#1d2a24", wordBreak: "break-all" }}>{youpiWebhookUrl}</code>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyYoupiWebhook}
+                className="button button-secondary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 12px",
+                  fontSize: "12px",
+                  cursor: "pointer",
+                }}
+              >
+                {copiedYoupiWebhook ? <Check size={14} color="#15803d" /> : <Copy size={14} />}
+                <span>{copiedYoupiWebhook ? "Copied" : "Copy URL"}</span>
+              </button>
+            </div>
+            <p style={{ margin: "6px 0 0 0", fontSize: "11px", color: "#777" }}>
+              Configure this URL under <em>Merchant Settings → Webhook URL</em> in the YouPI Admin dashboard.
             </p>
           </div>
         </div>

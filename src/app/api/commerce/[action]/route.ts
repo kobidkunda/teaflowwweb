@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { z } from "zod";
 import { gate, body, owner, json, failure } from "@/lib/international/http";
 import { createQuote, publicQuote, getQuote } from "@/lib/international/quotes";
-import { startPayment, liveOrder, validGuestToken } from "@/lib/international/orders";
+import { startPayment, liveOrder, validGuestToken, syncYoupiOrderStatus, switchOrderToCod, retryOrderPayment } from "@/lib/international/orders";
 import { getDb } from "@/lib/db";
 import { publicMarkets } from "@/lib/international/store";
 import { enabledLanguages } from "@/lib/international/translations";
@@ -20,6 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ acti
       const p = getPaymentSettings();
       const s = getShippingSettings();
       return json({
+        onlinePaymentEnabled: p.online_payment_enabled,
         discounts: {
           upi: {
             enabled: p.upi_discount_enabled,
@@ -69,9 +70,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ acti
       const rawId = query.get("id");
       if (!rawId || !z.string().uuid().safeParse(rawId).success) return new Response(null, { status: 404 });
       const id = rawId;
-      if (!validGuestToken(id, query.get("token") || "")) return new Response(null, { status: 404 });
-      const o = liveOrder(id), s = shipment(id), tracking = s ? JSON.parse(s.document).publicTracking : null;
-      return json({ orderId: o.id, paymentStatus: o.payment_status, fulfillmentStatus: o.fulfillment_status, refundMinor: o.refund_minor, tracking });
+      const token = query.get("token") || "";
+      if (!validGuestToken(id, token)) return new Response(null, { status: 404 });
+      let o = liveOrder(id);
+      if (o.payment_status === "payment_pending" || o.payment_status === "creating") {
+        try {
+          o = await syncYoupiOrderStatus(o);
+        } catch {}
+      }
+      const s = shipment(id), tracking = s ? JSON.parse(s.document).publicTracking : null;
+      let orderDoc: Record<string, unknown> = {};
+      try { orderDoc = JSON.parse(o.document); } catch {}
+      return json({
+        orderId: o.id,
+        paymentStatus: o.payment_status,
+        fulfillmentStatus: o.fulfillment_status,
+        refundMinor: o.refund_minor,
+        tracking,
+        checkoutUrl: typeof orderDoc.checkoutUrl === "string" ? orderDoc.checkoutUrl : undefined,
+      });
     }
     return new Response(null, { status: 404 });
   } catch (e) { return failure(e, request); }
@@ -96,12 +113,55 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       if (typeof payload.quoteId !== "string" || !z.string().uuid().safeParse(payload.quoteId).success) {
         throw new CommerceError("Your checkout session has expired or is invalid. Please review your total before continuing.");
       }
-      const p = z.object({ quoteId: z.string().uuid(), idempotencyKey: z.string().uuid(), currencyAcceptance: currencySchema, inrAcceptance: z.boolean().default(false) }).strict().parse(payload);
-      const quote = getQuote(p.quoteId, session);
+      const p = z.object({
+        quoteId: z.string().uuid(),
+        idempotencyKey: z.string().uuid(),
+        currencyAcceptance: currencySchema,
+        inrAcceptance: z.boolean().default(false),
+        method: z.enum(["upi", "card", "netbanking", "cod", "prepaid"]).optional(),
+      }).strict().parse(payload);
+
+      let quote = getQuote(p.quoteId, session);
       if (quote.subscription) throw new CommerceError("Continue through your subscription renewal page.");
+
+      const paySettings = getPaymentSettings();
+      if (!paySettings.online_payment_enabled && (p.method ? p.method !== "cod" : quote.input.method !== "cod")) {
+        throw new CommerceError("Online payment is currently disabled. Please checkout using Cash on Delivery.");
+      }
+
+      // Reconcile payment method if client requested a specific method (e.g. COD)
+      if (p.method && p.method !== quote.input.method) {
+        quote = await createQuote({ ...quote.input, method: p.method }, session);
+      }
+
       if (p.currencyAcceptance !== quote.currency || (quote.input.address.country !== "IN" && quote.currency === "INR" && !p.inrAcceptance)) throw new CommerceError("Confirm the payable currency before continuing.");
       getDb().prepare("INSERT INTO commerce_events (id,kind,document,created_ms) VALUES (?,'currency_consent',?,?) ON CONFLICT(id) DO NOTHING").run(`currency-consent:${quote.id}`, JSON.stringify({ quoteId: quote.id, currency: quote.currency, totalMinor: quote.totalMinor, inrAcceptance: p.inrAcceptance }), Date.now());
-      return json(await startPayment(p.quoteId, session, p.idempotencyKey), session);
+      return json(await startPayment(quote.id, session, p.idempotencyKey), session);
+    }
+    if (action === "change-to-cod") {
+      const payload = typeof input === "object" && input !== null ? { ...(input as Record<string, unknown>) } : {};
+      const p = z.object({
+        orderId: z.string().uuid(),
+        token: z.string().min(1),
+      }).strict().parse(payload);
+      const updated = switchOrderToCod(p.orderId, p.token);
+      return json({
+        ok: true,
+        orderId: updated.id,
+        paymentStatus: updated.payment_status,
+      }, session);
+    }
+    if (action === "retry-payment") {
+      const payload = typeof input === "object" && input !== null ? { ...(input as Record<string, unknown>) } : {};
+      const p = z.object({
+        orderId: z.string().uuid(),
+        token: z.string().min(1),
+      }).strict().parse(payload);
+      const retryResult = await retryOrderPayment(p.orderId, p.token);
+      return json({
+        ok: true,
+        ...retryResult,
+      }, session);
     }
     return new Response(null, { status: 404 });
   } catch (e) { return failure(e, request); }

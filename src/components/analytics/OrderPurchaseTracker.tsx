@@ -6,6 +6,7 @@ import { currencyDigits } from "@/lib/international/money";
 
 export interface OrderPurchaseTrackerProps {
   orderId: string;
+  verifiedPaid?: boolean;
   totalPaise?: number;
   totalMinor?: number;
   shippingPaise?: number;
@@ -18,6 +19,7 @@ export interface OrderPurchaseTrackerProps {
 
 export function OrderPurchaseTracker({
   orderId,
+  verifiedPaid = false,
   totalPaise,
   totalMinor,
   shippingPaise,
@@ -28,21 +30,7 @@ export function OrderPurchaseTracker({
   items,
 }: OrderPurchaseTrackerProps) {
   useEffect(() => {
-    if (!orderId) return;
-
-    // Deduplication safeguard in sessionStorage:
-    // Ensures page refresh or back/forward navigation does not inflate purchase conversions.
-    const storageKey = `gtm_tracked_purchase_${orderId}`;
-    try {
-      if (typeof window !== "undefined" && window.sessionStorage) {
-        if (sessionStorage.getItem(storageKey)) {
-          return;
-        }
-        sessionStorage.setItem(storageKey, "1");
-      }
-    } catch {
-      // In private browsing if sessionStorage fails, proceed gracefully
-    }
+    if (!orderId || !verifiedPaid) return;
 
     const divisor = 10 ** currencyDigits(currency);
     const totalValue = (totalMinor ?? totalPaise ?? 0) / divisor;
@@ -51,13 +39,14 @@ export function OrderPurchaseTracker({
 
     trackPurchase(
       orderId,
-      totalValue,
+      Math.max(0, totalValue - shippingValue - taxValue),
       shippingValue,
       taxValue,
       items,
-      currency
+      currency,
+      totalValue
     );
-  }, [orderId, totalPaise, totalMinor, shippingPaise, shippingMinor, taxPaise, taxMinor, currency, items]);
+  }, [verifiedPaid, orderId, totalPaise, totalMinor, shippingPaise, shippingMinor, taxPaise, taxMinor, currency, items]);
 
   return null;
 }

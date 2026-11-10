@@ -4,6 +4,7 @@ import { useDisplayMoney } from "@/components/international/InternationalProvide
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useMemo, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { trackSearch } from "@/lib/seo/tracking";
 import type { Product } from "@/lib/products";
 import type { Slider } from "@/lib/storefront";
 import type { ShopFilterState, SortOption, ViewMode, ActiveFilterChip } from "./types";
@@ -105,6 +106,11 @@ export function ShopExplorer({
     { id: "mid", label: "Mid Mountain (1,000 – 4,500 ft)" },
     { id: "valley", label: "Valley Terroir (<1,000 ft)" },
   ], []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => { trackSearch(filters.q); }, 800);
+    return () => clearTimeout(timer);
+  }, [filters.q]);
 
   // Update a single filter field
   const handleFilterChange = useCallback(
@@ -542,6 +548,7 @@ export function ShopExplorer({
                     <Image
                       src={cat.thumb}
                       alt=""
+                      aria-hidden="true"
                       width={32}
                       height={32}
                       sizes="32px"
@@ -768,6 +775,15 @@ export function ShopExplorer({
             onClick={handleResetFilters}
             className={`clear-all-chips-btn tf-clear-all-link ${hasActiveFilters ? "active" : ""}`}
           > <StorefrontText id="copy_ddceb7adfdb8816e" fallback="Clear All" /> </button>
+
+          <a
+            href="/brochure"
+            className="tf-brochure-link text-xs font-semibold text-[#23483a] hover:underline inline-flex items-center gap-1 ml-2"
+            title="Download complete harvest & sourcing brochure catalogue (PDF)"
+          >
+            <span>📄</span>
+            <span><StorefrontText id="copy_shop_download_brochure" fallback="Download Catalogue (PDF)" /></span>
+          </a>
         </div>
       </div>
 

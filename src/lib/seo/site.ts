@@ -104,7 +104,10 @@ export function getDynamicSiteConfig() {
         addressLocality: s.address_city || SITE_CONFIG.address.addressLocality,
         addressRegion: s.address_region || SITE_CONFIG.address.addressRegion,
         postalCode: s.address_postal_code || SITE_CONFIG.address.postalCode,
-        addressCountry: s.address_country || SITE_CONFIG.address.addressCountry,
+        addressCountry:
+          s.address_country === "India" || s.address_country === "IN"
+            ? "IN"
+            : s.address_country || SITE_CONFIG.address.addressCountry,
       },
       geo: SITE_CONFIG.geo,
       contact: {

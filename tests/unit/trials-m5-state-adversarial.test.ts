@@ -836,6 +836,7 @@ describe("Adversarial Stress Suite: Milestone 5 Storefront State & Interactions"
       expect(mockCartActions.add).toHaveBeenCalledWith({
         variantId: 0,
         trialId: mockTrial.id,
+        sku: mockTrial.sku,
         slug: mockTrial.slug,
         name: mockTrial.title,
         grams: 200,

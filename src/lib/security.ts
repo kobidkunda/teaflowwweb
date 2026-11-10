@@ -13,8 +13,8 @@ import type { NextResponse } from "next/server";
  */
 const scriptSrc =
   process.env.NODE_ENV === "production"
-    ? "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com https://checkout.razorpay.com"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com https://checkout.razorpay.com";
+    ? "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com https://connect.facebook.net https://static.cloudflareinsights.com https://checkout.razorpay.com"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.googleadservices.com https://www.google.com https://connect.facebook.net https://static.cloudflareinsights.com https://checkout.razorpay.com";
 export const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
@@ -28,12 +28,12 @@ export const SECURITY_HEADERS: Record<string, string> = {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self' data:",
-    "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://stats.g.doubleclick.net https://connect.facebook.net https://www.facebook.com https://*.facebook.com https://cloudflareinsights.com https://*.cloudflareinsights.com",
-    "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://www.googletagmanager.com https://www.youtube.com https://www.youtube-nocookie.com",
+    "connect-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://pay-api.biolastic.co.in https://pay.biolastic.co.in https://pay-admin.biolastic.co.in https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://stats.g.doubleclick.net https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://ad.doubleclick.net https://www.google.com https://www.google.co.in https://connect.facebook.net https://www.facebook.com https://*.facebook.com https://cloudflareinsights.com https://*.cloudflareinsights.com",
+    "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com https://pay.biolastic.co.in https://pay-admin.biolastic.co.in https://www.googletagmanager.com https://www.youtube.com https://www.youtube-nocookie.com",
     "media-src 'self' https: data: blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
-    "form-action 'self'",
+    "form-action 'self' https://pay.biolastic.co.in",
   ].join("; "),
 };
 

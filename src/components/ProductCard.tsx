@@ -1,4 +1,6 @@
 "use client";
+import { ProductImpression } from "@/components/analytics/ProductImpression";
+import { catalogItem } from "@/lib/seo/tracking";
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { useDisplayMoney } from "@/components/international/InternationalProvider";
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
@@ -13,6 +15,7 @@ export function ProductCard({ product }: { product: Product }) {
   if (!variant) return null;
   const colorClass = product.category.toLowerCase().replace(/[^a-z]/g, "");
   return <article className="product-card">
+    <ProductImpression item={catalogItem(product, variant)} />
     <Link href={"/tea/" + product.slug} className={"product-art art-" + colorClass}>
       <span className="art-badge">{product.flush}</span>
       {product.primary_image_url || variant.product_image_url ? (

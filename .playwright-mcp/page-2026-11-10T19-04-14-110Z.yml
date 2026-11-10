@@ -1,0 +1,581 @@
+- generic [active] [ref=f2e1]:
+  - link "Skip to main content" [ref=f2e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - region "Announcement" [ref=f2e3]:
+    - generic [ref=f2e4]:
+      - link "✨ FREE SHIPPING ON ORDERS ABOVE ₹999" [ref=f2e5] [cursor=pointer]:
+        - /url: /shop
+      - generic [aria-hidden] [ref=f2e6]: "|"
+      - link "Track Order" [ref=f2e7] [cursor=pointer]:
+        - /url: /track
+      - generic [aria-hidden] [ref=f2e8]: "|"
+      - link "Help" [ref=f2e9] [cursor=pointer]:
+        - /url: /contact
+      - generic [aria-hidden] [ref=f2e10]: "|"
+      - button "Deliver to IN · INR · en" [disabled] [ref=f2e12] [cursor=pointer]:
+        - generic [ref=f2e18]: IN · INR · EN
+  - banner [ref=f2e19]:
+    - generic [ref=f2e20]:
+      - button "Toggle navigation" [ref=f2e21] [cursor=pointer]
+      - link "TEAFLOWW Orthodox & CTC Teas from Origin homepage" [ref=f2e23] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f2e37]:
+          - generic [ref=f2e38]: TEAFLOWW
+          - generic [ref=f2e39]: Orthodox & CTC Teas from Origin
+        - generic [ref=f2e40]: homepage
+      - generic [ref=f2e41]:
+        - button "Wholesale & Bulk — Open purchase inquiry" [ref=f2e42] [cursor=pointer]
+        - button "Search teas (⌘K)" [ref=f2e46] [cursor=pointer]
+        - generic [aria-hidden] [ref=f2e50] [cursor=pointer]
+        - link "Shopping bag with 0 items" [ref=f2e54] [cursor=pointer]:
+          - /url: /cart
+          - generic [aria-hidden] [ref=f2e58]: "0"
+  - main [ref=f2e59]:
+    - generic [ref=f2e60]:
+      - region "Hero" [ref=f2e61]:
+        - generic [ref=f2e63]:
+          - generic [ref=f2e64]:
+            - generic [ref=f2e65]: YOUR TEA BRAND, STEP BY STEP
+            - heading "Bring Your Tea Brand to Life." [level=1] [ref=f2e66]
+            - paragraph [ref=f2e67]: Explore tea and packaging options, preview your brand, and request an itemized quotation. Our team will confirm sourcing, materials and production requirements for your project.
+            - generic [ref=f2e68]:
+              - link "Start Your Brand in Studio" [ref=f2e69] [cursor=pointer]:
+                - /url: /private-label/studio
+                - text: Start Your Brand →
+              - link "Explore Packaging Catalogue" [ref=f2e70] [cursor=pointer]:
+                - /url: /private-label/packaging
+            - generic [ref=f2e71]:
+              - generic [ref=f2e72]: Tea & packaging selection
+              - generic [ref=f2e73]: Configuration-specific minimums
+              - generic [ref=f2e74]: Proof review before production
+          - generic [ref=f2e77]:
+            - img "Concept arrangement of a green pouch, brass tin, amber jar and ivory tea carton" [ref=f2e78]
+            - note "AI-generated packaging concepts — illustrative only" [ref=f2e79]
+      - 'region "How it Works: Sourcing, Packaging & Production Process" [ref=f2e80]':
+        - generic [ref=f2e81]:
+          - generic [ref=f2e82]:
+            - 'heading "From Sourcing to Shelf: The 4-Stage Atelier Process" [level=2] [ref=f2e83]'
+            - paragraph [ref=f2e84]: A transparent, data-driven manufacturing flow engineered for high precision and zero surprises.
+          - generic [ref=f2e85]:
+            - generic [ref=f2e86]:
+              - generic [ref=f2e87]: "01"
+              - heading "Sourcing & Selection" [level=3] [ref=f2e88]
+              - paragraph [ref=f2e89]: Select invoice-verified single-estate teas from Darjeeling, Assam, or Kangra alongside high-barrier food-grade pouches, tins, or jars.
+            - generic [ref=f2e90]:
+              - generic [ref=f2e91]: "02"
+              - heading "Packaging & Design" [level=3] [ref=f2e92]
+              - paragraph [ref=f2e93]: Position your brand identity, nutritional declarations, and compliant FSSAI batch tables within exact millimeter safe-zones.
+            - generic [ref=f2e94]:
+              - generic [ref=f2e95]: "03"
+              - heading "Preflight & Proof Sign-Off" [level=3] [ref=f2e96]
+              - paragraph [ref=f2e97]: Inspect automated 300 DPI preflight reports, color separations, and review locked digital proof revisions before production.
+            - generic [ref=f2e98]:
+              - generic [ref=f2e99]: "04"
+              - heading "Production & Delivery" [level=3] [ref=f2e100]
+              - paragraph [ref=f2e101]: Food-grade nitrogen flushing, 7-stage QC cupping, and climate-controlled cleanroom packing at our Siliguri Works facility.
+      - region "Quality Standards & Trust Badges" [ref=f2e102]:
+        - generic [ref=f2e104]:
+          - generic [ref=f2e110]:
+            - heading "Review Your Requirements" [level=3] [ref=f2e111]
+            - paragraph [ref=f2e112]: Confirm product details, packaging specifications and required documentation with our team.
+          - generic [ref=f2e117]:
+            - heading "Plan Your Production" [level=3] [ref=f2e118]
+            - paragraph [ref=f2e119]: Review quantity, materials and production readiness before committing to a run.
+          - generic [ref=f2e125]:
+            - heading "Approve Your Proof" [level=3] [ref=f2e126]
+            - paragraph [ref=f2e127]: Review the production proof before approval. Studio previews are illustrative.
+          - generic [ref=f2e135]:
+            - heading "Discuss Sample Options" [level=3] [ref=f2e136]
+            - paragraph [ref=f2e137]: Ask about available tea samples and packaging swatches for your project.
+      - region "Interactive Studio Preview Teaser" [ref=f2e138]:
+        - generic [ref=f2e139]:
+          - generic [ref=f2e140]:
+            - 'heading "Interactive Preview: Design Your Custom Pack" [level=2] [ref=f2e141]'
+            - paragraph [ref=f2e142]: Preview your brand name on food-grade packaging with instant estimated production costs.
+          - generic [ref=f2e143]:
+            - generic [ref=f2e144]:
+              - generic [ref=f2e145]:
+                - generic [ref=f2e146]: Your Brand Name
+                - textbox "Your Brand Name" [ref=f2e147]:
+                  - /placeholder: e.g., Nirva Botanicals
+                  - text: TEAFLOWW RESERVE
+              - generic [ref=f2e148]:
+                - generic [ref=f2e149]: Packaging Structure
+                - generic [ref=f2e150]:
+                  - button "Matte Stand-Up Pouch" [ref=f2e151] [cursor=pointer]
+                  - button "Artisanal Metal Tin" [ref=f2e152] [cursor=pointer]
+              - generic [ref=f2e153]:
+                - generic [ref=f2e154]: Single-Estate Tea Grade
+                - combobox "Single-Estate Tea Grade" [ref=f2e155]:
+                  - option "Darjeeling First Flush (FTGFOP1)" [selected]
+                  - option "Assam Orthodox Golden Tips (TGFOP)"
+                  - option "Kangra High Elevation Green"
+              - generic [ref=f2e156]:
+                - generic [ref=f2e157]:
+                  - generic [ref=f2e158]: Indicative Unit Estimate (500 units)
+                  - strong [ref=f2e159]: ≈ ₹72.50 / unit
+                - generic [ref=f2e160]:
+                  - generic [ref=f2e161]: Includes tea leaf, packaging, print & cleanroom packing
+                  - generic [ref=f2e162]: "Batch Total: ₹36,250"
+              - link "Open Full Configurator in Studio →" [ref=f2e163] [cursor=pointer]:
+                - /url: /private-label/studio?pack=stand-up-pouch-matte-black-250g
+            - generic [ref=f2e164]:
+              - generic [ref=f2e165]:
+                - button "Front View" [ref=f2e166] [cursor=pointer]
+                - button "Back View" [ref=f2e167] [cursor=pointer]
+              - generic [ref=f2e168]:
+                - generic [ref=f2e170]:
+                  - generic [ref=f2e171]: TEAFLOWW RESERVE
+                  - paragraph [ref=f2e172]: Darjeeling First Flush
+                  - generic [ref=f2e173]: 100g • Single-Estate Whole Leaf
+                - note "Digital mockup — illustrative only" [ref=f2e174]
+      - region "Featured Packaging Formats" [ref=f2e175]:
+        - generic [ref=f2e176]:
+          - generic [ref=f2e177]:
+            - generic [ref=f2e179]:
+              - heading "Certified Food-Grade Packaging Structures" [level=2] [ref=f2e180]
+              - paragraph [ref=f2e181]: Engineered for maximum aroma retention, barrier protection, and shelf impact.
+            - link "View All Packaging Formats →" [ref=f2e182] [cursor=pointer]:
+              - /url: /private-label/packaging
+          - generic [ref=f2e183]:
+            - article "Stand-Up Pouch Matte Black 250g - 250g Retail" [ref=f2e184]:
+              - generic [ref=f2e186]:
+                - generic [aria-hidden] [ref=f2e187]: 📦
+                - generic [ref=f2e188]: Stand-Up Pouch Matte Black 250g
+                - generic [ref=f2e189]: 250g Retail • Kraft / Foil Barrier
+              - generic [ref=f2e190]:
+                - generic [ref=f2e191]:
+                  - generic [ref=f2e192]: pouch
+                  - generic [ref=f2e193]: Kraft / Foil Barrier
+                  - generic [ref=f2e194]: "MOQ: 500"
+                - heading [level=3] [ref=f2e195]:
+                  - link "Stand-Up Pouch Matte Black 250g" [ref=f2e196] [cursor=pointer]:
+                    - /url: /private-label/packaging/stand-up-pouch-matte-black-250g
+                - paragraph [ref=f2e197]: "Capacity: 250g Retail • Closure: Resealable Grip Zipper"
+                - note "Digital mockup — illustrative only" [ref=f2e198]
+                - generic [ref=f2e199]:
+                  - generic [ref=f2e200]: From ₹18.50 / unit
+                  - generic [ref=f2e201]:
+                    - link "Specs" [ref=f2e202] [cursor=pointer]:
+                      - /url: /private-label/packaging/stand-up-pouch-matte-black-250g
+                    - link "Configure Stand-Up Pouch Matte Black 250g in Studio" [ref=f2e203] [cursor=pointer]:
+                      - /url: /private-label/studio?pack=stand-up-pouch-matte-black-250g
+                      - text: Configure →
+            - article "Artisanal Metal Tin Caddy 100g - 100g Standard" [ref=f2e204]:
+              - generic [ref=f2e206]:
+                - generic [aria-hidden] [ref=f2e207]: 📦
+                - generic [ref=f2e208]: Artisanal Metal Tin Caddy 100g
+                - generic [ref=f2e209]: 100g Standard • Food-Grade Tinplate
+              - generic [ref=f2e210]:
+                - generic [ref=f2e211]:
+                  - generic [ref=f2e212]: tin
+                  - generic [ref=f2e213]: Food-Grade Tinplate
+                  - generic [ref=f2e214]: "MOQ: 250"
+                - heading [level=3] [ref=f2e215]:
+                  - link "Artisanal Metal Tin Caddy 100g" [ref=f2e216] [cursor=pointer]:
+                    - /url: /private-label/packaging/metal-tin-caddy-100g
+                - paragraph [ref=f2e217]: "Capacity: 100g Standard • Closure: Inner Slip Lid"
+                - note "Digital mockup — illustrative only" [ref=f2e218]
+                - generic [ref=f2e219]:
+                  - generic [ref=f2e220]: From ₹42.00 / unit
+                  - generic [ref=f2e221]:
+                    - link "Specs" [ref=f2e222] [cursor=pointer]:
+                      - /url: /private-label/packaging/metal-tin-caddy-100g
+                    - link "Configure Artisanal Metal Tin Caddy 100g in Studio" [ref=f2e223] [cursor=pointer]:
+                      - /url: /private-label/studio?pack=metal-tin-caddy-100g
+                      - text: Configure →
+            - article "Amber Apothecary Glass Jar 150g - 150g Reserve" [ref=f2e224]:
+              - generic [ref=f2e226]:
+                - generic [aria-hidden] [ref=f2e227]: 📦
+                - generic [ref=f2e228]: Amber Apothecary Glass Jar 150g
+                - generic [ref=f2e229]: 150g Reserve • Borosilicate Amber Glass
+              - generic [ref=f2e230]:
+                - generic [ref=f2e231]:
+                  - generic [ref=f2e232]: jar
+                  - generic [ref=f2e233]: Borosilicate Amber Glass
+                  - generic [ref=f2e234]: "MOQ: 250"
+                - heading [level=3] [ref=f2e235]:
+                  - link "Amber Apothecary Glass Jar 150g" [ref=f2e236] [cursor=pointer]:
+                    - /url: /private-label/packaging/amber-glass-jar-150g
+                - paragraph [ref=f2e237]: "Capacity: 150g Reserve • Closure: Airtight Silicone Gasket"
+                - note "Digital mockup — illustrative only" [ref=f2e238]
+                - generic [ref=f2e239]:
+                  - generic [ref=f2e240]: From ₹55.00 / unit
+                  - generic [ref=f2e241]:
+                    - link "Specs" [ref=f2e242] [cursor=pointer]:
+                      - /url: /private-label/packaging/amber-glass-jar-150g
+                    - link "Configure Amber Apothecary Glass Jar 150g in Studio" [ref=f2e243] [cursor=pointer]:
+                      - /url: /private-label/studio?pack=amber-glass-jar-150g
+                      - text: Configure →
+            - article "Rigid Presentation Gift Carton - Dual Tin Presentation" [ref=f2e244]:
+              - generic [ref=f2e246]:
+                - generic [aria-hidden] [ref=f2e247]: 📦
+                - generic [ref=f2e248]: Rigid Presentation Gift Carton
+                - generic [ref=f2e249]: Dual Tin Presentation • FSC Folding Boxboard
+              - generic [ref=f2e250]:
+                - generic [ref=f2e251]:
+                  - generic [ref=f2e252]: carton
+                  - generic [ref=f2e253]: FSC Folding Boxboard
+                  - generic [ref=f2e254]: "MOQ: 500"
+                - heading [level=3] [ref=f2e255]:
+                  - link "Rigid Presentation Gift Carton" [ref=f2e256] [cursor=pointer]:
+                    - /url: /private-label/packaging/rigid-presentation-carton
+                - paragraph [ref=f2e257]: "Capacity: Dual Tin Presentation • Closure: Magnetic Flap Closure"
+                - note "Digital mockup — illustrative only" [ref=f2e258]
+                - generic [ref=f2e259]:
+                  - generic [ref=f2e260]: From ₹68.00 / unit
+                  - generic [ref=f2e261]:
+                    - link "Specs" [ref=f2e262] [cursor=pointer]:
+                      - /url: /private-label/packaging/rigid-presentation-carton
+                    - link "Configure Rigid Presentation Gift Carton in Studio" [ref=f2e263] [cursor=pointer]:
+                      - /url: /private-label/studio?pack=rigid-presentation-carton
+                      - text: Configure →
+            - article "Biodegradable Pyramid Sachet Envelope - 2.5g Pyramid Sachet" [ref=f2e264]:
+              - generic [ref=f2e266]:
+                - generic [aria-hidden] [ref=f2e267]: 📦
+                - generic [ref=f2e268]: Biodegradable Pyramid Sachet Envelope
+                - generic [ref=f2e269]: 2.5g Pyramid Sachet • PLA Cornstarch & Kraft Outer
+              - generic [ref=f2e270]:
+                - generic [ref=f2e271]:
+                  - generic [ref=f2e272]: sachet
+                  - generic [ref=f2e273]: PLA Cornstarch & Kraft Outer
+                  - generic [ref=f2e274]: "MOQ: 1,000"
+                - heading [level=3] [ref=f2e275]:
+                  - link "Biodegradable Pyramid Sachet Envelope" [ref=f2e276] [cursor=pointer]:
+                    - /url: /private-label/packaging/pyramid-sachet-envelope
+                - paragraph [ref=f2e277]: "Capacity: 2.5g Pyramid Sachet • Closure: Hermetic Ultrasonic Fin Seal"
+                - note "Digital mockup — illustrative only" [ref=f2e278]
+                - generic [ref=f2e279]:
+                  - generic [ref=f2e280]: From ₹4.80 / unit
+                  - generic [ref=f2e281]:
+                    - link "Specs" [ref=f2e282] [cursor=pointer]:
+                      - /url: /private-label/packaging/pyramid-sachet-envelope
+                    - link "Configure Biodegradable Pyramid Sachet Envelope in Studio" [ref=f2e283] [cursor=pointer]:
+                      - /url: /private-label/studio?pack=pyramid-sachet-envelope
+                      - text: Configure →
+            - article "Master Bulk Foodservice Kraft Bag 1kg - 1kg Commercial Bulk" [ref=f2e284]:
+              - generic [ref=f2e286]:
+                - generic [aria-hidden] [ref=f2e287]: 📦
+                - generic [ref=f2e288]: Master Bulk Foodservice Kraft Bag 1kg
+                - generic [ref=f2e289]: 1kg Commercial Bulk • Heavy 4-Ply Barrier Kraft
+              - generic [ref=f2e290]:
+                - generic [ref=f2e291]:
+                  - generic [ref=f2e292]: bag
+                  - generic [ref=f2e293]: Heavy 4-Ply Barrier Kraft
+                  - generic [ref=f2e294]: "MOQ: 100"
+                - heading [level=3] [ref=f2e295]:
+                  - link "Master Bulk Foodservice Kraft Bag 1kg" [ref=f2e296] [cursor=pointer]:
+                    - /url: /private-label/packaging/bulk-kraft-barrier-bag-1kg
+                - paragraph [ref=f2e297]: "Capacity: 1kg Commercial Bulk • Closure: Tin-Tie & Heat Seal Strip"
+                - note "Digital mockup — illustrative only" [ref=f2e298]
+                - generic [ref=f2e299]:
+                  - generic [ref=f2e300]: From ₹38.00 / unit
+                  - generic [ref=f2e301]:
+                    - link "Specs" [ref=f2e302] [cursor=pointer]:
+                      - /url: /private-label/packaging/bulk-kraft-barrier-bag-1kg
+                    - link "Configure Master Bulk Foodservice Kraft Bag 1kg in Studio" [ref=f2e303] [cursor=pointer]:
+                      - /url: /private-label/studio?pack=bulk-kraft-barrier-bag-1kg
+                      - text: Configure →
+      - region "Print Process Comparison" [ref=f2e304]:
+        - generic [ref=f2e305]:
+          - generic [ref=f2e306]:
+            - 'heading "Choose How You Print: The 3-Way Printing Matrix" [level=2] [ref=f2e307]'
+            - paragraph [ref=f2e308]: Compare minimum order quantities, cylinder tooling requirements, and finish capabilities across our print technologies.
+          - region "Print Comparison Table" [ref=f2e309]:
+            - table "Technical comparison of Label, Digital Roll-Fed, and Gravure printing methods." [ref=f2e310]:
+              - caption [ref=f2e311]: Technical comparison of Label, Digital Roll-Fed, and Gravure printing methods.
+              - rowgroup [ref=f2e312]:
+                - row [ref=f2e313]:
+                  - columnheader "Feature / Parameter" [ref=f2e314]
+                  - columnheader "Precision Label (BOPP / Paper)" [ref=f2e315]
+                  - columnheader "Short-Run Direct Digital Print" [ref=f2e316]
+                  - columnheader "Industrial Rotogravure Cylinder" [ref=f2e317]
+              - rowgroup [ref=f2e318]:
+                - row [ref=f2e319]:
+                  - rowheader "Ideal For" [ref=f2e320]
+                  - cell "Boutique trial batches, popups, limited seasonal single-cask lots" [ref=f2e321]
+                  - cell "Growing direct-to-consumer tea brands & retail rollouts" [ref=f2e322]
+                  - cell "High-volume wholesale retail distribution & export containers" [ref=f2e323]
+                - row [ref=f2e324]:
+                  - rowheader "Minimum Order Quantity (MOQ)" [ref=f2e325]
+                  - cell [ref=f2e326]:
+                    - strong [ref=f2e327]: 100 units
+                  - cell [ref=f2e328]:
+                    - strong [ref=f2e329]: 500 units
+                  - cell [ref=f2e330]:
+                    - strong [ref=f2e331]: 5,000 units
+                - row [ref=f2e332]:
+                  - rowheader "Tooling & Cylinder Setup Fee" [ref=f2e333]
+                  - cell [ref=f2e334]:
+                    - strong [ref=f2e335]: ₹0
+                    - text: (Zero plate or cylinder fee)
+                  - cell [ref=f2e336]:
+                    - strong [ref=f2e337]: ₹0
+                    - text: (Direct digital prepress)
+                  - cell "₹8,000 per color engraved steel cylinder" [ref=f2e338]
+                - row [ref=f2e339]:
+                  - rowheader "Color Model & Palette" [ref=f2e340]
+                  - cell "CMYK + Spot Varnishes" [ref=f2e341]
+                  - cell "High-DPI CMYK + White Understrike" [ref=f2e342]
+                  - cell "Up to 10 Spot Pantone (PMS) Colors" [ref=f2e343]
+                - row [ref=f2e344]:
+                  - rowheader "Coverage Area" [ref=f2e345]
+                  - cell "Label Safe Zone on front and back" [ref=f2e346]
+                  - cell "Full-bleed edge-to-edge printing" [ref=f2e347]
+                  - cell "Seamless 360° full roll-fed envelope" [ref=f2e348]
+                - row [ref=f2e349]:
+                  - rowheader "Finishing Options" [ref=f2e350]
+                  - cell "Matte, Gloss, Cold Foil Stamp" [ref=f2e351]
+                  - cell "Soft-Touch Matte, Spot Gloss UV" [ref=f2e352]
+                  - cell "Matte Lacquer, Metallic Inks, Window Cutouts" [ref=f2e353]
+                - row [ref=f2e354]:
+                  - rowheader "Production Lead Time" [ref=f2e355]
+                  - cell "7–10 business days" [ref=f2e356]
+                  - cell "14–18 business days" [ref=f2e357]
+                  - cell "25–35 business days" [ref=f2e358]
+      - region "Frequently Asked Questions" [ref=f2e359]:
+        - generic [ref=f2e360]:
+          - generic [ref=f2e361]:
+            - heading "Frequently Asked Questions" [level=2] [ref=f2e362]
+            - paragraph [ref=f2e363]: Clear, truthful answers regarding manufacturing minimums, food compliance, and delivery timelines.
+          - generic [ref=f2e364]:
+            - group [ref=f2e365]:
+              - generic "What is the minimum order quantity?" [ref=f2e366] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e368]: +
+            - group [ref=f2e369]:
+              - generic "Can I request tea and packaging samples?" [ref=f2e370] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e372]: +
+            - group [ref=f2e373]:
+              - generic "How do I check food safety and labeling requirements?" [ref=f2e374] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e376]: +
+            - group [ref=f2e377]:
+              - generic "What artwork can I use in the studio?" [ref=f2e378] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e380]: +
+            - group [ref=f2e381]:
+              - generic "When will my order be ready?" [ref=f2e382] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e384]: +
+            - group [ref=f2e385]:
+              - generic "Can I discuss a custom blend?" [ref=f2e386] [cursor=pointer]:
+                - generic [aria-hidden] [ref=f2e388]: +
+      - region "Order Sample Kit & Consultation" [ref=f2e390]:
+        - generic [ref=f2e391]:
+          - generic [ref=f2e392]:
+            - heading "Order a Tasting Sample Kit or Request Consultation" [level=2] [ref=f2e393]
+            - paragraph [ref=f2e394]: Tell our team what you need. We will confirm sample options and a suitable production configuration.
+          - generic [ref=f2e396]:
+            - generic [ref=f2e397]:
+              - generic [ref=f2e398]:
+                - generic [ref=f2e399]:
+                  - generic [ref=f2e400]: Your Name *
+                  - textbox "Your Name *" [ref=f2e401]:
+                    - /placeholder: e.g. Vikram Sen
+                - generic [ref=f2e402]:
+                  - generic [ref=f2e403]: Work Email *
+                  - textbox "Work Email *" [ref=f2e404]:
+                    - /placeholder: vikram@brand.com
+              - generic [ref=f2e405]:
+                - generic [ref=f2e406]:
+                  - generic [ref=f2e407]: Brand / Company Name
+                  - textbox "Brand / Company Name" [ref=f2e408]:
+                    - /placeholder: e.g. Himalayan Botanicals
+                - generic [ref=f2e409]:
+                  - generic [ref=f2e410]: Planned First Run Quantity
+                  - combobox "Planned First Run Quantity" [ref=f2e411]:
+                    - option "Trial Batch (100–250 units)"
+                    - option "Standard Run (500–1,000 units)" [selected]
+                    - option "Commercial Run (2,500–5,000 units)"
+                    - option "Enterprise Bulk (10,000+ units)"
+              - generic [ref=f2e412]:
+                - generic [ref=f2e413]: Project Details & Target Launch Timeline
+                - textbox "Project Details & Target Launch Timeline" [ref=f2e414]:
+                  - /placeholder: Tell us about your packaging preferences, tea blend requirements, or custom questions...
+            - button "Request Consultation & Samples →" [ref=f2e415] [cursor=pointer]
+  - contentinfo "Site footer" [ref=f2e416]:
+    - generic [ref=f2e417]:
+      - generic [ref=f2e418]:
+        - generic [ref=f2e419]:
+          - link "TEAFLOWW · Nirva homepage" [ref=f2e420] [cursor=pointer]:
+            - /url: /
+            - generic [ref=f2e434]:
+              - text: TEAFLOWW
+              - generic [ref=f2e435]: · Nirva
+          - paragraph [ref=f2e436]: Single-estate loose leaf teas direct from small Himalayan tea makers.
+        - region "Brand standards" [ref=f2e437]:
+          - generic [ref=f2e442]:
+            - generic [ref=f2e443]: 100% Single-Estate
+            - generic [ref=f2e444]: Unblended orthodox lots direct from Himalayan gardens.
+          - generic [ref=f2e448]:
+            - generic [ref=f2e449]: Sealed at Origin
+            - generic [ref=f2e450]: Graded and packaged at our Siliguri origin facility.
+          - generic [ref=f2e456]:
+            - generic [ref=f2e457]: 24–48h Dispatch
+            - generic [ref=f2e458]: Fast courier delivery across India via Blue Dart & Delhivery.
+          - generic [ref=f2e463]:
+            - generic [ref=f2e464]: Freshness Guarantee
+            - generic [ref=f2e465]: 14-day freshness and transit resolution assurance.
+      - generic [ref=f2e466]:
+        - generic [ref=f2e467]:
+          - heading "Shop Teas" [level=3] [ref=f2e468]
+          - navigation "Shop Teas" [ref=f2e469]:
+            - list [ref=f2e470]:
+              - listitem [ref=f2e471]:
+                - link "Shop All Teas" [ref=f2e472] [cursor=pointer]:
+                  - /url: /shop
+              - listitem [ref=f2e473]:
+                - link "Darjeeling First Flush" [ref=f2e474] [cursor=pointer]:
+                  - /url: /collections/darjeeling-first-flush
+              - listitem [ref=f2e475]:
+                - link "Reserve Black Teas" [ref=f2e476] [cursor=pointer]:
+                  - /url: /collections/black-tea
+              - listitem [ref=f2e477]:
+                - link "Green & White Teas" [ref=f2e478] [cursor=pointer]:
+                  - /url: /shop?category=green-tea
+              - listitem [ref=f2e479]:
+                - link "Oolong & Specialty" [ref=f2e480] [cursor=pointer]:
+                  - /url: /shop?category=oolong-tea
+              - listitem [ref=f2e481]:
+                - link "Trials & Samples" [ref=f2e482] [cursor=pointer]:
+                  - /url: /trials
+              - listitem [ref=f2e483]:
+                - link "Wholesale & Bulk Orders" [ref=f2e484] [cursor=pointer]:
+                  - /url: /wholesale
+              - listitem [ref=f2e485]:
+                - link "Blend Lab (Custom Tea Atelier)" [ref=f2e486] [cursor=pointer]:
+                  - /url: /blend-lab
+        - generic [ref=f2e487]:
+          - heading "Discovery & Tools" [level=3] [ref=f2e488]
+          - navigation "Discovery & Tools" [ref=f2e489]:
+            - list [ref=f2e490]:
+              - listitem [ref=f2e491]:
+                - link "Tea Finder (Flavor Quiz)" [ref=f2e492] [cursor=pointer]:
+                  - /url: /tea-finder
+              - listitem [ref=f2e493]:
+                - link "Compare Cupping Profiles" [ref=f2e494] [cursor=pointer]:
+                  - /url: /compare
+              - listitem [ref=f2e495]:
+                - link "Track Your Order" [ref=f2e496] [cursor=pointer]:
+                  - /url: /track
+              - listitem [ref=f2e497]:
+                - link "Shopping Bag" [ref=f2e498] [cursor=pointer]:
+                  - /url: /cart
+              - listitem [ref=f2e499]:
+                - link "Product Feeds (Google & CSV)" [ref=f2e500] [cursor=pointer]:
+                  - /url: /feeds
+        - generic [ref=f2e501]:
+          - heading "Journal & Heritage" [level=3] [ref=f2e502]
+          - navigation "Journal & Heritage" [ref=f2e503]:
+            - list [ref=f2e504]:
+              - listitem [ref=f2e505]:
+                - link "Tea Journal & Articles Stories" [ref=f2e506] [cursor=pointer]:
+                  - /url: /blog
+                  - generic [ref=f2e507]: Tea Journal & Articles
+                  - generic [ref=f2e508]: Stories
+              - listitem [ref=f2e509]:
+                - link "Tea Education & Brewing" [ref=f2e510] [cursor=pointer]:
+                  - /url: /learn
+              - listitem [ref=f2e512]:
+                - link "Leaf-to-Cup Craft Story" [ref=f2e513] [cursor=pointer]:
+                  - /url: /leaf-to-cup
+              - listitem [ref=f2e515]:
+                - link "Ways to Make CTC Tea" [ref=f2e516] [cursor=pointer]:
+                  - /url: /ways-to-make-ctc-tea
+              - listitem [ref=f2e518]:
+                - link "Siliguri Origin & Tasting Room" [ref=f2e519] [cursor=pointer]:
+                  - /url: /locations/siliguri
+              - listitem [ref=f2e521]:
+                - link "Our Heritage & Estates" [ref=f2e522] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=f2e524]:
+                - link "Brand Assets & Media Kit" [ref=f2e525] [cursor=pointer]:
+                  - /url: /brand
+        - generic [ref=f2e527]:
+          - heading "Customer Care" [level=3] [ref=f2e528]
+          - navigation "Customer Care" [ref=f2e529]:
+            - list [ref=f2e530]:
+              - listitem [ref=f2e531]:
+                - link "Contact Us" [ref=f2e532] [cursor=pointer]:
+                  - /url: /contact
+              - listitem [ref=f2e533]:
+                - link "Payment Methods & Discounts" [ref=f2e534] [cursor=pointer]:
+                  - /url: /payment-methods
+              - listitem [ref=f2e535]:
+                - link "Shipping & Dispatch Policy" [ref=f2e536] [cursor=pointer]:
+                  - /url: /shipping
+              - listitem [ref=f2e537]:
+                - link "14-Day Returns & Guarantee" [ref=f2e538] [cursor=pointer]:
+                  - /url: /returns
+              - listitem [ref=f2e539]:
+                - link "Privacy Policy" [ref=f2e540] [cursor=pointer]:
+                  - /url: /privacy
+              - listitem [ref=f2e541]:
+                - link "Terms of Service" [ref=f2e542] [cursor=pointer]:
+                  - /url: /terms
+          - generic [ref=f2e543]:
+            - heading "Featured Topics" [level=4] [ref=f2e544]
+            - navigation "Featured Topics" [ref=f2e545]:
+              - list [ref=f2e546]:
+                - listitem [ref=f2e547]:
+                  - link "Shop Tea" [ref=f2e548] [cursor=pointer]:
+                    - /url: /shop
+                - listitem [ref=f2e549]:
+                  - link "Wholesale & Bulk" [ref=f2e550] [cursor=pointer]:
+                    - /url: /wholesale
+                - listitem [ref=f2e551]:
+                  - link "Private Label" [ref=f2e552] [cursor=pointer]:
+                    - /url: /private-label
+                - listitem [ref=f2e553]:
+                  - link "Product Feeds" [ref=f2e554] [cursor=pointer]:
+                    - /url: /feeds
+                - listitem [ref=f2e555]:
+                  - link "Brand Assets" [ref=f2e556] [cursor=pointer]:
+                    - /url: /brand
+                - listitem [ref=f2e557]:
+                  - link "Shipping" [ref=f2e558] [cursor=pointer]:
+                    - /url: /shipping
+                - listitem [ref=f2e559]:
+                  - link "Returns" [ref=f2e560] [cursor=pointer]:
+                    - /url: /returns
+                - listitem [ref=f2e561]:
+                  - link "Privacy Policy" [ref=f2e562] [cursor=pointer]:
+                    - /url: /privacy
+                - listitem [ref=f2e563]:
+                  - link "Terms of Service" [ref=f2e564] [cursor=pointer]:
+                    - /url: /terms
+                - listitem [ref=f2e565]:
+                  - link "Contact Us" [ref=f2e566] [cursor=pointer]:
+                    - /url: /contact
+        - generic [ref=f2e567]:
+          - heading "Company & Origin" [level=3] [ref=f2e568]
+          - generic [ref=f2e569]:
+            - generic [ref=f2e574]:
+              - strong [ref=f2e575]: Nirva
+              - text: "(Brand: TeaFloww)"
+              - generic [ref=f2e576]: "GSTIN: 19CTHPK8646J2ZY"
+            - generic [ref=f2e581]:
+              - strong [ref=f2e582]: "Works / Facility:"
+              - generic [ref=f2e583]: 00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri, Dist Jalpaiguri, Siliguri, West Bengal, 734015
+            - generic [ref=f2e588]:
+              - strong [ref=f2e589]: "Office:"
+              - generic [ref=f2e590]: Shiv Shakti Kali Bari Rd, Sukantapally East, Siliguri 734005, West Bengal
+            - link "Contact us" [ref=f2e596] [cursor=pointer]:
+              - /url: /contact
+            - link "+91 7001304853" [ref=f2e601] [cursor=pointer]:
+              - /url: tel:+917001304853
+            - generic [ref=f2e602]: Mon – Sat · 09:00 – 18:00 IST
+      - generic [ref=f2e607]:
+        - generic [ref=f2e608]:
+          - generic [ref=f2e609]: © 2026 TEAFLOWW · Nirva. All rights reserved.
+          - button "Deliver to IN · INR · en" [disabled] [ref=f2e611] [cursor=pointer]:
+            - generic [ref=f2e617]: IN · INR · EN
+          - navigation "Legal navigation" [ref=f2e618]:
+            - link "Privacy Policy" [ref=f2e619] [cursor=pointer]:
+              - /url: /privacy
+            - link "Terms of Service" [ref=f2e620] [cursor=pointer]:
+              - /url: /terms
+            - link "Shipping Policy" [ref=f2e621] [cursor=pointer]:
+              - /url: /shipping
+            - link "Returns Guarantee" [ref=f2e622] [cursor=pointer]:
+              - /url: /returns
+            - link "Product Feeds" [ref=f2e623] [cursor=pointer]:
+              - /url: /feeds
+        - paragraph [ref=f2e624]: Direct from origin. Graded and packaged at our Siliguri headquarters.

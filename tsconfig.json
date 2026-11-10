@@ -50,9 +50,11 @@
     ".next-quality-final/types/**/*.ts",
     ".next-scroll-check/types/**/*.ts",
     ".next-test/types/**/*.ts",
+    ".next-tracking-dev/types/**/*.ts",
     ".next-trials-check/types/**/*.ts",
     ".next/types/**/*.ts",
-    "next-env.d.ts"
+    "next-env.d.ts",
+    ".next-tracking-build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

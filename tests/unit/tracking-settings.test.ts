@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from "vitest";
+import { setupAdminTestEnv, type TestEnv } from "./admin-e2e/test-helper";
 import {
   getTrackingSettings,
   updateTrackingSettings,
@@ -6,6 +7,9 @@ import {
 } from "@/lib/trackingSettings";
 
 describe("Tracking & Analytics Settings (GTM, Meta, GA4)", () => {
+  let env: TestEnv;
+  beforeAll(() => { env = setupAdminTestEnv(); });
+  afterAll(() => env.cleanup());
   beforeEach(() => {
     // Reset to defaults
     updateTrackingSettings({

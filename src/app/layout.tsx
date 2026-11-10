@@ -11,8 +11,9 @@ import { SITE_CONFIG, getSiteUrl } from "@/lib/seo/site";
 import { getOrganizationSchema, getLocalBusinessSchema, getWebsiteSchema } from "@/lib/seo/schema";
 import "./globals.css";
 import { getStorefrontHomepageContent } from "@/lib/homepage";
+import { trackingBootstrap } from "@/lib/seo/consent";
 import { getPublicTrackingConfig } from "@/lib/trackingSettings";
-import { AnalyticsHeadScripts, AnalyticsBodyNoScript } from "@/components/analytics/AnalyticsScripts";
+import { AnalyticsHeadScripts } from "@/components/analytics/AnalyticsScripts";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +115,7 @@ export default async function RootLayout({
   return (
     <html lang={currentLang === "en" ? "en-IN" : currentLang} dir={international.dir}>
       <head>
+        <script id="tracking-consent-defaults" dangerouslySetInnerHTML={{ __html: trackingBootstrap(trackingConfig) }} />
         <link rel="ai-catalog" href="/ai-catalog.json" />
         <link rel="ard" href="/ai-catalog.json" />
         <script
@@ -132,7 +134,6 @@ export default async function RootLayout({
       </head>
       <body>
         <AnalyticsHeadScripts config={trackingConfig} />
-        <AnalyticsBodyNoScript config={trackingConfig} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }}

@@ -16,6 +16,7 @@ import {
 } from "@/lib/productModels";
 import { SubscribeLink } from "@/components/subscriptions/SubscribeLink";
 import { ShoppingCart, Share2, Check } from "lucide-react";
+import { catalogItem, trackViewItem } from "@/lib/seo/tracking";
 
 export interface VariantPickerProps {
   product: Product;
@@ -102,6 +103,9 @@ export function VariantPicker({
           })
         );
       }
+      if (activeVariant.id !== product.variants[0]?.id) {
+        trackViewItem(catalogItem(product, activeVariant));
+      }
     }
   }, [activeVariant, selectedFormat, product, onVariantChange]);
 
@@ -177,7 +181,7 @@ export function VariantPicker({
     setAddError("");
     try {
       add({
-        variantId: activeVariant.id,
+        variantId: activeVariant.id, sku: activeVariant.sku?.trim() || `HTH-${product.id}-${activeVariant.id}`,
         slug: product.slug,
         name: product.name,
         grams: activeVariant.grams,

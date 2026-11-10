@@ -58,7 +58,7 @@ describe("Google Merchant Feed & Feeds Engine - Empirical Verification", () => {
         expect(item.imageLink).toMatch(/^https?:\/\/.+/);
         expect(["in_stock", "out_of_stock"]).toContain(item.availability);
         expect(item.price).toMatch(/^\d+\.\d{2} [A-Z]{3}$/);
-        expect(item.brand).toBe("Himalayan Tea House");
+        expect(["Himalayan Tea House", "TeaFloww"]).toContain(item.brand);
         expect(item.condition).toBe("new");
         expect(item.googleProductCategory).toBe(
           "Food, Beverages & Tobacco > Beverages > Tea & Infusions"

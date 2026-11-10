@@ -1,43 +1,168 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CONSENT_EVENT } from "@/lib/seo/consent";
 import { trackPurchase } from "@/lib/seo/tracking";
 import type { quoteAnalytics } from "@/lib/international/analytics";
 import { useCart } from "@/components/CartProvider";
-export function PurchaseStatus({ id, token, initial, analytics }: { id: string; token: string; initial: string; analytics: ReturnType<typeof quoteAnalytics> }) {
-  const [status, setStatus] = useState(initial), [tracking, setTracking] = useState<{ code: string; status: string } | null>(null), [message, setMessage] = useState("");
+import { Truck, RefreshCw } from "lucide-react";
+
+export function PurchaseStatus({
+  id,
+  token,
+  initial,
+  analytics,
+}: {
+  id: string;
+  token: string;
+  initial: string;
+  analytics: ReturnType<typeof quoteAnalytics>;
+}) {
+  const router = useRouter();
+  const [status, setStatus] = useState(initial);
+  const [tracking, setTracking] = useState<{ code: string; status: string } | null>(null);
+  const [message, setMessage] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [busyAction, setBusyAction] = useState<"cod" | "retry" | null>(null);
   const { clear } = useCart();
-  const tracked = useRef(false);
+
   useEffect(() => {
-    if (status !== "paid" || tracked.current) return;
-    try { if (localStorage.getItem(`tf_purchase_${id}`)) { tracked.current = true; return; } } catch {}
-    trackPurchase(id, analytics.total, analytics.shipping, analytics.tax, analytics.items, analytics.currency);
-    tracked.current = true;
-    try { localStorage.setItem(`tf_purchase_${id}`, "1"); } catch {}
+    const record = () => {
+      if (status === "paid" || status === "cod_due" || status === "cod_remitted") {
+        trackPurchase(
+          id,
+          analytics.value,
+          analytics.shipping,
+          analytics.tax,
+          analytics.items,
+          analytics.currency,
+          analytics.total
+        );
+      }
+    };
+    record();
+    window.addEventListener(CONSENT_EVENT, record);
+    return () => window.removeEventListener(CONSENT_EVENT, record);
   }, [id, status, analytics]);
+
   useEffect(() => {
     let active = true;
     const poll = async () => {
       try {
         const response = await fetch(`/api/commerce/order?id=${id}&token=${encodeURIComponent(token)}`, { cache: "no-store" });
         if (!response.ok) throw new Error();
-        const result = await response.json(); if (active) { setStatus(result.paymentStatus); setTracking(result.tracking); setMessage(""); }
-      } catch { if (active) setMessage("Status is temporarily unavailable. Please refresh shortly."); }
+        const result = await response.json();
+        if (active) {
+          setStatus(result.paymentStatus);
+          setTracking(result.tracking);
+          if (["paid", "cod_due", "cod_remitted"].includes(result.paymentStatus)) {
+            setActionError("");
+          }
+        }
+      } catch {
+        if (active && !message) setMessage("Status is temporarily unavailable. Please refresh shortly.");
+      }
     };
-    poll(); const timer = setInterval(poll, 10000);
+    poll();
+    const timer = setInterval(poll, 10000);
     return () => { active = false; clearInterval(timer); };
-  }, [id, token]);
-  useEffect(() => { if (["paid", "cod_due"].includes(status)) clear(); }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
-  const text: Record<string, string> = { payment_pending: "Payment verification pending. Confirmation appears after the payment provider verifies capture.", payment_failed: "Payment was not completed. Contact us if your bank shows a debit.", creating: "Preparing your payment.", creation_uncertain: "Your payment request needs verification. Please contact us with the order reference.", paid: "Payment confirmed. Your order is awaiting preparation.", paid_exception: "Payment received. Our team is reviewing fulfillment and will arrange delivery or a refund.", cod_due: "Cash on delivery order received. Payment is due on delivery.", cod_remitted: "Cash on delivery remittance confirmed.", refunded: "Your payment has been refunded.", partially_refunded: "A partial refund has been processed.", cancelled: "This order has been cancelled." };
+  }, [id, token, message]);
+
+  useEffect(() => {
+    if (["paid", "cod_due", "cod_remitted"].includes(status)) clear();
+  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isConfirmed = ["paid", "cod_due", "cod_remitted"].includes(status);
+  const isFailedOrPending = ["payment_failed", "payment_pending", "creation_uncertain", "creating"].includes(status);
+
+  async function handleSwitchToCod() {
+    setBusyAction("cod");
+    setActionError("");
+    try {
+      const res = await fetch("/api/commerce/change-to-cod", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id, token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unable to switch order to Cash on Delivery.");
+      setStatus("cod_due");
+      clear();
+      setMessage("Order successfully changed to Cash on Delivery! Payment is due upon delivery.");
+      router.refresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to change order to Cash on Delivery.");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  async function handleRetryPayment() {
+    setBusyAction("retry");
+    setActionError("");
+    try {
+      const res = await fetch("/api/commerce/retry-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id, token }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Unable to initiate payment retry.");
+      if (data.checkoutUrl) {
+        window.location.assign(data.checkoutUrl);
+        return;
+      }
+      if (data.gateway === "razorpay" && typeof window !== "undefined" && (window as unknown as { Razorpay?: new (opts: unknown) => { open: () => void } }).Razorpay) {
+        const widget = new (window as unknown as { Razorpay: new (opts: unknown) => { open: () => void } }).Razorpay({
+          key: data.keyId,
+          order_id: data.gatewayOrderId,
+          name: "TeaFloww",
+          handler: () => {
+            setStatus("paid");
+            router.refresh();
+          },
+          modal: { ondismiss: () => setBusyAction(null) },
+          theme: { color: "#23483A" },
+        });
+        widget.open();
+        return;
+      }
+      setMessage("Payment retry request initiated. Please check your payment app or reload.");
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Failed to retry online payment.");
+    } finally {
+      setBusyAction(null);
+    }
+  }
+
+  const text: Record<string, string> = {
+    payment_pending: "Payment verification pending. If money was debited, your bank will update shortly.",
+    payment_failed: "Online payment was not completed or was cancelled.",
+    creating: "Preparing your payment.",
+    creation_uncertain: "Your payment request needs verification. Please retry or change to Cash on Delivery.",
+    paid: "Payment confirmed. Your order is awaiting preparation.",
+    paid_exception: "Payment received. Our team is reviewing fulfillment and will arrange delivery or a refund.",
+    cod_due: "Cash on delivery order received. Payment is due on delivery.",
+    cod_remitted: "Cash on delivery remittance confirmed.",
+    refunded: "Your payment has been refunded.",
+    partially_refunded: "A partial refund has been processed.",
+    cancelled: "This order has been cancelled.",
+  };
+
   return (
     <div
-      className="p-4 sm:p-5 rounded-xl border border-[#ded7cb] bg-[#faf7f2] shadow-sm mb-6"
+      className={`p-4 sm:p-6 rounded-xl border shadow-sm mb-6 transition-all ${
+        isConfirmed
+          ? "border-[#ded7cb] bg-[#faf7f2]"
+          : "border-[#f5c6cb] bg-[#fffaf9]"
+      }`}
       aria-live="polite"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
           <div
-            className={`w-3 h-3 rounded-full mt-1.5 flex-shrink-0 ${
-              ["paid", "cod_due", "cod_remitted"].includes(status)
+            className={`w-3.5 h-3.5 rounded-full mt-1 flex-shrink-0 ${
+              isConfirmed
                 ? "bg-[#2e7d32]"
                 : status.includes("failed") || status === "cancelled"
                 ? "bg-[#c62828]"
@@ -63,6 +188,14 @@ export function PurchaseStatus({ id, token, initial, analytics }: { id: string; 
                 {message}
               </p>
             )}
+            {actionError && (
+              <p
+                role="alert"
+                className="text-xs font-semibold text-[#c62828] mt-2 bg-[#fde8e8] px-2.5 py-1 rounded inline-block"
+              >
+                {actionError}
+              </p>
+            )}
           </div>
         </div>
 
@@ -83,6 +216,35 @@ export function PurchaseStatus({ id, token, initial, analytics }: { id: string; 
           <span>Copy private order link</span>
         </button>
       </div>
+
+      {/* Prominent recovery options when payment failed or pending */}
+      {isFailedOrPending && (
+        <div className="mt-5 pt-4 border-t border-[#f0ede6] flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <button
+            type="button"
+            disabled={busyAction !== null}
+            onClick={handleSwitchToCod}
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            <Truck size={16} aria-hidden="true" />
+            <span>
+              {busyAction === "cod" ? "Switching to COD…" : "Change to Cash on Delivery (COD) →"}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            disabled={busyAction !== null}
+            onClick={handleRetryPayment}
+            className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg border border-[#23483a] text-[#23483a] hover:bg-[#f0f5f2] text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            <RefreshCw size={14} className={busyAction === "retry" ? "animate-spin" : ""} aria-hidden="true" />
+            <span>
+              {busyAction === "retry" ? "Connecting to gateway…" : "Retry Online Payment"}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

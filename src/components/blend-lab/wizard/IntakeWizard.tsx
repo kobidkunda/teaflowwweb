@@ -1,4 +1,5 @@
 "use client";
+import { trackLead } from "@/lib/seo/tracking";
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
@@ -213,6 +214,7 @@ export function IntakeWizard() {
         throw new Error(data.error || "Failed to submit project draft");
       }
 
+      trackLead("blend_lab_project");
       setSubmittedProject(data.project);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "An error occurred while creating project";

@@ -18,11 +18,12 @@ describe("Tier 1: Admin Shell & Navigation (Features 1–6)", () => {
     env.cleanup();
   });
 
-  describe("Feature 1: Grouped 5-Section Sidebar Structure", () => {
-    it("defines and verifies the 5 authoritative administrative navigation groups from navConfig", () => {
-      expect(NAV_SECTIONS).toHaveLength(5);
+  describe("Feature 1: Grouped 6-Section Sidebar Structure", () => {
+    it("defines and verifies the 6 authoritative administrative navigation groups from navConfig", () => {
+      expect(NAV_SECTIONS).toHaveLength(6);
       const groupTitles = NAV_SECTIONS.map((g) => g.title);
       expect(groupTitles).toContain("Storefront & Catalog");
+      expect(groupTitles).toContain("Private Label Studio");
       expect(groupTitles).toContain("Sales & Customers");
       expect(groupTitles).toContain("Editorial & Content");
       expect(groupTitles).toContain("System & MCP");

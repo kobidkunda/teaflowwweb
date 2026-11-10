@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { CartItemImage } from "@/components/CartItemImage";
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { useEffect, useRef, useState } from "react";
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
@@ -102,7 +102,7 @@ export function CheckoutForm() {
       trackedCheckoutRef.current = true;
       trackBeginCheckout(
         items.map((x) => ({
-          item_id: String(x.variantId),
+          item_id: x.sku || x.trialId || String(x.variantId),
           item_name: x.name,
           price: x.pricePaise / 100,
           quantity: x.quantity,
@@ -323,14 +323,11 @@ export function CheckoutForm() {
               {items.map((x) => (
                 <li key={x.variantId} className="checkout-line-item">
                   <div className="checkout-line-thumb">
-                    <Image
-                      src={getCartItemImage(x) || "/images/product-darjeeling-tin.jpg"}
-                      alt={x.name || "Tea selection"}
-                      width={56}
-                      height={56}
-                      sizes="56px"
+                    <CartItemImage
+                      src={getCartItemImage(x)}
+                      name={x.name || "Tea selection"}
+                      size={56}
                       className="checkout-thumb-img object-cover rounded-md"
-                      loading="lazy"
                     />
                   </div>
                   <div className="checkout-line-content">

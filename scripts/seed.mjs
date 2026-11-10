@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
+import { seedPrivateLabelCatalog } from "./seed-private-label.mjs";
 
 // Demo/seed data is FICTIONAL catalogue placeholders. It must never run in
 // production: seeding would overwrite real catalogue rows (upsert by slug/sku)
@@ -915,6 +916,8 @@ try {
         );
       }
     }
+    // Seed Private Label catalog
+    seedPrivateLabelCatalog(db);
   }
 } catch {
   /* seed extras are best-effort; catalogue above is authoritative */

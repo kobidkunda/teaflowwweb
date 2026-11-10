@@ -98,7 +98,7 @@ export async function generateMetadata({
     authors: [article.author_name || "Teafloww"],
     canonicalOverride: article.canonical_override,
     noindex: Boolean(article.noindex),
-    locale: ctx.requestedLocale || ctx.locale,
+    locale: ctx.requestedLocale || "en",
     resource: `blog:${rawArticle.id}`,
   });
 }

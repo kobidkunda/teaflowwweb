@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { CONSENT_EVENT } from "@/lib/seo/consent";
+import type { quoteAnalytics } from "@/lib/international/analytics";
 import type { CustomerAddress } from "@/lib/customerAddresses";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { trackBeginCheckout } from "@/lib/seo/tracking";
+import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo } from "@/lib/seo/tracking";
 import { useCart } from "@/components/CartProvider";
 import { useInternational } from "./InternationalProvider";
 import { formatMoney } from "@/lib/international/money";
@@ -29,6 +31,7 @@ type QuoteView = {
   expires: number;
   dutiesMode: string;
   components: Record<string, number>;
+  analytics?: ReturnType<typeof quoteAnalytics>;
   method?: string;
   paymentDiscountPaise?: number;
 };
@@ -42,9 +45,12 @@ type Payment = {
   currency: string;
   paymentStatus: string;
   expires: number;
+  gateway?: "razorpay" | "youpi";
+  checkoutUrl?: string;
 };
 
 type PaymentMethodsConfig = {
+  onlinePaymentEnabled?: boolean;
   discounts: {
     upi: { enabled: boolean; type: "percentage" | "flat"; value: number; maxRupees: number };
     card: { enabled: boolean; type: "percentage" | "flat"; value: number; maxRupees: number };
@@ -91,9 +97,27 @@ export function LiveCheckout() {
   const [method, setMethod] = useState<"upi" | "card" | "netbanking" | "cod" | "prepaid">("upi");
   const [inrAccepted, setInrAccepted] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<PaymentMethodsConfig | null>(null);
+  const onlinePaymentEnabled = paymentConfig?.onlinePaymentEnabled ?? true;
+
+  useEffect(() => {
+    if (paymentConfig && paymentConfig.onlinePaymentEnabled === false && method !== "cod") {
+      setMethod("cod");
+    }
+  }, [paymentConfig, method]);
 
   const key = useRef("");
   const quotedItems = useRef("");
+  const beganCheckout = useRef(false);
+  const paymentTracked = useRef("");
+  useEffect(() => {
+    const record = () => {
+      if (!beganCheckout.current && cart.items.length && cart.items.every(i => i.sku || i.trialId || i.variantId)) {
+        beganCheckout.current = trackBeginCheckout(cart.items.map(i => ({ item_id: i.sku || i.trialId || `HTH-${i.variantId}`, item_name: i.name, price: i.pricePaise / 100, quantity: i.quantity })), cart.subtotal / 100, "INR");
+      }
+    };
+    record(); window.addEventListener(CONSENT_EVENT, record);
+    return () => window.removeEventListener(CONSENT_EVENT, record);
+  }, [cart.items, cart.subtotal]);
   const t = (id: string) => ctx?.texts[id] || id;
   const [country, setCountry] = useState(ctx?.country || "IN");
 
@@ -164,7 +188,12 @@ export function LiveCheckout() {
     fetch("/api/commerce/payment-methods")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
-        if (!cancelled && data) setPaymentConfig(data);
+        if (!cancelled && data) {
+          setPaymentConfig(data);
+          if (data.onlinePaymentEnabled === false) {
+            setMethod("cod");
+          }
+        }
       })
       .catch(() => {});
     return () => {
@@ -290,6 +319,8 @@ export function LiveCheckout() {
         })
         .filter((i) => (i.trialId ? i.variantId === 0 : i.variantId > 0));
 
+      const effectiveMethod = !onlinePaymentEnabled ? "cod" : selectedMethod;
+
       const response = await fetch("/api/commerce/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -297,7 +328,7 @@ export function LiveCheckout() {
           address,
           currency: paymentCurrency,
           locale: ctx?.locale || "en",
-          method: selectedMethod,
+          method: effectiveMethod,
           coupon: coupon || "",
           items,
         }),
@@ -328,7 +359,7 @@ export function LiveCheckout() {
 
       setQuote(result);
       if (result.analytics) {
-        trackBeginCheckout(result.analytics.items, result.analytics.total, result.analytics.currency);
+        trackAddShippingInfo("destination_quote", result.analytics.items, result.analytics.value, result.analytics.currency);
       }
       key.current = generateUUID();
       quotedItems.current = JSON.stringify(items);
@@ -347,10 +378,10 @@ export function LiveCheckout() {
   }
 
   function handleMethodChange(newMethod: "upi" | "card" | "netbanking" | "cod" | "prepaid") {
+    if (!onlinePaymentEnabled && newMethod !== "cod") return;
     setMethod(newMethod);
-    if (isAddressComplete(formData, country)) {
-      computeQuote(newMethod, formData, country, false);
-    }
+    key.current = generateUUID();
+    computeQuote(newMethod, formData, country, false);
   }
 
   async function pay() {
@@ -378,7 +409,7 @@ export function LiveCheckout() {
         key.current = generateUUID();
       }
 
-      if (!quote.id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(quote.id)) {
+      if (!quote.id || quote.method !== method || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(quote.id)) {
         await computeQuote(method, formData, country, false);
         return;
       }
@@ -391,11 +422,16 @@ export function LiveCheckout() {
           idempotencyKey: key.current,
           currencyAcceptance: quote.currency,
           inrAcceptance: inrAccepted,
+          method: method,
         }),
       });
 
       const p: Payment & { error?: string; preferredMethod?: string } = await response.json();
       if (!response.ok) throw new Error(p.error);
+
+      if (quote.analytics && paymentTracked.current !== quote.id) {
+        if (trackAddPaymentInfo(method, quote.analytics.items, quote.analytics.value, quote.analytics.currency)) paymentTracked.current = quote.id;
+      }
 
       if (saveAddressToAccount && customer) {
         fetch("/api/customer/addresses", {
@@ -415,8 +451,19 @@ export function LiveCheckout() {
       }
 
       const resultUrl = `/purchase/${p.orderId}?token=${encodeURIComponent(p.token)}`;
-      if (p.paymentStatus === "cod_due" || p.paymentStatus === "paid") {
+      // Cash on Delivery must ALWAYS go directly to the confirmation order receipt, NEVER to YouPI or payment gateway!
+      if (method === "cod" || p.preferredMethod === "cod" || p.paymentStatus === "cod_due" || p.paymentStatus === "paid") {
+        if (method === "cod" && p.paymentStatus !== "cod_due" && p.paymentStatus !== "paid") {
+          setError("Cash on Delivery could not be confirmed for this order. Please check bag requirements or re-verify address.");
+          setBusy(false);
+          return;
+        }
         window.location.assign(resultUrl);
+        return;
+      }
+
+      if (p.gateway === "youpi" && p.checkoutUrl) {
+        window.location.assign(p.checkoutUrl);
         return;
       }
 
@@ -830,113 +877,146 @@ export function LiveCheckout() {
                 <h3 id="payment-methods-legend" className="text-sm font-bold text-[#171713]">
                   2. Select Payment Method
                 </h3>
-                <p className="text-xs text-[#526359]">Choose prepaid to unlock instant discounts and priority dispatch</p>
+                <p className="text-xs text-[#526359]">
+                  {onlinePaymentEnabled
+                    ? "Choose prepaid to unlock instant discounts and priority dispatch"
+                    : "Cash on Delivery is currently the only available payment method"}
+                </p>
               </div>
-              <Link
-                href="/payment-methods"
-                target="_blank"
-                className="text-xs text-[#23483a] hover:underline flex items-center gap-1 font-semibold"
-              >
-                Why prepaid? <ArrowRight className="w-3 h-3" />
-              </Link>
+              {onlinePaymentEnabled && (
+                <Link
+                  href="/payment-methods"
+                  target="_blank"
+                  className="text-xs text-[#23483a] hover:underline flex items-center gap-1 font-semibold"
+                >
+                  Why prepaid? <ArrowRight className="w-3 h-3" />
+                </Link>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {!onlinePaymentEnabled && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-[#fefce8] border border-[#fde047] text-xs text-[#854d0e]">
+                <Truck className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  <strong>Online payment disabled:</strong> All online payment gateways are currently paused. Orders are accepted exclusively via Cash on Delivery.
+                </span>
+              </div>
+            )}
+
+            {country !== "IN" && !onlinePaymentEnabled && (
+              <div className="p-4 rounded-xl border border-[#fca5a5] bg-[#fef2f2] text-xs text-[#991b1b]">
+                <strong>Online payment paused:</strong> Digital payment gateways are currently turned off. Cash on Delivery is currently available for domestic delivery in India only.
+              </div>
+            )}
+
+            {country === "IN" && !codEnabled && !onlinePaymentEnabled && (
+              <div className="p-4 rounded-xl border border-[#fca5a5] bg-[#fef2f2] text-xs text-[#991b1b]">
+                <strong>No payment method available:</strong> Both online payments and Cash on Delivery are currently turned off. Please contact customer support.
+              </div>
+            )}
+
+            <div className={`grid ${onlinePaymentEnabled ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"} gap-3`}>
               {/* Option 1: UPI / QR Code */}
-              <label
-                className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  method === "upi"
-                    ? "border-[#23483a] bg-[#f4f7f2] shadow-sm"
-                    : "border-[#d7d5c7] bg-white hover:border-[#b8b5a8]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment_choice"
-                  value="upi"
-                  checked={method === "upi"}
-                  onChange={() => handleMethodChange("upi")}
-                  className="mt-1 accent-[#23483a] w-4 h-4 cursor-pointer"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[#171713] text-sm flex items-center gap-1.5">
-                      <Zap className="w-4 h-4 text-[#23483a]" />
-                      UPI &amp; QR Code
-                    </span>
-                    <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
-                      ⚡ Save {upiValue}%
-                    </span>
+              {onlinePaymentEnabled && (
+                <label
+                  className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    method === "upi"
+                      ? "border-[#23483a] bg-[#f4f7f2] shadow-sm"
+                      : "border-[#d7d5c7] bg-white hover:border-[#b8b5a8]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment_choice"
+                    value="upi"
+                    checked={method === "upi"}
+                    onChange={() => handleMethodChange("upi")}
+                    className="mt-1 accent-[#23483a] w-4 h-4 cursor-pointer"
+                  />
+                  <div className="flex-1 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-[#171713] text-sm flex items-center gap-1.5">
+                        <Zap className="w-4 h-4 text-[#23483a]" />
+                        UPI &amp; QR Code
+                      </span>
+                      <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
+                        ⚡ Save {upiValue}%
+                      </span>
+                    </div>
+                    <p className="text-[#526359] leading-tight">
+                      Instant scan with Google Pay, PhonePe, Paytm, or BHIM. Zero processing fee.
+                    </p>
                   </div>
-                  <p className="text-[#526359] leading-tight">
-                    Instant scan with Google Pay, PhonePe, Paytm, or BHIM. Zero processing fee.
-                  </p>
-                </div>
-              </label>
+                </label>
+              )}
 
               {/* Option 2: Cards */}
-              <label
-                className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  method === "card"
-                    ? "border-[#23483a] bg-[#f4f7f2] shadow-sm"
-                    : "border-[#d7d5c7] bg-white hover:border-[#b8b5a8]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment_choice"
-                  value="card"
-                  checked={method === "card"}
-                  onChange={() => handleMethodChange("card")}
-                  className="mt-1 accent-[#23483a] w-4 h-4 cursor-pointer"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[#171713] text-sm flex items-center gap-1.5">
-                      <CreditCard className="w-4 h-4 text-[#b39156]" />
-                      Credit &amp; Debit Cards
-                    </span>
-                    <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
-                      💳 Save {cardValue}%
-                    </span>
+              {onlinePaymentEnabled && (
+                <label
+                  className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    method === "card"
+                      ? "border-[#23483a] bg-[#f4f7f2] shadow-sm"
+                      : "border-[#d7d5c7] bg-white hover:border-[#b8b5a8]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment_choice"
+                    value="card"
+                    checked={method === "card"}
+                    onChange={() => handleMethodChange("card")}
+                    className="mt-1 accent-[#23483a] w-4 h-4 cursor-pointer"
+                  />
+                  <div className="flex-1 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-[#171713] text-sm flex items-center gap-1.5">
+                        <CreditCard className="w-4 h-4 text-[#b39156]" />
+                        Credit &amp; Debit Cards
+                      </span>
+                      <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
+                        💳 Save {cardValue}%
+                      </span>
+                    </div>
+                    <p className="text-[#526359] leading-tight">
+                      Visa, MasterCard, RuPay, Amex. 256-bit AES encrypted via Razorpay.
+                    </p>
                   </div>
-                  <p className="text-[#526359] leading-tight">
-                    Visa, MasterCard, RuPay, Amex. 256-bit AES encrypted via Razorpay.
-                  </p>
-                </div>
-              </label>
+                </label>
+              )}
 
               {/* Option 3: Net Banking */}
-              <label
-                className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  method === "netbanking"
-                    ? "border-[#23483a] bg-[#f4f7f2] shadow-sm"
-                    : "border-[#d7d5c7] bg-white hover:border-[#b8b5a8]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment_choice"
-                  value="netbanking"
-                  checked={method === "netbanking"}
-                  onChange={() => handleMethodChange("netbanking")}
-                  className="mt-1 accent-[#23483a] w-4 h-4 cursor-pointer"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-[#171713] text-sm flex items-center gap-1.5">
-                      <Building2 className="w-4 h-4 text-[#46524a]" />
-                      Net Banking &amp; Wallets
-                    </span>
-                    <span className="text-[11px] font-medium text-[#46524a] bg-[#f0ede6] px-2 py-0.5 rounded-full">
-                      50+ Banks
-                    </span>
+              {onlinePaymentEnabled && (
+                <label
+                  className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    method === "netbanking"
+                      ? "border-[#23483a] bg-[#f4f7f2] shadow-sm"
+                      : "border-[#d7d5c7] bg-white hover:border-[#b8b5a8]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment_choice"
+                    value="netbanking"
+                    checked={method === "netbanking"}
+                    onChange={() => handleMethodChange("netbanking")}
+                    className="mt-1 accent-[#23483a] w-4 h-4 cursor-pointer"
+                  />
+                  <div className="flex-1 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-[#171713] text-sm flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-[#46524a]" />
+                        Net Banking &amp; Wallets
+                      </span>
+                      <span className="text-[11px] font-medium text-[#46524a] bg-[#f0ede6] px-2 py-0.5 rounded-full">
+                        50+ Banks
+                      </span>
+                    </div>
+                    <p className="text-[#526359] leading-tight">
+                      HDFC, ICICI, SBI, Axis, Cred &amp; popular digital wallets.
+                    </p>
                   </div>
-                  <p className="text-[#526359] leading-tight">
-                    HDFC, ICICI, SBI, Axis, Cred &amp; popular digital wallets.
-                  </p>
-                </div>
-              </label>
+                </label>
+              )}
 
               {/* Option 4: COD (Only for India) */}
               {country === "IN" && codEnabled && (
@@ -975,6 +1055,8 @@ export function LiveCheckout() {
                         ? cartSubtotalRupees < codMin
                           ? `COD requires a minimum bag value of ₹${codMin}.`
                           : `COD is available for orders up to ₹${codMax}. Please select prepaid payment.`
+                        : !onlinePaymentEnabled
+                        ? "Pay cash upon delivery to your courier. Online payments are currently paused."
                         : "Pay cash upon delivery. Subject to phone confirmation. No discount."}
                     </p>
                   </div>
@@ -1144,15 +1226,28 @@ export function LiveCheckout() {
                 <button
                   type="button"
                   onClick={pay}
-                  disabled={busy || isBelowMinDeliveryOrder || (country !== "IN" && quote.currency === "INR" && !inrAccepted)}
+                  disabled={
+                    busy ||
+                    isBelowMinDeliveryOrder ||
+                    (country !== "IN" && quote.currency === "INR" && !inrAccepted) ||
+                    (!onlinePaymentEnabled && (country !== "IN" || !codEnabled || !isCodSubtotalValid))
+                  }
                   className="w-full min-h-[50px] rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {busy ? (
                     "Processing…"
                   ) : isBelowMinDeliveryOrder ? (
                     `Minimum Order ₹${minDeliveryOrder} Required`
+                  ) : !onlinePaymentEnabled && country !== "IN" ? (
+                    "Domestic COD Only Available"
+                  ) : !onlinePaymentEnabled && !codEnabled ? (
+                    "No Payment Method Available"
                   ) : method === "cod" ? (
-                    "Place Cash on Delivery Order →"
+                    !isCodSubtotalValid ? (
+                      `COD Available ₹${codMin}–₹${codMax}`
+                    ) : (
+                      "Place Cash on Delivery Order →"
+                    )
                   ) : method === "upi" ? (
                     `Pay ${formatMoney(quote.totalMinor, quote.currency, ctx?.locale)} with UPI →`
                   ) : method === "card" ? (

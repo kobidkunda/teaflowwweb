@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 export interface PaymentMethodsData {
+  onlinePaymentEnabled?: boolean;
   discounts: {
     upi: {
       enabled: boolean;
@@ -86,6 +87,19 @@ export function PaymentMethodsInteractiveHub({ data }: { data: PaymentMethodsDat
 
   return (
     <div className="payment-methods-hub space-y-16">
+      {/* Store Notice: When online payments are disabled */}
+      {data.onlinePaymentEnabled === false && (
+        <div className="p-4 sm:p-5 rounded-xl border border-[#fde047] bg-[#fefce8] text-[#854d0e] flex items-center gap-3 shadow-sm">
+          <Truck className="w-6 h-6 flex-shrink-0 text-[#854d0e]" />
+          <div>
+            <h3 className="font-bold text-sm">Store Notice: Cash on Delivery Only Mode</h3>
+            <p className="text-xs mt-0.5 text-[#92400e]">
+              Online payment gateways (UPI, Cards, Net Banking) are currently paused. We are currently accepting orders exclusively via Cash on Delivery (COD) across India.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* SECTION 1: Interactive Savings Simulator */}
       <section
         className="rounded-2xl p-6 sm:p-10 border border-[#d7d5c7] bg-[#fbf8f1] shadow-sm relative overflow-hidden"

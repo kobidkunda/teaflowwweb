@@ -25,6 +25,7 @@ export default async function PaymentMethodsPage() {
   const s = getShippingSettings();
 
   const data: PaymentMethodsData = {
+    onlinePaymentEnabled: p.online_payment_enabled,
     discounts: {
       upi: {
         enabled: p.upi_discount_enabled,

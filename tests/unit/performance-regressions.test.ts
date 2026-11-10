@@ -10,6 +10,8 @@ vi.mock("next/script", () => ({
   default: ({ strategy, ...props }: Record<string, unknown>) =>
     React.createElement("script", { ...props, "data-strategy": strategy }),
 }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+import { gtmLoaderScript, trackingBootstrap } from "@/lib/seo/consent";
 import { AnalyticsHeadScripts } from "@/components/analytics/AnalyticsScripts";
 import { GET as getCatalog } from "@/app/ai-catalog.json/route";
 import { GET as getLegacyCatalog } from "@/app/.well-known/ai-catalog.json/route";
@@ -23,38 +25,32 @@ const config: PublicTrackingConfig = {
 const render = (overrides: Partial<PublicTrackingConfig> = {}) =>
   renderToStaticMarkup(React.createElement(AnalyticsHeadScripts, { config: { ...config, ...overrides } }));
 
-describe("Google tracking ownership and late loading", () => {
-  it("loads only the GTM owner when both Google integrations are enabled", () => {
-    const html = render();
-    expect(html).toContain("gtm.js?id=");
-    expect(html).not.toContain("gtag/js");
-    expect(html).toContain('data-strategy="lazyOnload"');
-  });
-  it("retains standalone GA4 when GTM is disabled or has no container", () => {
-    for (const overrides of [{ gtmEnabled: false }, { gtmContainerId: "" }]) {
-      expect(render(overrides)).toContain("gtag/js?id=G-EXAMPLE");
-      expect(render(overrides)).not.toContain("gtm.js?id=");
+describe("Google tracking ownership and consent loading", () => {
+  it("does not render vendor requests before a browser consent decision", () => {
+    for (const overrides of [{}, { gtmEnabled: false }, { gtmContainerId: "" }]) {
+      const html = render(overrides);
+      expect(html).not.toContain("gtm.js?id=");
+      expect(html).not.toContain("gtag/js");
+      expect(html).not.toContain("fbevents.js");
     }
   });
-  it("loads once after load without requestIdleCallback and preserves queued commerce", () => {
-    const source = render().match(/<script[^>]*id="google-tag-manager"[^>]*>([\s\S]*?)<\/script>/)?.[1];
-    expect(source).toBeTruthy();
+  it("preserves configured standalone fallback in the synchronous bootstrap", () => {
+    expect(trackingBootstrap({ ...config, gtmEnabled: false })).toContain('"ga4MeasurementId":"G-EXAMPLE"');
+  });
+  it("loads GTM only once and preserves previously queued commerce", () => {
     const queued = { event: "add_to_cart", ecommerce: { value: 199 } };
     const dataLayer = [queued];
     const inserted: Array<{ src?: string }> = [];
     const context = vm.createContext({
       window: { dataLayer },
-      document: {
-        createElement: () => ({}),
-        getElementsByTagName: () => [{ parentNode: { insertBefore: (script: { src?: string }) => inserted.push(script) } }],
-      },
+      document: { createElement: () => ({}), head: { appendChild: (script: { src?: string }) => inserted.push(script) } },
     });
-    vm.runInContext(source!, context);
-    vm.runInContext(source!, context);
+    const source = gtmLoaderScript("GTM-EXAMPLE");
+    vm.runInContext(source, context); vm.runInContext(source, context);
     expect(inserted).toHaveLength(1);
     expect(inserted[0].src).toBe("https://www.googletagmanager.com/gtm.js?id=GTM-EXAMPLE");
-    expect(dataLayer[0]).toBe(queued);
-    expect(dataLayer).toHaveLength(2);
+    expect(dataLayer[0]).toBe(queued); expect(dataLayer).toHaveLength(2);
+    expect(gtmLoaderScript("bad-id';alert(1)")).toBe("");
   });
 });
 

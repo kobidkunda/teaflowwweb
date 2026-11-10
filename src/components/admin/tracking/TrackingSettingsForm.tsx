@@ -240,13 +240,27 @@ export function TrackingSettingsForm() {
       tax: 95.0,
       items: sampleItems,
     });
-    logTestEvent("purchase", {
+    if (typeof window !== "undefined") {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: "teafloww_purchase",
+        tf_purchase_value: 1995.0,
+        tf_purchase_currency: "INR",
+        tf_purchase_order_id: ref,
+        tf_purchase_event_id: `purchase_${ref}`,
+      });
+    }
+    logTestEvent("purchase (standard + teafloww_purchase)", {
       transaction_id: ref,
       currency: "INR",
       value: 1995.0,
       shipping: 0.0,
       tax: 95.0,
       items: sampleItems,
+      tf_purchase_value: 1995.0,
+      tf_purchase_currency: "INR",
+      tf_purchase_order_id: ref,
+      tf_purchase_event_id: `purchase_${ref}`,
     });
   };
 
@@ -488,8 +502,7 @@ export function TrackingSettingsForm() {
                 </a>
               </div>
               <p>
-                Tags configured in GTM (GA4, Google Ads Conversion Linker, Remarketing) will receive
-                all events dispatched to <code className="bg-[#ede9df] px-1 py-0.5 rounded">window.dataLayer</code>.
+                GTM receives website events through <code className="bg-[#ede9df] px-1 py-0.5 rounded">window.dataLayer</code>. Configure matching event tags, triggers and consent checks inside the container; loading GTM alone does not confirm delivery to GA4 or advertising platforms.
               </p>
             </div>
           </div>
@@ -545,7 +558,7 @@ export function TrackingSettingsForm() {
                 <p className="text-xs text-red-600 mt-1">{errors.metaPixelId}</p>
               )}
               <p className="text-xs text-[#555f50] mt-1.5">
-                Found in Meta Events Manager &gt; Data Sources. Automatically forwards standard events:{" "}
+                Standalone fallback when GTM is disabled. With GTM enabled, configure Meta in that container; this direct pixel is suppressed. Supported events:{" "}
                 <code className="text-[11px]">PageView</code>, <code className="text-[11px]">ViewContent</code>,{" "}
                 <code className="text-[11px]">AddToCart</code>, <code className="text-[11px]">InitiateCheckout</code>,{" "}
                 <code className="text-[11px]">Purchase</code>, <code className="text-[11px]">Lead</code>.
