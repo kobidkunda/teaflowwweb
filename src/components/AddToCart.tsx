@@ -8,24 +8,30 @@ export function AddToCart({
   variant,
   accessibleLabel,
   disableModal = false,
+  label,
 }: {
   product: Product;
-  variant: Variant;
+  variant?: Variant;
   accessibleLabel?: string;
   disableModal?: boolean;
+  label?: React.ReactNode;
 }) {
   const { add, openQuickModal } = useCart();
   const [added, setAdded] = useState(false);
 
-  // Lowest amount / lowest price variant
-  const lowestVariant =
-    product.variants && product.variants.length > 0
-      ? [...product.variants].sort((a, b) => a.price_paise - b.price_paise)[0] || variant
-      : variant;
+  // Lowest in-stock variant, or fallback to lowest overall variant, or fallback to passed variant
+  const inStockVariants = (product.variants || []).filter((v) => v.stock > 0);
+  const sortedInStock = [...inStockVariants].sort((a, b) => a.price_paise - b.price_paise);
+  const sortedAll = product.variants && product.variants.length > 0
+    ? [...product.variants].sort((a, b) => a.price_paise - b.price_paise)
+    : [];
+
+  const lowestVariant = sortedInStock[0] || sortedAll[0] || variant;
+  const target = (variant && variant.stock > 0) ? variant : (lowestVariant || variant);
+  const isOutOfStock = !target || target.stock < 1;
 
   const handleQuickAdd = () => {
-    const target = lowestVariant || variant;
-    if (!target || target.stock < 1) return;
+    if (isOutOfStock) return;
 
     add({
       variantId: target.id,
@@ -55,14 +61,14 @@ export function AddToCart({
           ? `${added ? "Added to bag. " : ""}${accessibleLabel}`
           : undefined
       }
-      disabled={variant.stock < 1}
+      disabled={isOutOfStock}
       onClick={handleQuickAdd}
     >
-      {variant.stock < 1
+      {isOutOfStock
         ? "Unavailable"
         : added
         ? "Added ✓ · Add another"
-        : "Quick add +"}
+        : label || "Quick add +"}
     </button>
   );
 }

@@ -1,5 +1,25 @@
 # Prioritized Development Checklist
 
+## Homepage Signature Blends Carousel: Price Range & Add-to-Cart Modal Fix — 2026-11-12
+- [x] Price Range Calculation & Display:
+  - Updated `SignatureBlendsCarousel.tsx` to calculate `minPrice` and `maxPrice` across all product variants (`Math.min` and `Math.max` over `variantPrices`).
+  - Implemented dynamic price range rendering (`₹min – ₹max`) when a product has multiple variant prices, matching `ShopProductCard` and `ProductCard`.
+  - Maintained single-price rendering with compare-at original price comparison and discount calculations when a product has only one price.
+  - Added responsive CSS typography `clamp(17px, 2vw, 22px)` to prevent text clipping on narrow mobile viewports in `SignatureBlendsShelf.module.css`.
+- [x] Add to Cart & Quick Variant Modal Activation:
+  - Fixed out-of-stock variant blocking in `AddToCart.tsx`: prioritized lowest-priced in-stock variant (`sortedInStock[0]`) rather than blindly taking index 0 or out-of-stock sample variants (which previously disabled Product 1 Darjeeling Clonal First Flush).
+  - Ensured Add to Cart button is only disabled when all variants of a product are genuinely out of stock.
+  - Added support for `label` prop on `AddToCart.tsx` with fallback to `"Quick add +"`, rendering a prominent `ShoppingBag` icon with `<StorefrontText id="shop.add_to_cart" fallback="Add to cart" />` on carousel cards.
+  - Fixed `openQuickModal` in `CartProvider.tsx` to prioritize in-stock variants when selecting the active item.
+  - Elevated modal backdrop `z-index` to `10000` in `globals.css` ensuring `QuickVariantModal` is never occluded by sticky banners, headers, or prompts.
+- [x] Automated Testing & Quality Assurance:
+  - Created unit tests in `tests/unit/signature-blends-price-range.test.ts` verifying multi-variant price range, single-price display, in-stock variant prioritization, and out-of-stock button states (5/5 tests passing).
+  - Created Playwright browser end-to-end test in `tests/e2e/signature-blends-homepage.spec.ts` verifying homepage carousel price range rendering, Add to Cart click, QuickVariantModal appearance with variant radio group, and clean dismissal (1/1 test passing).
+  - Verified `tests/unit/signature-blends-mobile.test.ts` (7/7 tests passing) and `tests/unit/quick-variant-modal.test.ts` (7/7 tests passing).
+  - Verified `npm run typecheck` passes with zero errors.
+  - Verified `npm run build` compiles all 101/101 static and dynamic routes successfully.
+
+
 ## Wholesale Order Payment Flow: Advance PG & Direct Bank Transfer — 2026-11-12
 - [x] Database & Persistence:
   - Created additive migration `scripts/migrations/054_wholesale_payment_settings.mjs` adding `wholesale_advance_percent`, `wholesale_bank_beneficiary`, `wholesale_bank_name`, `wholesale_bank_account_number`, `wholesale_bank_ifsc`, `wholesale_bank_branch`, and `wholesale_bank_upi_id` to `store_settings`.

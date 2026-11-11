@@ -16,12 +16,12 @@
 .category { margin: 0 0 10px; text-transform: capitalize; color: #365b47; font: 400 14px/1.4 Arial, Helvetica, sans-serif; }
 .shelf :global(.tf-card-tasting-notes) { font-size: 14px; color: #3d5041; margin: 0 0 14px; line-height: 1.5; height: auto; min-height: 0; }
 .shelf :global(.tf-card-stars-row) { margin-bottom: 16px; }
-.shelf :global(.tf-card-price-row) { margin: auto 0 14px; padding-top: 6px; gap: 12px; }
-.shelf :global(.tf-card-price) { color: #10392c; font-size: 23px; }
-.shelf :global(.tf-card-original-price) { color: #647466; font-size: 16px; }
-.shelf :global(.tf-card-actions .quick-add) { min-height: 48px; padding: 12px 10px; border: 1px solid #153e30; border-radius: 8px; background: #153e30; color: #fffdf6; font: 600 17px/1.3 Georgia, 'Times New Roman', serif; letter-spacing: 0; }
+.shelf :global(.tf-card-price-row) { margin: auto 0 14px; padding-top: 6px; gap: 10px; display: flex; align-items: baseline; flex-wrap: wrap; }
+.shelf :global(.tf-card-price) { color: #10392c; font-size: clamp(17px, 2vw, 22px); font-weight: 700; }
+.shelf :global(.tf-card-original-price) { color: #647466; font-size: 15px; }
+.shelf :global(.tf-card-actions .quick-add) { min-height: 48px; padding: 12px 10px; border: 1px solid #153e30; border-radius: 8px; background: #153e30; color: #fffdf6; font: 600 16px/1.3 Georgia, 'Times New Roman', serif; letter-spacing: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer; transition: background 0.2s ease, transform 0.1s ease; }
 .shelf :global(.tf-card-actions .quick-add:hover:not(:disabled)) { background: #28563d; }
-.shelf :global(.tf-card-actions .quick-add:disabled) { background: #e2e4d9; border-color: #bcc5b7; color: #4d5a4c; opacity: 1; }
+.shelf :global(.tf-card-actions .quick-add:disabled) { background: #e2e4d9; border-color: #bcc5b7; color: #4d5a4c; opacity: 1; cursor: not-allowed; }
 .missingImage { display: grid; place-items: center; min-height: 200px; color: #586454; font-size: 13px; }
 
 /* Bottom CTA Button */

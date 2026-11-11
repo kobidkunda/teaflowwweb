@@ -49,8 +49,10 @@ export function middleware(request: NextRequest) {
   if (isPrivateOrAdmin) {
     response.headers.set("Cache-Control", "private, no-store");
   } else if (!isStaticPublicAsset) {
-    // Public indexable storefront pages and feeds: allow edge CDN caching while enforcing browser revalidation
-    response.headers.set("Cache-Control", "public, max-age=0, s-maxage=3600, stale-while-revalidate=86400");
+    // Public indexable storefront pages: prevent stale edge CDN caching so admin catalog updates (category visibility, prices, inventory) reflect instantly
+    response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+    response.headers.set("CDN-Cache-Control", "no-store");
+    response.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
   }
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(name, value);

@@ -7990,7 +7990,7 @@ dialog.tf-pdf-dialog[open]::backdrop {
 .quick-variant-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 10000;
   background: rgba(17, 26, 20, 0.68);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);

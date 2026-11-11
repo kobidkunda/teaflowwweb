@@ -12,12 +12,16 @@ interface CategoryCirclesProps {
 export function CategoryCircles({ categories }: CategoryCirclesProps) {
   if (!categories || categories.length === 0) return null;
 
-  // Map incoming dynamic categories from DB / Admin / MCP (prioritize all active DB categories)
-  const displayItems = categories.map((c) => ({
-    slug: c.slug,
-    name: c.name,
-    cover: c.cover_image_url || "/uploads/cat-green-tea.jpg",
-  }));
+  // Filter out any hidden categories (is_active !== 0) and map display items
+  const displayItems = categories
+    .filter((c) => c && (c as { is_active?: number }).is_active !== 0)
+    .map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      cover: c.cover_image_url || "/uploads/cat-green-tea.jpg",
+    }));
+
+  if (displayItems.length === 0) return null;
 
   return (
     <section className="tf-categories-strip" aria-label="Browse teas by category">

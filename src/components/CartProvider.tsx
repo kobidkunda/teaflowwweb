@@ -76,8 +76,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [quickModalState, setQuickModalState] = useState<QuickModalState | null>(null);
 
   const openQuickModal = useCallback((product: Product, initialVariant?: Variant) => {
+    const inStock = product.variants?.filter((v) => v.stock > 0) || [];
+    const lowestInStock = inStock.length > 0
+      ? [...inStock].sort((a, b) => a.price_paise - b.price_paise)[0]
+      : null;
     const lowestVariant =
       initialVariant ||
+      lowestInStock ||
       [...product.variants].sort((a, b) => a.price_paise - b.price_paise)[0] ||
       product.variants[0];
     if (!lowestVariant) return;

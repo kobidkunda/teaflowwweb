@@ -108,7 +108,7 @@ export function listStorefrontCategories(): Category[] {
   }
   const rows = getDb()
     .prepare(
-      "SELECT DISTINCT category AS name FROM products ORDER BY category ASC"
+      "SELECT DISTINCT category AS name FROM products WHERE status = 'published' AND is_enabled = 1 AND category IS NOT NULL AND category != '' ORDER BY category ASC"
     )
     .all() as { name: string }[];
   return rows.map((r, i) => ({ id: -(i + 1), slug: r.name, name: r.name }));

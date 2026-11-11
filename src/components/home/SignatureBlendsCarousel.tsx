@@ -5,7 +5,7 @@ import { useDisplayMoney } from "@/components/international/InternationalProvide
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Heart, Pause, Play, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Pause, Play, ArrowRight, ShoppingBag } from "lucide-react";
 import type { Product, Variant } from "@/lib/products";
 
 import { AddToCart } from "@/components/AddToCart";
@@ -296,17 +296,30 @@ export function SignatureBlendsCarousel({
           onTouchEnd={handleTouchEnd}
         >
           {products.map((product, index) => {
-            const variant: Variant | undefined = product.variants[0];
-            if (!variant) return null;
+            const inStockVariants = (product.variants || []).filter((v) => v.stock > 0);
+            const sortedInStock = [...inStockVariants].sort((a, b) => a.price_paise - b.price_paise);
+            const sortedVariants = [...(product.variants || [])].sort((a, b) => a.price_paise - b.price_paise);
+            const activeVariant: Variant | undefined = sortedInStock[0] || sortedVariants[0] || product.variants?.[0];
+            if (!activeVariant) return null;
 
             const isWished = !!wishlist[product.id];
             const imageUrl =
               product.primary_image?.url ||
               product.primary_image_url ||
-              variant.product_image_url;
+              activeVariant.product_image_url;
             const imageAlt =
               product.primary_image?.alt_text ||
               `Artisan tea canister for ${product.name}`;
+
+            const variantPrices = (product.variants || [])
+              .map((v) => v.price_paise)
+              .filter((p) => typeof p === "number" && p > 0);
+            const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : activeVariant.price_paise;
+            const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : activeVariant.price_paise;
+            const hasMultiplePrices = minPrice !== maxPrice;
+            const priceDisplay = hasMultiplePrices
+              ? `${formatINR(minPrice)} – ${formatINR(maxPrice)}`
+              : formatINR(activeVariant.price_paise);
 
             return (
               <article
@@ -315,7 +328,7 @@ export function SignatureBlendsCarousel({
                 data-testid={`signature-card-${product.slug}`}
                 aria-label={`${index + 1} of ${products.length}: ${product.name}`}
               >
-                <ProductImpression item={catalogItem(product, variant)} list="Signature Blends" />
+                <ProductImpression item={catalogItem(product, activeVariant)} list="Signature Blends" />
                 {/* Visual Tin Container */}
                 <div className="tf-product-card-visual">
                   <div className="tf-card-top-row">
@@ -363,21 +376,37 @@ export function SignatureBlendsCarousel({
                   </div>
 
                   <div className="tf-card-price-row">
-                    <span className="tf-card-price">{formatINR(variant.price_paise)}</span>
-                    {variant.compare_at_price_paise && variant.compare_at_price_paise > variant.price_paise ? (
-                      <>
-                        <del
-                          className="tf-card-original-price"
-                          aria-label={`Original price ${formatINR(variant.compare_at_price_paise)}`}
-                        >
-                          {formatINR(variant.compare_at_price_paise)}
-                        </del>
-                      </>
+                    <span className="tf-card-price">{priceDisplay}</span>
+                    {activeVariant.compare_at_price_paise &&
+                    activeVariant.compare_at_price_paise > activeVariant.price_paise &&
+                    !hasMultiplePrices ? (
+                      <del
+                        className="tf-card-original-price"
+                        aria-label={`Original price ${formatINR(activeVariant.compare_at_price_paise)}`}
+                      >
+                        {formatINR(activeVariant.compare_at_price_paise)}
+                      </del>
                     ) : null}
                   </div>
 
                   <div className="tf-card-actions">
-                    <AddToCart product={product} variant={variant} accessibleLabel={`Add ${product.name} to bag`} />
+                    <AddToCart
+                      product={product}
+                      variant={activeVariant}
+                      label={
+                        <>
+                          <ShoppingBag
+                            size={16}
+                            aria-hidden="true"
+                            style={{ display: "inline-block", marginRight: "6px", verticalAlign: "middle" }}
+                          />
+                          <span>
+                            <StorefrontText id="shop.add_to_cart" fallback="Add to cart" />
+                          </span>
+                        </>
+                      }
+                      accessibleLabel={`Add ${product.name} to bag`}
+                    />
                   </div>
                 </div>
               </article>
