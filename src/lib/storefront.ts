@@ -106,12 +106,21 @@ export function listStorefrontCategories(): Category[] {
   } catch {
     /* fall through to legacy */
   }
-  const rows = getDb()
-    .prepare(
-      "SELECT DISTINCT category AS name FROM products WHERE status = 'published' AND is_enabled = 1 AND category IS NOT NULL AND category != '' ORDER BY category ASC"
-    )
-    .all() as { name: string }[];
-  return rows.map((r, i) => ({ id: -(i + 1), slug: r.name, name: r.name }));
+  try {
+    const rows = getDb()
+      .prepare(
+        "SELECT DISTINCT category AS name FROM products WHERE status = 'published' AND is_enabled = 1 AND category IS NOT NULL AND category != '' ORDER BY category ASC"
+      )
+      .all() as { name: string }[];
+    return rows.map((r, i) => ({ id: -(i + 1), slug: r.name, name: r.name }));
+  } catch {
+    const rows = getDb()
+      .prepare(
+        "SELECT DISTINCT category AS name FROM products WHERE category IS NOT NULL AND category != '' ORDER BY category ASC"
+      )
+      .all() as { name: string }[];
+    return rows.map((r, i) => ({ id: -(i + 1), slug: r.name, name: r.name }));
+  }
 }
 
 /** Gallery images for a product; [] when table absent (caller shows placeholder). */

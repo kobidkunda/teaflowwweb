@@ -418,9 +418,14 @@ export function QuickVariantModal() {
                     </div>
 
                     <div className="quick-variant-pill-bottom">
-                      <strong className="quick-variant-pill-price">
-                        {formatMoney(v.price_paise)}
-                      </strong>
+                      <div>
+                        <strong className="quick-variant-pill-price">
+                          {formatMoney(v.price_paise)}
+                        </strong>
+                        <span className="text-[10px] text-[#707c72] ml-1">
+                          (~{cupsFromGrams(v.grams).toLocaleString("en-IN")} cups)
+                        </span>
+                      </div>
                       {discountPct > 0 && (
                         <span className="quick-variant-pill-discount">
                           {discountPct}% OFF

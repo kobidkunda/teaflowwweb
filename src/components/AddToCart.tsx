@@ -67,7 +67,7 @@ export function AddToCart({
       {isOutOfStock
         ? "Unavailable"
         : added
-        ? "Added ✓ · Add another"
+        ? (label ? "Added to Cart ✓" : "Added ✓ · Add another")
         : label || "Quick add +"}
     </button>
   );

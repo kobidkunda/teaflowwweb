@@ -149,6 +149,7 @@ describe("Shop Redesign — Contemporary Himalayan Connoisseurship", () => {
     expect(html).toContain("Sensory Cupping Radar");
     expect(html).toContain("Floral");
     expect(html).toContain(product.name);
+    expect(html).toContain("Select Pack Size");
     expect(html).toContain("Full Passport");
   });
 

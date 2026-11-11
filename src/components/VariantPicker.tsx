@@ -18,6 +18,7 @@ import { SubscribeLink } from "@/components/subscriptions/SubscribeLink";
 import { formatPackWeight } from "@/lib/packSize";
 import { ShoppingCart, Share2, Check } from "lucide-react";
 import { catalogItem, trackViewItem } from "@/lib/seo/tracking";
+import { cupsFromGrams } from "@/lib/money";
 
 export interface VariantPickerProps {
   product: Product;
@@ -199,7 +200,15 @@ export function VariantPicker({
   }
 
   const isSoldOut = activeVariant.stock < 1;
-  const servings = activeVariant.servings || Math.floor(activeVariant.grams / product.leaf_dose_grams);
+  const calculatedServings = product.leaf_dose_grams && product.leaf_dose_grams > 0
+    ? Math.floor(activeVariant.grams / product.leaf_dose_grams)
+    : cupsFromGrams(activeVariant.grams);
+  const servings =
+    (activeVariant.servings && activeVariant.servings > 50 && activeVariant.servings >= Math.floor(activeVariant.grams / 3))
+      ? activeVariant.servings
+      : (activeVariant.servings && activeVariant.grams <= 1000)
+      ? activeVariant.servings
+      : calculatedServings;
   const perCupDisplay = formatPerCup(activeVariant.price_paise, servings);
   const sizeLabel = formatPackWeight(activeVariant.grams);
 
@@ -493,11 +502,18 @@ export function VariantPicker({
             const v = resolveVariant(product.variants, selectedFormat, grams);
             const sizeSoldOut = !v || v.stock < 1;
             const isSelected = activeVariant.grams === grams;
-            const cups = v?.servings || Math.floor(grams / product.leaf_dose_grams);
+            const calculatedCups = product.leaf_dose_grams && product.leaf_dose_grams > 0
+              ? Math.floor(grams / product.leaf_dose_grams)
+              : cupsFromGrams(grams);
+            const cups = (v?.servings && v.servings > 50 && v.servings >= Math.floor(grams / 3))
+              ? v.servings
+              : (v?.servings && grams <= 1000)
+              ? v.servings
+              : calculatedCups;
 
             const displaySizeTitle =
               selectedFormat === "pyramid_bags" && grams < 1000
-                ? `${v?.servings || 25} Bags (${formatPackWeight(grams)})`
+                ? `${cups || 25} Bags (${formatPackWeight(grams)})`
                 : formatPackWeight(grams);
 
             return (
@@ -535,7 +551,7 @@ export function VariantPicker({
                     {v ? formatINR(v.price_paise) : ""}
                   </span>
                   <span className="text-[11px] text-[#6b7367] mt-0.5 block">
-                    {sizeSoldOut ? "Sold Out" : `~${cups} cups`}
+                    {sizeSoldOut ? "Sold Out" : `~${cups.toLocaleString("en-IN")} cups`}
                   </span>
                 </div>
               </button>

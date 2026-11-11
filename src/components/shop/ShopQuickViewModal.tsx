@@ -7,6 +7,7 @@ import Image from "next/image";
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
 import type { Product, Variant } from "@/lib/products";
 import { cupsFromGrams } from "@/lib/money";
+import { formatPackWeight } from "@/lib/packSize";
 import { AddToCart } from "@/components/AddToCart";
 import { X, Droplets, Mountain, Sparkles, ArrowRight } from "lucide-react";
 
@@ -242,10 +243,20 @@ export function ShopQuickViewModal({
               <div className="shop-modal-purchase">
                 {product.variants.length > 1 && (
                   <div className="shop-modal-variants">
-                    <span className="spec-label"> <StorefrontText id="copy_5167392d37cefc2a" fallback="Choose Packaging Format" /> </span>
+                    <span className="spec-label">
+                      <StorefrontText id="copy_65357f21fdcb965e" fallback="Select Pack Size" />
+                    </span>
                     <div className="shop-card-variant-pills">
                       {product.variants.map((v) => {
                         const isSelected = v.id === activeVariant.id;
+                        const weightStr = formatPackWeight(v.grams);
+                        const formatStr =
+                          v.packaging_format === "luxury_tin"
+                            ? "Tin"
+                            : v.packaging_format === "pyramid_bags"
+                            ? "Bags"
+                            : "Pouch";
+                        const cups = cupsFromGrams(v.grams);
                         return (
                           <button
                             key={v.id}
@@ -255,13 +266,25 @@ export function ShopQuickViewModal({
                             }`}
                             onClick={() => setSelectedVariantId(v.id)}
                             aria-pressed={isSelected}
+                            style={{
+                              display: "inline-flex",
+                              flexDirection: "column",
+                              alignItems: "flex-start",
+                              gap: "2px",
+                              padding: "6px 10px",
+                              minHeight: "48px",
+                              textAlign: "left",
+                            }}
                           >
-                            {v.grams} <StorefrontText id="copy_8c76882ff0c30a2b" fallback="g (" /> {v.packaging_format === "luxury_tin"
-                              ? "Tin"
-                              : v.packaging_format === "pyramid_bags"
-                              ? "Bags"
-                              : "Pouch"}
-                            )
+                            <span style={{ fontWeight: 600, fontSize: "12px", lineHeight: 1.2 }}>
+                              {weightStr} <span style={{ opacity: 0.75, fontWeight: 400 }}>({formatStr})</span>
+                            </span>
+                            <span style={{ fontSize: "11px", fontWeight: 700, color: isSelected ? "#1b3022" : "#23483a", lineHeight: 1.2 }}>
+                              {formatINR(v.price_paise)}
+                              <span style={{ fontWeight: 400, opacity: 0.7, marginLeft: "4px", fontSize: "10px" }}>
+                                ~{cups.toLocaleString("en-IN")} cups
+                              </span>
+                            </span>
                           </button>
                         );
                       })}
@@ -275,7 +298,9 @@ export function ShopQuickViewModal({
                       {formatINR(activeVariant.price_paise)}
                     </strong>
                     <span className="shop-modal-yield">
-                      {activeVariant.grams} <StorefrontText id="copy_6b8e375784466001" fallback="g · ~" /> {cupsFromGrams(activeVariant.grams)} <StorefrontText id="copy_43b69e82bee632b3" fallback="cups" /> </span>
+                      {formatPackWeight(activeVariant.grams)} · ~{cupsFromGrams(activeVariant.grams).toLocaleString("en-IN")}{" "}
+                      <StorefrontText id="copy_43b69e82bee632b3" fallback="cups" />
+                    </span>
                   </div>
                   <div className="shop-modal-cta-group">
                     <AddToCart product={product} variant={activeVariant} disableModal={true} />

@@ -26,16 +26,8 @@ const LeadCaptureModal = dynamic(
     import("@/components/cart/LeadCaptureModal").then((m) => m.LeadCaptureModal),
   { ssr: false }
 );
-const AddToCartPrompt = dynamic(
-  () =>
-    import("@/components/cart/AddToCartPrompt").then((m) => m.AddToCartPrompt),
-  { ssr: false }
-);
-const QuickVariantModal = dynamic(
-  () =>
-    import("@/components/cart/QuickVariantModal").then((m) => m.QuickVariantModal),
-  { ssr: false }
-);
+import { QuickVariantModal } from "@/components/cart/QuickVariantModal";
+import { AddToCartPrompt } from "@/components/cart/AddToCartPrompt";
 
 /**
  * StorefrontShell manages layout wrapping between public storefront routes and

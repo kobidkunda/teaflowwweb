@@ -4,6 +4,8 @@ import { useDisplayMoney } from "@/components/international/InternationalProvide
 
 import React, { useState, useEffect } from "react";
 import { useCart } from "@/components/CartProvider";
+import { cupsFromGrams } from "@/lib/money";
+import { formatPackWeight } from "@/lib/packSize";
 
 import type { Product, Variant, PackagingFormat } from "@/lib/products";
 
@@ -128,13 +130,19 @@ export function StickyPurchaseBar({
   if (!currentVariant) return null;
 
   const isSoldOut = currentVariant.stock < 1;
+  const calculatedServings = product.leaf_dose_grams && product.leaf_dose_grams > 0
+    ? Math.floor(currentVariant.grams / product.leaf_dose_grams)
+    : cupsFromGrams(currentVariant.grams);
   const servings =
-    currentVariant.servings || Math.floor(currentVariant.grams / product.leaf_dose_grams);
+    (currentVariant.servings && currentVariant.servings > 50 && currentVariant.servings >= Math.floor(currentVariant.grams / 3))
+      ? currentVariant.servings
+      : (currentVariant.servings && currentVariant.grams <= 1000)
+      ? currentVariant.servings
+      : calculatedServings;
   const perCupStr = formatPerCup(currentVariant.price_paise, servings);
   const formatName =
     FORMAT_LABELS[currentVariant.packaging_format] || "Loose Leaf";
-  const sizeName =
-    currentVariant.grams >= 1000 ? "1kg" : `${currentVariant.grams}g`;
+  const sizeName = formatPackWeight(currentVariant.grams);
 
   const handleQuickAdd = () => {
     if (isSoldOut || isAdding) return;

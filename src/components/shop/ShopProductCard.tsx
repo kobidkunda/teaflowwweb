@@ -39,8 +39,11 @@ export function ShopProductCard({
     product.variants.find((v) => v.id === selectedVariantId) ??
     product.variants[0];
 
+  const inStockVariants = (product.variants || []).filter((v) => v.stock > 0);
+  const sortedInStock = [...inStockVariants].sort((a, b) => a.price_paise - b.price_paise);
   const sortedVariants = [...product.variants].sort((a, b) => a.price_paise - b.price_paise);
-  const lowestVariant = sortedVariants[0] || activeVariant;
+  const lowestVariant = sortedInStock[0] || sortedVariants[0] || activeVariant;
+  const isProductSoldOut = inStockVariants.length === 0;
 
   const variantPrices = product.variants.map((v) => v.price_paise).filter((p) => typeof p === "number" && p > 0);
   const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : (activeVariant?.price_paise ?? 0);
@@ -104,7 +107,12 @@ export function ShopProductCard({
 
   const handleAddToCart = () => {
     const targetVariant = lowestVariant || activeVariant;
-    if (!targetVariant || targetVariant.stock < 1) return;
+    if (isProductSoldOut || !targetVariant) {
+      if (openQuickModal && targetVariant) {
+        openQuickModal(product, targetVariant);
+      }
+      return;
+    }
     add({
       variantId: targetVariant.id,
       sku: targetVariant.sku?.trim() || `HTH-${product.id}-${targetVariant.id}`,
@@ -295,10 +303,10 @@ export function ShopProductCard({
               type="button"
               className={`tf-mockup-add-to-cart-btn ${added ? "added" : ""}`}
               onClick={handleAddToCart}
-              disabled={activeVariant.stock < 1}
+              disabled={isProductSoldOut}
               aria-live="polite"
               aria-label={
-                activeVariant.stock < 1
+                isProductSoldOut
                   ? "Sold out"
                   : `Add ${product.name} to cart`
               }
@@ -306,7 +314,7 @@ export function ShopProductCard({
               <span className="tf-mockup-btn-left">
                 <ShoppingBag size={15} aria-hidden="true" />
                 <span>
-                  {activeVariant.stock < 1
+                  {isProductSoldOut
                     ? "Sold out"
                     : added
                     ? "Added to Cart ✓"

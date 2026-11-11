@@ -543,6 +543,43 @@ describe("Editorial PDP empty catalogue and sourcing safety", () => {
     expect(html).not.toContain("Add to Bag");
   });
 
+  it("formats bulk sizes as 1kg, 5kg, 10kg, 25kg, 35kg with truthful cup yields", () => {
+    const bulkVariants: Variant[] = [
+      { id: 1, product_id: 1, sku: "TFW-100G", packaging_format: "loose_leaf_pouch", grams: 100, price_paise: 3000, stock: 10, servings: 50 },
+      { id: 2, product_id: 1, sku: "TFW-250G", packaging_format: "loose_leaf_pouch", grams: 250, price_paise: 7000, stock: 10, servings: 125 },
+      { id: 3, product_id: 1, sku: "TFW-500G", packaging_format: "loose_leaf_pouch", grams: 500, price_paise: 14500, stock: 10, servings: 250 },
+      { id: 4, product_id: 1, sku: "TFW-1KG", packaging_format: "loose_leaf_pouch", grams: 1000, price_paise: 28000, stock: 10, servings: 500 },
+      { id: 5, product_id: 1, sku: "TFW-5KG", packaging_format: "loose_leaf_pouch", grams: 5000, price_paise: 140000, stock: 10, servings: 50 }, // default 50 in DB should be corrected
+      { id: 6, product_id: 1, sku: "TFW-10KG", packaging_format: "loose_leaf_pouch", grams: 10000, price_paise: 280000, stock: 10, servings: 50 },
+      { id: 7, product_id: 1, sku: "TFW-25KG", packaging_format: "loose_leaf_pouch", grams: 25000, price_paise: 700000, stock: 10, servings: 50 },
+      { id: 8, product_id: 1, sku: "TFW-35KG", packaging_format: "loose_leaf_pouch", grams: 35000, price_paise: 980000, stock: 10, servings: 50 },
+    ];
+
+    const html = renderWithCart(React.createElement(VariantPicker, {
+      product: { ...mockProduct, leaf_dose_grams: 2, variants: bulkVariants },
+    }));
+
+    // Check size titles
+    expect(html).toContain("100g");
+    expect(html).toContain("250g");
+    expect(html).toContain("500g");
+    expect(html).toContain("1kg");
+    expect(html).toContain("5kg");
+    expect(html).toContain("10kg");
+    expect(html).toContain("25kg");
+    expect(html).toContain("35kg");
+
+    // Check cups are truthfully calculated
+    expect(html).toContain("~50 cups");
+    expect(html).toContain("~125 cups");
+    expect(html).toContain("~250 cups");
+    expect(html).toContain("~500 cups");
+    expect(html).toContain("~2,500 cups");
+    expect(html).toContain("~5,000 cups");
+    expect(html).toContain("~12,500 cups");
+    expect(html).toContain("~17,500 cups");
+  });
+
   it("keeps demo checkout disclosure and an accessible purchase status", () => {
     const html = renderWithCart(React.createElement(VariantPicker, { product: mockProduct }));
     expect(html).toContain("No real payment is collected");
