@@ -343,7 +343,7 @@ export function SignatureBlendsCarousel({
                         className="tf-product-tin-img"
                       />
                     ) : (
-                      <span className={styles.missingImage}>Image unavailable</span>
+                      <span className={styles.missingImage}><StorefrontText id="copy_7817cd06563196ee" fallback="Image unavailable" /></span>
                     )}
                   </Link>
                 </div>

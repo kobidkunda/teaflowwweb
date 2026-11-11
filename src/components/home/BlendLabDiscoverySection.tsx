@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,22 +35,22 @@ export function BlendLabDiscoverySection() {
           className={styles.image}
         />
         <figcaption className={styles.caption}>
-          <span className={styles.cupStages}>Leaf <span aria-hidden="true">·</span> Infusion <span aria-hidden="true">·</span> Liquor <span aria-hidden="true">·</span> Milk</span>
+          <span className={styles.cupStages}><StorefrontText id="copy_b83382a973db8eca" fallback="Leaf" /> <span aria-hidden="true">·</span><StorefrontText id="copy_8c40b4eb62988a8b" fallback="Infusion" /> <span aria-hidden="true">·</span><StorefrontText id="copy_f66440f080ab3dfe" fallback="Liquor" /> <span aria-hidden="true">·</span><StorefrontText id="copy_8189b8409b18b1ef" fallback="Milk" /></span>
           <span className={styles.disclosure}>{customImage ? "A look at Blend Lab" : "AI-generated illustrative imagery"}</span>
         </figcaption>
       </figure>
       <div className={styles.copy}>
         <p className={styles.eyebrow}>{eyebrow}</p>
         <h2 id="blend-lab-home-heading" className={styles.title}>
-          {title === DEFAULT_TITLE ? <><span>Your tea.</span>{" "}<span>A world of</span>{" "}<span>possibilities.</span></> : title}
+          {title === DEFAULT_TITLE ? <><span><StorefrontText id="copy_4cc7f35aba8e2a6c" fallback="Your tea." /></span>{" "}<span><StorefrontText id="copy_76c49f4b7bf1fae8" fallback="A world of" /></span>{" "}<span><StorefrontText id="copy_1b31bbc1e93ed94a" fallback="possibilities." /></span></> : title}
         </h2>
         <p className={styles.description}>{description}</p>
         <div className={styles.actions}>
           <Link href="/blend-lab" className={styles.primary}>{placement?.cta_label || "Explore Blend Lab"}<ArrowRight size={21} aria-hidden="true" /></Link>
-          <Link href="/blend-lab#method" className={styles.secondary}>See how it works</Link>
+          <Link href="/blend-lab#method" className={styles.secondary}><StorefrontText id="copy_a105ad29235aa71e" fallback="See how it works" /></Link>
         </div>
         <ol className={styles.steps} role="list" aria-label="Your Blend Lab journey">
-          <li>Send a sample</li><li>Explore your cup</li><li>Shape your blend</li>
+          <li><StorefrontText id="copy_f9f9314a67a12260" fallback="Send a sample" /></li><li><StorefrontText id="copy_1869cf16485dbcad" fallback="Explore your cup" /></li><li><StorefrontText id="copy_9a298118290ad250" fallback="Shape your blend" /></li>
         </ol>
       </div>
     </section>

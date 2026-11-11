@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -156,7 +157,7 @@ export default function BrochurePage() {
                     textDecoration: "none",
                   }}
                 >
-                  <ExternalLink size={18} /> View in Browser
+                  <ExternalLink size={18} /><StorefrontText id="copy_863910b4ff1717af" fallback="View in Browser" />
                 </a>
               </div>
 
@@ -171,9 +172,9 @@ export default function BrochurePage() {
                   justifyContent: "center",
                 }}
               >
-                <span>Format: <strong>PDF Document</strong></span>
+                <span><StorefrontText id="copy_9a5649a42cb2fcef" fallback="Format:" /> <strong><StorefrontText id="copy_0cbeb39b2ff09b68" fallback="PDF Document" /></strong></span>
                 {settings.formatted_size && <span>&bull; Size: <strong>{settings.formatted_size}</strong></span>}
-                <span>&bull; Direct Origin Dispatch: <strong>Siliguri Hub</strong></span>
+                <span>&bull; Direct Origin Dispatch: <strong><StorefrontText id="copy_8f2965ee033b88d1" fallback="Siliguri Hub" /></strong></span>
               </div>
             </div>
           ) : (
@@ -187,12 +188,9 @@ export default function BrochurePage() {
                 margin: "0 auto",
               }}
             >
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "#ffffff", marginBottom: "8px" }}>
-                Harvest Catalogue Updating
+              <div style={{ fontSize: "16px", fontWeight: 600, color: "#ffffff", marginBottom: "8px" }}><StorefrontText id="copy_7a7b91a6de7f5aeb" fallback="Harvest Catalogue Updating" />
               </div>
-              <p style={{ margin: "0 0 16px 0", fontSize: "14px", color: "#d3dbce", lineHeight: 1.5 }}>
-                Our 2026 harvest dossier and wholesale catalog is being updated with the latest garden invoices.
-                You can browse our live catalog online or contact our wholesale desk directly.
+              <p style={{ margin: "0 0 16px 0", fontSize: "14px", color: "#d3dbce", lineHeight: 1.5 }}><StorefrontText id="copy_68663a82e356b9d9" fallback="Our 2026 harvest dossier and wholesale catalog is being updated with the latest garden invoices. You can browse our live catalog online or contact our wholesale desk directly." />
               </p>
               <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap" }}>
                 <Link
@@ -206,8 +204,7 @@ export default function BrochurePage() {
                     fontWeight: 700,
                     textDecoration: "none",
                   }}
-                >
-                  Browse Online Shop
+                ><StorefrontText id="copy_096e80ff858adcdf" fallback="Browse Online Shop" />
                 </Link>
                 <Link
                   href="/wholesale"
@@ -220,8 +217,7 @@ export default function BrochurePage() {
                     fontWeight: 600,
                     textDecoration: "none",
                   }}
-                >
-                  Wholesale Inquiries
+                ><StorefrontText id="copy_5537bb1bd3fa0c50" fallback="Wholesale Inquiries" />
                 </Link>
               </div>
             </div>
@@ -240,8 +236,7 @@ export default function BrochurePage() {
               letterSpacing: "0.1em",
               color: "#23483a",
             }}
-          >
-            Comprehensive Sourcing Portfolio
+          ><StorefrontText id="copy_cff212011442b27c" fallback="Comprehensive Sourcing Portfolio" />
           </span>
           <h2
             style={{
@@ -254,8 +249,7 @@ export default function BrochurePage() {
           >
             What You&apos;ll Discover in the Catalogue
           </h2>
-          <p style={{ color: "#586053", maxWidth: "600px", margin: "0 auto", fontSize: "15px" }}>
-            Every batch of orthodox tea undergoes professional cupping protocols in our Siliguri laboratory prior to dispatch.
+          <p style={{ color: "#586053", maxWidth: "600px", margin: "0 auto", fontSize: "15px" }}><StorefrontText id="copy_53dbea3e1c8e583c" fallback="Every batch of orthodox tea undergoes professional cupping protocols in our Siliguri laboratory prior to dispatch." />
           </p>
         </div>
 
@@ -291,11 +285,9 @@ export default function BrochurePage() {
             >
               <FileText size={22} />
             </div>
-            <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}>
-              Single-Estate Provenance
+            <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}><StorefrontText id="copy_29cea881bc637f1e" fallback="Single-Estate Provenance" />
             </h3>
-            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}>
-              Complete botanical terroir data: garden names (Giddapahar, Castleton, Mangalam), elevation metrics, harvest flush dates, and cultivar genetics (AV2, Heritage China).
+            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}><StorefrontText id="copy_a110f5c27e26b265" fallback="Complete botanical terroir data: garden names (Giddapahar, Castleton, Mangalam), elevation metrics, harvest flush dates, and cultivar genetics (AV2, Heritage China)." />
             </p>
           </div>
 
@@ -360,8 +352,7 @@ export default function BrochurePage() {
             <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}>
               Commercial Bulk &amp; Retail Packs
             </h3>
-            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}>
-              Bulk nitrogen-flushed multi-ply sacks (5kg/25kg), sealed tin caddies, recyclable kraft pouches, and biodegradable pyramid tea bags for hospitality and retail brands.
+            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}><StorefrontText id="copy_7f98d80f69d45215" fallback="Bulk nitrogen-flushed multi-ply sacks (5kg/25kg), sealed tin caddies, recyclable kraft pouches, and biodegradable pyramid tea bags for hospitality and retail brands." />
             </p>
           </div>
 
@@ -390,11 +381,9 @@ export default function BrochurePage() {
             >
               <ShieldCheck size={22} />
             </div>
-            <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}>
-              Laboratory Purity Assurance
+            <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}><StorefrontText id="copy_c84a91a621abec89" fallback="Laboratory Purity Assurance" />
             </h3>
-            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}>
-              100% unblended botanical purity. Zero chemical residues or synthetic flavorings. Tea Board of India verified paperwork with moisture levels strictly below 4.5%.
+            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}><StorefrontText id="copy_da851463fda8b448" fallback="100% unblended botanical purity. Zero chemical residues or synthetic flavorings. Tea Board of India verified paperwork with moisture levels strictly below 4.5%." />
             </p>
           </div>
 
@@ -423,11 +412,9 @@ export default function BrochurePage() {
             >
               <Truck size={22} />
             </div>
-            <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}>
-              Direct Siliguri Logistics
+            <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}><StorefrontText id="copy_79dccfff4fd857d2" fallback="Direct Siliguri Logistics" />
             </h3>
-            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}>
-              Located right at the foot of the hills at Fulbari Ghoshpukur Bypass. Direct 24–48h express dispatch across India and international air cargo corridors.
+            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}><StorefrontText id="copy_fc1c0fa74bf98727" fallback="Located right at the foot of the hills at Fulbari Ghoshpukur Bypass. Direct 24–48h express dispatch across India and international air cargo corridors." />
             </p>
           </div>
 
@@ -459,8 +446,7 @@ export default function BrochurePage() {
             <h3 style={{ fontSize: "17px", fontWeight: 700, color: "#18231c", margin: "0 0 8px 0" }}>
               Blend Lab &amp; Custom Formulary
             </h3>
-            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}>
-              Proprietary botanical formulations crafted with Bengal spices, Gondhoraj peel, and heritage CTC or orthodox bases through our Siliguri atelier.
+            <p style={{ fontSize: "14px", color: "#586053", lineHeight: 1.6, margin: 0 }}><StorefrontText id="copy_02793a21da28cce5" fallback="Proprietary botanical formulations crafted with Bengal spices, Gondhoraj peel, and heritage CTC or orthodox bases through our Siliguri atelier." />
             </p>
           </div>
         </div>
@@ -486,11 +472,9 @@ export default function BrochurePage() {
           }}
         >
           <div>
-            <h3 style={{ margin: "0 0 6px 0", fontSize: "20px", fontWeight: 700, color: "#18231c" }}>
-              Need wholesale pricing or custom sample kits?
+            <h3 style={{ margin: "0 0 6px 0", fontSize: "20px", fontWeight: 700, color: "#18231c" }}><StorefrontText id="copy_d75ce456eae57e1f" fallback="Need wholesale pricing or custom sample kits?" />
             </h3>
-            <p style={{ margin: 0, fontSize: "14px", color: "#586053" }}>
-              Our tea specialists in Siliguri can prepare custom 50g cupping sample flights for your cafe, restaurant or brand.
+            <p style={{ margin: 0, fontSize: "14px", color: "#586053" }}><StorefrontText id="copy_d7ac5f7adff3b678" fallback="Our tea specialists in Siliguri can prepare custom 50g cupping sample flights for your cafe, restaurant or brand." />
             </p>
           </div>
 
@@ -512,7 +496,7 @@ export default function BrochurePage() {
                   textDecoration: "none",
                 }}
               >
-                <Download size={16} /> Download PDF
+                <Download size={16} /><StorefrontText id="copy_6183be0883d2a89c" fallback="Download PDF" />
               </a>
             )}
             <Link
@@ -530,8 +514,7 @@ export default function BrochurePage() {
                 fontWeight: 600,
                 textDecoration: "none",
               }}
-            >
-              Wholesale Desk <ArrowRight size={14} />
+            ><StorefrontText id="copy_4e8f7a4b1b767f9f" fallback="Wholesale Desk" /> <ArrowRight size={14} />
             </Link>
           </div>
         </div>

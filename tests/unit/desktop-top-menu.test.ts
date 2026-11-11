@@ -47,6 +47,8 @@ describe("Desktop Top Menu UI/UX Pro Max Architecture", () => {
       expect(markup).toContain(item.href);
     });
     expect(markup).toContain("ritual-nav-link");
+    expect(markup).not.toContain("/collections/black-tea");
+    expect(markup).not.toContain("/tea-finder");
   });
 
   it("highlights active route with aria-current='page' and .is-active class", () => {

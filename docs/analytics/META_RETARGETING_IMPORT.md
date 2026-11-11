@@ -1,5 +1,55 @@
 # Correct Meta destination and add retargeting events — 2026-11-11
 
+## Catalogue matching follow-up — 2026-11-11
+
+The public GTM Purchase tag was independently read back and sends value,
+currency and order ID but no product contents. A regression reproduced the
+missing SKU fields before the fix. Both regenerated imports now make that
+existing tag use `TF Meta - Event properties`, overriding its value/currency
+with the existing purchase totals and preserving the purchase event ID,
+marketing consent and paused duplicate. Missing valid items suppress the tag.
+The app's `teafloww_purchase` alias now carries explicit sanitized ecommerce
+items; the preceding standard `purchase` event remains for GA4.
+
+The Razorpay retry browser callback now displays verification pending and
+refreshes server state instead of setting paid. A component test exercises
+the real retry handler and server poll: browser success alone does not emit
+Purchase; server-confirmed paid does. Accepted COD behavior is unchanged.
+
+Six in-stock product sets were created in catalogue `949209234720485` and
+their exact variant membership read back: Retail Packs (16), Bulk Packs (8),
+Everyday Chai (4), Elaichi Chai (8), Ginger Chai (8), Masala Chai (4).
+Meta's set summary counts product groups (4/2/1/1/1/1), whereas the item
+endpoint returns the stated variant counts. All Products remains present.
+Full IDs, filters and receipts are in `META_CATALOG_MATCHING_2026-11-11.json`.
+Filters enumerate current complete SKUs and update in-stock membership;
+new SKUs require a filter update. No campaign assignments were changed.
+The live CSV's 24 unique IDs exactly matched catalogue retailer IDs.
+
+For this issue, prefer the minimal import
+`teafloww-meta-purchase-catalog-fix.json` (regenerate with
+`node scripts/generate-gtm-meta-retargeting.mjs --purchase-only`). It contains
+only the existing Purchase tag and its dependencies, preserving Google/GA4,
+the Meta base and funnel tags, and the paused duplicate. Back up/export the
+current workspace, review conflicts by name, use Merge with overwrite of
+matching entities, and preview before publishing. Reconcile intentional newer
+workspace edits before import. This minimal patch uses the existing preceding
+purchase ecommerce payload; publishing it does not require website deployment.
+The explicit alias payload and retry confirmation improvement require a
+separate website deployment.
+
+Publication is pending: connected tools expose no GTM workspace capability,
+Safari opens a Google sign-in page, and Chrome accessibility timed out.
+An authenticated fresh workspace export and backup cannot yet be obtained.
+The generated complete import still uses the saved baseline, so review it
+against the fresh workspace before import; it is not a fresh export.
+No GTM publication or website deployment was performed. Meta Test Events
+receipt remains unverified; the catalogue health report ends November 9,
+reports no measured events, and returns a null match rate. Do not claim the
+warning has cleared or the match rate is >=90% until fresh data supports it.
+
+---
+
 The merchant identified dataset 29619022431117471 as the intended TeaFloww data
 source. The live public GTM container was independently checked and still
 contained 1128432123376468, with no occurrence of the intended ID. The Meta

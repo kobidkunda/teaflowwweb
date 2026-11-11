@@ -26,9 +26,11 @@ for(const file of [...files('src/components'),...files('src/app')].filter(f=>f.e
  visit(tree);
  if(!edits.length)continue;
  for(const edit of edits.sort((a,b)=>b.start-a.start))source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);
- const imp='import { Text as StorefrontText } from "@/components/international/InternationalProvider";\n';
- const directive=source.match(/^(?:"use client"|'use client');\s*/);
- source=directive?source.slice(0,directive[0].length)+imp+source.slice(directive[0].length):imp+source;
+ if(!source.includes("StorefrontText")){
+  const imp='import { Text as StorefrontText } from "@/components/international/InternationalProvider";\n';
+  const directive=source.match(/^(?:"use client"|'use client');\s*/);
+  source=directive?source.slice(0,directive[0].length)+imp+source.slice(directive[0].length):imp+source;
+ }
  fs.writeFileSync(file,source);count+=edits.length;
 }
 for (const file of files('src/lib/international').filter(f=>f.endsWith('.ts'))) {

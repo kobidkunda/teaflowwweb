@@ -30,7 +30,7 @@ export function ShopProductCard({
 }: ShopProductCardProps) {
   const formatINR = useDisplayMoney();
 
-  const { add } = useCart();
+  const { add, openQuickModal } = useCart();
   const selectedVariantId = product.variants[0]?.id ?? 0;
   const [wishlisted, setWishlisted] = useState<boolean>(false);
   const [added, setAdded] = useState<boolean>(false);
@@ -38,6 +38,25 @@ export function ShopProductCard({
   const activeVariant: Variant | undefined =
     product.variants.find((v) => v.id === selectedVariantId) ??
     product.variants[0];
+
+  const sortedVariants = [...product.variants].sort((a, b) => a.price_paise - b.price_paise);
+  const lowestVariant = sortedVariants[0] || activeVariant;
+
+  const variantPrices = product.variants.map((v) => v.price_paise).filter((p) => typeof p === "number" && p > 0);
+  const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : (activeVariant?.price_paise ?? 0);
+  const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : (activeVariant?.price_paise ?? 0);
+  const hasMultiplePrices = minPrice !== maxPrice;
+  const priceDisplay = hasMultiplePrices ? `${formatINR(minPrice)} – ${formatINR(maxPrice)}` : (activeVariant ? formatINR(activeVariant.price_paise) : "");
+
+  const allWholesaleSlabs = product.variants.flatMap((v) =>
+    (v.wholesale_slabs || []).map((s) => ({
+      ...s,
+      regularPricePaise: v.price_paise,
+    }))
+  );
+  const bestWholesaleSlab = allWholesaleSlabs.length > 0
+    ? [...allWholesaleSlabs].sort((a, b) => a.price_paise - b.price_paise)[0]
+    : null;
 
   if (!activeVariant) return null;
 
@@ -84,16 +103,22 @@ export function ShopProductCard({
     `Single estate tea caddy for ${product.name} from ${product.estate}`;
 
   const handleAddToCart = () => {
-    if (activeVariant.stock < 1) return;
+    const targetVariant = lowestVariant || activeVariant;
+    if (!targetVariant || targetVariant.stock < 1) return;
     add({
-      variantId: activeVariant.id, sku: activeVariant.sku?.trim() || `HTH-${product.id}-${activeVariant.id}`,
+      variantId: targetVariant.id,
+      sku: targetVariant.sku?.trim() || `HTH-${product.id}-${targetVariant.id}`,
       slug: product.slug,
       name: product.name,
-      grams: activeVariant.grams,
-      pricePaise: activeVariant.price_paise,
-    });
+      grams: targetVariant.grams,
+      pricePaise: targetVariant.price_paise,
+      imageUrl: targetVariant.product_image_url || product.primary_image_url || product.primary_image?.url || imageUrl,
+    }, true, false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2400);
+    if (openQuickModal) {
+      openQuickModal(product, targetVariant);
+    }
   };
 
   return (
@@ -202,25 +227,56 @@ export function ShopProductCard({
 
           {/* Price & Specs row (Truthful weight & elevation) */}
           <div className="tf-mockup-price-rating-row">
-            <div className="tf-mockup-price-stack">
-              <strong className="tf-mockup-price">
-                {formatINR(activeVariant.price_paise)}
-              </strong>
-              {activeVariant.compare_at_price_paise && activeVariant.compare_at_price_paise > activeVariant.price_paise ? (
-                <div className="tf-mockup-discount-wrap">
-                  <del
-                    className="tf-mockup-original-price"
-                    aria-label={`Original price ${formatINR(activeVariant.compare_at_price_paise)}`}
-                  >
-                    {formatINR(activeVariant.compare_at_price_paise)}
-                  </del>
-                  <span
-                    className="tf-mockup-discount-badge"
-                    aria-label={`${Math.round(((activeVariant.compare_at_price_paise - activeVariant.price_paise) / activeVariant.compare_at_price_paise) * 100)} percent discount`}
-                  >
-                    {Math.round(((activeVariant.compare_at_price_paise - activeVariant.price_paise) / activeVariant.compare_at_price_paise) * 100)}<StorefrontText id="copy_d892cb05720ec3ad" fallback="% OFF" /> </span>
+            <div className="tf-mockup-price-stack" style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
+                <strong className="tf-mockup-price">
+                  {priceDisplay}
+                </strong>
+                {activeVariant.compare_at_price_paise && activeVariant.compare_at_price_paise > activeVariant.price_paise && !hasMultiplePrices ? (
+                  <div className="tf-mockup-discount-wrap">
+                    <del
+                      className="tf-mockup-original-price"
+                      aria-label={`Original price ${formatINR(activeVariant.compare_at_price_paise)}`}
+                    >
+                      {formatINR(activeVariant.compare_at_price_paise)}
+                    </del>
+                    <span
+                      className="tf-mockup-discount-badge"
+                      aria-label={`${Math.round(((activeVariant.compare_at_price_paise - activeVariant.price_paise) / activeVariant.compare_at_price_paise) * 100)} percent discount`}
+                    >
+                      {Math.round(((activeVariant.compare_at_price_paise - activeVariant.price_paise) / activeVariant.compare_at_price_paise) * 100)}<StorefrontText id="copy_d892cb05720ec3ad" fallback="% OFF" /> </span>
+                  </div>
+                ) : null}
+              </div>
+
+              {bestWholesaleSlab && (
+                <div
+                  className="tf-wholesale-card-badge"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    color: "#23483a",
+                    background: "#eaf3e9",
+                    border: "1px solid #b7d6be",
+                    borderRadius: "4px",
+                    padding: "2px 6px",
+                    width: "fit-content",
+                    marginTop: "2px",
+                  }}
+                >
+                  <span><StorefrontText id="copy_46cf537d6f511463" fallback="🌿 Wholesale from:" /></span>
+                  {bestWholesaleSlab.regularPricePaise > bestWholesaleSlab.price_paise && (
+                    <del style={{ color: "#7a8274", fontWeight: 500 }}>
+                      {formatINR(bestWholesaleSlab.regularPricePaise)}
+                    </del>
+                  )}
+                  <strong style={{ color: "#1b3022" }}>{formatINR(bestWholesaleSlab.price_paise)}</strong>
+                  <span style={{ color: "#465244", fontSize: "10px" }}><StorefrontText id="copy_2e4cf228d2da709a" fallback="· Min" /> {bestWholesaleSlab.min_qty}<StorefrontText id="copy_d7d4f59db48fb4b8" fallback="pcs" /></span>
                 </div>
-              ) : null}
+              )}
             </div>
 
             <div

@@ -1,8 +1,16 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 const version = JSON.parse(execFileSync(process.execPath, ["scripts/generate-gtm-complete.mjs", "--stdout"], { encoding: "utf8" })).containerVersion;
 type Entity = { name: string; type: string; firingTriggerId?: string[]; triggerId?: string; paused?: boolean; parameter?: { key: string; value: string }[] };
 describe("Combined Google and Meta import", () => {
+  it("preserves the saved baseline Google tags exactly while adding SKU properties to Purchase", () => {
+    const baseline = JSON.parse(readFileSync("docs/analytics/teafloww-gtm-corrected.json", "utf8")).containerVersion;
+    const googleTags = (tags: Entity[]) => tags.filter(tag => ["googtag", "gaawe"].includes(tag.type));
+    expect(googleTags(version.tag)).toEqual(googleTags(baseline.tag));
+    const purchase = version.tag.find((tag: Entity) => tag.name === "Meta Pixel - Purchase - Teafloww");
+    expect(purchase.parameter.find((p: { key: string }) => p.key === "html").value).toContain("{{TF Meta - Event properties}}");
+  });
   it("retains the Google base and all four GA4 tags alongside six Meta funnel mappings", () => {
     expect(version.tag.filter((tag: Entity) => tag.type === "googtag")).toHaveLength(1);
     expect(version.tag.filter((tag: Entity) => tag.type === "gaawe")).toHaveLength(4);

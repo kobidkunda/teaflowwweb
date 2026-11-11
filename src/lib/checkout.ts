@@ -52,13 +52,40 @@ export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPa
     if (combined.size > 30) throw new CheckoutError("Too many line items.");
     const lines: { variantId: number; quantity: number; unitPrice: number }[] = [];
     let subtotal = 0;
-    const lookup = db.prepare(`SELECT v.id,v.price_paise,v.stock FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=? AND ${enabledProductCondition("p")}`);
+    let hasWholesaleItems = false;
+    const hasProductMoqCol = (() => {
+      try {
+        return (db.prepare("PRAGMA table_info(products)").all() as { name: string }[]).some((c) => c.name === "wholesale_moq");
+      } catch {
+        return false;
+      }
+    })();
+    const lookup = db.prepare(`SELECT v.id,v.price_paise,v.stock ${hasProductMoqCol ? ",p.wholesale_moq" : ""} FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=? AND ${enabledProductCondition("p")}`);
     for (const [variantId, quantity] of combined) {
-      if (quantity > 20) throw new CheckoutError("Maximum quantity is 20 per variant.");
-      const variant = lookup.get(variantId) as StockRow | undefined;
+      const variant = lookup.get(variantId) as (StockRow & { wholesale_moq?: number | null }) | undefined;
       if (!variant || variant.stock < quantity) throw new CheckoutError("A selected tea is unavailable or exceeds available stock.");
-      subtotal += variant.price_paise * quantity;
-      lines.push({ variantId, quantity, unitPrice: variant.price_paise });
+      let unitPrice = variant.price_paise;
+      let isWholesale = false;
+      let slabRows: Array<{ min_qty: number; price_paise: number }> = [];
+      try {
+        slabRows = db.prepare("SELECT min_qty, price_paise FROM wholesale_slabs WHERE variant_id=? ORDER BY min_qty DESC").all(variantId) as Array<{ min_qty: number; price_paise: number }>;
+        const activeSlab = slabRows.find((s) => quantity >= s.min_qty);
+        if (activeSlab) {
+          unitPrice = activeSlab.price_paise;
+          isWholesale = true;
+          hasWholesaleItems = true;
+        }
+      } catch {}
+
+      if (quantity > 20 && !isWholesale) {
+        if (slabRows.length > 0) {
+          const minRequired = Math.min(...slabRows.map((s) => s.min_qty));
+          throw new CheckoutError(`Minimum wholesale quantity is ${minRequired} units.`);
+        }
+        throw new CheckoutError("Maximum retail quantity is 20 per variant. For larger orders, wholesale pricing slabs apply.");
+      }
+      subtotal += unitPrice * quantity;
+      lines.push({ variantId, quantity, unitPrice });
     }
     // Server-side coupon: client math is ignored; unknown/inapplicable codes
     // are rejected here (never silently dropped when a code was supplied).
@@ -76,7 +103,15 @@ export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPa
     }
 
     // Single totals owner: GST-inclusive breakout, total unchanged by tax.
-    const { shippingPaise: shipping, taxPaise: tax, totalPaise: total } = quoteTotals(subtotal, discount);
+    const totals = quoteTotals(subtotal, discount);
+    let shipping = totals.shippingPaise;
+    const tax = totals.taxPaise;
+    let total = totals.totalPaise;
+    if (hasWholesaleItems) {
+      // Commercial surface transport freight is extra (payable on delivery / To-Pay Bilty)
+      shipping = 0;
+      total = Math.max(0, subtotal - discount);
+    }
     const id = randomUUID();
 
     const orderCols = [
@@ -108,7 +143,7 @@ export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPa
     }
     if (hasTaxCols) {
       orderCols.push("tax_paise", "shipping_method");
-      orderVals.push(tax, SHIPPING_METHOD);
+      orderVals.push(tax, hasWholesaleItems ? "wholesale_transport_topay" : SHIPPING_METHOD);
     }
     if (hasPhoneCol) {
       orderCols.push("customer_phone");

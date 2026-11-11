@@ -1,6 +1,6 @@
 {
   "exportFormatVersion": 2,
-  "exportTime": "2026-11-11T08:56:58.716Z",
+  "exportTime": "2026-11-11T15:50:26.225Z",
   "containerVersion": {
     "path": "accounts/6382131376/containers/266900144/versions/7",
     "accountId": "6382131376",
@@ -194,7 +194,7 @@
           {
             "type": "TEMPLATE",
             "key": "html",
-            "value": "<script>\nif (typeof fbq === 'function') {\n  fbq('trackSingle', '29619022431117471', 'Purchase', {\n    value: {{DLV - TF Purchase Value}},\n    currency: '{{DLV - TF Purchase Currency}}',\n    order_id: '{{DLV - TF Purchase Order ID}}'\n  }, {\n    eventID: '{{DLV - TF Purchase Event ID}}'\n  });\n}\n</script>"
+            "value": "<script>\nvar tfPurchaseProperties = {{TF Meta - Event properties}};\nif (typeof fbq === 'function' && tfPurchaseProperties.content_ids && tfPurchaseProperties.content_ids.length) {\n  tfPurchaseProperties.value = {{DLV - TF Purchase Value}};\n  tfPurchaseProperties.currency = '{{DLV - TF Purchase Currency}}';\n  tfPurchaseProperties.order_id = '{{DLV - TF Purchase Order ID}}';\n  fbq('trackSingle', '29619022431117471', 'Purchase', tfPurchaseProperties, {\n    eventID: '{{DLV - TF Purchase Event ID}}'\n  });\n}\n</script>"
           },
           {
             "type": "BOOLEAN",

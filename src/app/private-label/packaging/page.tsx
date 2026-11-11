@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import type { Metadata } from "next";
 import { constructMetadata } from "@/lib/seo/metadata";
@@ -87,7 +88,7 @@ export default async function PackagingCataloguePage() {
         }}
       >
         <div className={styles.contentContainer}>
-          <SectionEyebrow>FOOD-GRADE STRUCTURES</SectionEyebrow>
+          <SectionEyebrow><StorefrontText id="copy_64b5862b179768fd" fallback="FOOD-GRADE STRUCTURES" /></SectionEyebrow>
           <h1
             style={{
               fontFamily: 'Georgia, "Times New Roman", serif',
@@ -108,8 +109,7 @@ export default async function PackagingCataloguePage() {
               margin: 0,
               maxWidth: "680px",
             }}
-          >
-            Certified high-barrier pouches, artisanal tins, apothecary jars, and single-serve pyramid sachets engineered for volatile aroma preservation and zero shelf degradation.
+          ><StorefrontText id="copy_a7cd04241ca80548" fallback="Certified high-barrier pouches, artisanal tins, apothecary jars, and single-serve pyramid sachets engineered for volatile aroma preservation and zero shelf degradation." />
           </p>
         </div>
       </section>

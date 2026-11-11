@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -46,20 +47,17 @@ export function PackagingDetailView({
             }}
           >
             <li>
-              <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>
-                Home
+              <Link href="/" style={{ color: "inherit", textDecoration: "none" }}><StorefrontText id="copy_3a78695388b38b5c" fallback="Home" />
               </Link>
             </li>
             <li aria-hidden="true">&rsaquo;</li>
             <li>
-              <Link href="/private-label" style={{ color: "inherit", textDecoration: "none" }}>
-                Private Label
+              <Link href="/private-label" style={{ color: "inherit", textDecoration: "none" }}><StorefrontText id="copy_0f30f7c052a486a2" fallback="Private Label" />
               </Link>
             </li>
             <li aria-hidden="true">&rsaquo;</li>
             <li>
-              <Link href="/private-label/packaging" style={{ color: "inherit", textDecoration: "none" }}>
-                Packaging
+              <Link href="/private-label/packaging" style={{ color: "inherit", textDecoration: "none" }}><StorefrontText id="copy_0d62bb01df4edd95" fallback="Packaging" />
               </Link>
             </li>
             <li aria-hidden="true">&rsaquo;</li>
@@ -128,8 +126,7 @@ export function PackagingDetailView({
               <span style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#143C31" }}>
                 {startingPriceText}
               </span>
-              <span style={{ fontSize: "0.875rem", color: "#65746D" }}>
-                (MOQ: {(variant.moq_units || 500).toLocaleString("en-IN")} units)
+              <span style={{ fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_ddcbffca75101ce9" fallback="(MOQ:" /> {(variant.moq_units || 500).toLocaleString("en-IN")}<StorefrontText id="copy_cb20a4486a64f501" fallback="units)" />
               </span>
             </div>
 
@@ -168,8 +165,7 @@ export function PackagingDetailView({
                   color: "#143C31",
                   borderColor: "#143C31",
                 }}
-              >
-                Order Sample Swatch
+              ><StorefrontText id="copy_5fa2a6dca589035b" fallback="Order Sample Swatch" />
               </Link>
             </div>
           </div>

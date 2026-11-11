@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -51,7 +52,7 @@ export function FeaturedPackagingGrid({
           {displayItems.length === 0 && ["pouch", "tin", "jar", "carton"].map(family => (
             <article key={family} className={styles.packagingCard}>
               <Image src={`/images/private-label/${family}-concept.webp`} alt={`Illustrative ${family} packaging concept`} width={800} height={800} sizes="(max-width: 640px) 100vw, 33vw" style={{ width: "100%", height: "auto" }} />
-              <div className={styles.cardBody}><h3 className={styles.cardTitle} style={{ textTransform: "capitalize" }}>{family} concept</h3><p>AI-generated illustration. Availability, materials and pricing require confirmation.</p><Link href="/private-label#sample-kit" className={styles.cardActionLink}>Discuss this format →</Link></div>
+              <div className={styles.cardBody}><h3 className={styles.cardTitle} style={{ textTransform: "capitalize" }}>{family}<StorefrontText id="copy_da5e11efa36720a4" fallback="concept" /></h3><p><StorefrontText id="copy_c8e4be0266b0bf86" fallback="AI-generated illustration. Availability, materials and pricing require confirmation." /></p><Link href="/private-label#sample-kit" className={styles.cardActionLink}><StorefrontText id="copy_c495043fdb314fb2" fallback="Discuss this format →" /></Link></div>
             </article>
           ))}
           {displayItems.map((variant) => (

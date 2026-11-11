@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -105,14 +106,11 @@ export default function SampleOrderPage() {
     <div className="min-h-screen bg-[#FBF9F4] py-12 px-4">
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
-          <span className="text-xs font-mono uppercase tracking-widest text-[#143C31] font-semibold">
-            Tactile Evaluation
+          <span className="text-xs font-mono uppercase tracking-widest text-[#143C31] font-semibold"><StorefrontText id="copy_ce158182e8947597" fallback="Tactile Evaluation" />
           </span>
-          <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#143C31] mt-1">
-            Order Trial Sample Kits
+          <h1 className="text-3xl md:text-4xl font-serif font-bold text-[#143C31] mt-1"><StorefrontText id="copy_bd39a05e5ce268d0" fallback="Order Trial Sample Kits" />
           </h1>
-          <p className="text-sm text-[#65746D] mt-2 max-w-2xl">
-            Evaluate orthodox tea grades and high-barrier packaging finishes before committing to full cleanroom MOQs.
+          <p className="text-sm text-[#65746D] mt-2 max-w-2xl"><StorefrontText id="copy_1b1a4d2b1d574782" fallback="Evaluate orthodox tea grades and high-barrier packaging finishes before committing to full cleanroom MOQs." />
           </p>
         </div>
 
@@ -120,14 +118,13 @@ export default function SampleOrderPage() {
         <div className="bg-[#EBF3EF] border border-[#C5D6CC] rounded-xl p-4 flex items-center gap-3">
           <ShieldCheck className="w-8 h-8 text-[#143C31] shrink-0" />
           <div className="text-xs text-[#143C31]">
-            <span className="font-bold">Sample credit terms: </span>
-            Ask our team whether sample costs can be credited toward your production order. Terms must be confirmed in your quotation.
+            <span className="font-bold"><StorefrontText id="copy_6219549adb01af70" fallback="Sample credit terms:" /> </span><StorefrontText id="copy_d5872c78e76a52ab" fallback="Ask our team whether sample costs can be credited toward your production order. Terms must be confirmed in your quotation." />
           </div>
         </div>
 
         {/* Sample Kit Selector */}
         <div className="space-y-4">
-          <h2 className="text-base font-serif font-bold text-[#143C31]">1. Select Sample Kit</h2>
+          <h2 className="text-base font-serif font-bold text-[#143C31]"><StorefrontText id="copy_87829b947a1802bd" fallback="1. Select Sample Kit" /></h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {kitOptions.map((kit) => {
               const active = selectedType === kit.id;
@@ -177,7 +174,7 @@ export default function SampleOrderPage() {
               2. Delivery Address & Contact
             </h2>
 
-            {needsLogin && <p><Link href="/login?redirect=%2Fprivate-label%2Fsamples" target="_blank" rel="noopener noreferrer">Open sign-in in a new tab, then retry here</Link></p>}
+            {needsLogin && <p><Link href="/login?redirect=%2Fprivate-label%2Fsamples" target="_blank" rel="noopener noreferrer"><StorefrontText id="copy_a42ce7d686c1e856" fallback="Open sign-in in a new tab, then retry here" /></Link></p>}
             {error && (
               <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 text-xs p-3 rounded-lg flex items-center gap-2">
                 <AlertCircle size={16} /> {error}
@@ -186,7 +183,7 @@ export default function SampleOrderPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
-                <label htmlFor="sample-name" className="block font-medium text-[#143C31] mb-1">Contact Name *</label>
+                <label htmlFor="sample-name" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_baea66a613c3a3d5" fallback="Contact Name *" /></label>
                 <input
                   type="text"
                   required
@@ -199,7 +196,7 @@ export default function SampleOrderPage() {
               </div>
 
               <div>
-                <label htmlFor="sample-phone" className="block font-medium text-[#143C31] mb-1">Mobile Number</label>
+                <label htmlFor="sample-phone" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_34975ecb9b9a043e" fallback="Mobile Number" /></label>
                 <input
                   type="tel"
                   id="sample-phone"
@@ -211,7 +208,7 @@ export default function SampleOrderPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="sample-line1" className="block font-medium text-[#143C31] mb-1">Street Address Line 1 *</label>
+                <label htmlFor="sample-line1" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_97bef6d58c527cd2" fallback="Street Address Line 1 *" /></label>
                 <input
                   type="text"
                   required
@@ -224,7 +221,7 @@ export default function SampleOrderPage() {
               </div>
 
               <div>
-                <label htmlFor="sample-city" className="block font-medium text-[#143C31] mb-1">City *</label>
+                <label htmlFor="sample-city" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_4b592363361d535f" fallback="City *" /></label>
                 <input
                   type="text"
                   required
@@ -237,11 +234,11 @@ export default function SampleOrderPage() {
               </div>
 
               <div>
-                <label htmlFor="sample-state" className="block font-medium text-[#143C31] mb-1">State / Union Territory *</label>
+                <label htmlFor="sample-state" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_71607e6dcbb45e3f" fallback="State / Union Territory *" /></label>
                 <input id="sample-state" type="text" required minLength={2} maxLength={100} autoComplete="address-level1" value={address.state} onChange={event => setAddress({ ...address, state: event.target.value })} className="w-full px-3 py-2 border border-[#DDE4DC] rounded-lg" />
               </div>
               <div>
-                <label htmlFor="sample-pincode" className="block font-medium text-[#143C31] mb-1">6-Digit PIN Code *</label>
+                <label htmlFor="sample-pincode" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_2cff822667986cd6" fallback="6-Digit PIN Code *" /></label>
                 <input
                   type="text"
                   required
@@ -258,7 +255,7 @@ export default function SampleOrderPage() {
             <div className="pt-4 border-t border-[#E8E4DC] flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="text-xs">
-                  <label htmlFor="sample-quantity" className="block font-medium text-[#143C31] mb-1">Quantity (Max 10)</label>
+                  <label htmlFor="sample-quantity" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_e72eb6dd6de26c86" fallback="Quantity (Max 10)" /></label>
                   <input
                     type="number"
                     min={1}
@@ -271,7 +268,7 @@ export default function SampleOrderPage() {
                   />
                 </div>
                 <div className="text-xs">
-                  <label htmlFor="sample-coupon" className="block font-medium text-[#143C31] mb-1">Promo Coupon</label>
+                  <label htmlFor="sample-coupon" className="block font-medium text-[#143C31] mb-1"><StorefrontText id="copy_7452ac21a73a055b" fallback="Promo Coupon" /></label>
                   <input
                     type="text"
                     id="sample-coupon"
@@ -284,7 +281,7 @@ export default function SampleOrderPage() {
               </div>
 
               <div className="text-right">
-                <span className="text-xs text-[#65746D]">Indicative sample subtotal</span>
+                <span className="text-xs text-[#65746D]"><StorefrontText id="copy_54100985a905cc11" fallback="Indicative sample subtotal" /></span>
                 <p className="text-xl font-serif font-bold text-[#143C31]">
                   {`₹${(displayPrice / 100).toLocaleString("en-IN")}`}
                 </p>
@@ -296,8 +293,7 @@ export default function SampleOrderPage() {
             <Link
               href="/private-label"
               className="px-5 py-2.5 rounded-lg text-xs font-semibold border border-[#DDE4DC] text-[#65746D] hover:bg-white"
-            >
-              Cancel
+            ><StorefrontText id="copy_19766ed6ccb2f4a3" fallback="Cancel" />
             </Link>
             <button
               type="submit"
@@ -307,11 +303,10 @@ export default function SampleOrderPage() {
             >
               {loading ? (
                 <>
-                  <RefreshCw size={14} className="animate-spin" /> Submitting Request...
+                  <RefreshCw size={14} className="animate-spin" /><StorefrontText id="copy_e6e8b66bfe85300f" fallback="Submitting Request..." />
                 </>
               ) : (
-                <>
-                  Request Sample Order <ArrowRight size={14} />
+                <><StorefrontText id="copy_8b21aafde0d5a39a" fallback="Request Sample Order" /> <ArrowRight size={14} />
                 </>
               )}
             </button>

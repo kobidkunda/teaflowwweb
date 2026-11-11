@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
@@ -20,7 +21,12 @@ export function AnalyticsHeadScripts({ config }: { config: PublicTrackingConfig 
     };
     sync();
     window.addEventListener(CONSENT_EVENT, sync);
-    return () => window.removeEventListener(CONSENT_EVENT, sync);
+    const handleOpenSettings = () => setSettings(true);
+    window.addEventListener("open-cookie-settings", handleOpenSettings);
+    return () => {
+      window.removeEventListener(CONSENT_EVENT, sync);
+      window.removeEventListener("open-cookie-settings", handleOpenSettings);
+    };
   }, []);
 
   useEffect(() => {
@@ -52,14 +58,15 @@ export function AnalyticsHeadScripts({ config }: { config: PublicTrackingConfig 
     {consent.marketing && !gtm && config.customHeadScript && <Script id="custom-head-tracking" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: config.customHeadScript }} />}
     {consent.marketing && !gtm && config.customBodyScript && <div id="custom-body-tracking" dangerouslySetInnerHTML={{ __html: config.customBodyScript }} />}
     {(!chosen || settings) ? <section aria-label="Cookie preferences" className="tracking-consent-panel">
-      <h2>Choose your cookies</h2>
-      <p>Essential cookies keep your bag and checkout working. Optional analytics help us improve TeaFloww; marketing cookies help Google and Meta show relevant ads. <a href="/privacy">Privacy policy</a></p>
+      <h2><StorefrontText id="copy_27fed2a49a73923d" fallback="Choose your cookies" /></h2>
+      <p><StorefrontText id="copy_c919c4b974125043" fallback="Essential cookies keep your bag and checkout working. Optional analytics help us improve TeaFloww; marketing cookies help Google and Meta show relevant ads." /> <a href="/privacy"><StorefrontText id="copy_ba445cff3898a3f2" fallback="Privacy policy" /></a></p>
       <div className="tracking-consent-actions">
-        <button type="button" className="button button-outline" onClick={() => choose(DENIED_CONSENT)}>Essential only</button>
-        <button type="button" className="button button-outline" onClick={() => choose({ analytics: true, marketing: false })}>Analytics only</button>
-        <button type="button" className="button button-primary" onClick={() => choose({ analytics: true, marketing: true })}>Accept all</button>
+        <button type="button" className="button button-outline" onClick={() => choose(DENIED_CONSENT)}><StorefrontText id="copy_99468ef7474b8794" fallback="Essential only" /></button>
+        <button type="button" className="button button-outline" onClick={() => choose({ analytics: true, marketing: false })}><StorefrontText id="copy_ab9e3e3f6b320ffa" fallback="Analytics only" /></button>
+        <button type="button" className="button button-primary" onClick={() => choose({ analytics: true, marketing: true })}><StorefrontText id="copy_f55ee86234087579" fallback="Accept all" /></button>
+        {settings && <button type="button" className="button button-outline" onClick={() => setSettings(false)}><StorefrontText id="copy_7d9eb7acb13e2462" fallback="Close" /></button>}
       </div>
-    </section> : <button type="button" className="tracking-cookie-settings" onClick={() => setSettings(true)}>Cookie settings</button>}
+    </section> : null}
   </>;
 }
 

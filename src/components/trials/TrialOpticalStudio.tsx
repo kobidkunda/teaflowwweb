@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import type { TrialPublicDto } from "@/lib/trials/types";
@@ -13,6 +14,7 @@ export interface TrialOpticalStudioProps {
   locale?: TrialLocale;
   heroImage?: { url: string; alt_text: string } | null;
   galleryImages?: Array<{ url: string; alt_text: string }>;
+  initialStage?: string;
 }
 
 export const OPTICAL_STAGES = [
@@ -30,9 +32,10 @@ export function TrialOpticalStudio({
   locale = "en",
   heroImage,
   galleryImages = [],
+  initialStage,
 }: TrialOpticalStudioProps) {
   const [internalPouchIndex, setInternalPouchIndex] = useState(0);
-  const [selectedStage, setSelectedStage] = useState<string>("milk_tea");
+  const [selectedStage, setSelectedStage] = useState<string>(initialStage || "milk_tea");
   const [selectedGalleryIdx, setSelectedGalleryIdx] = useState<number | null>(null);
 
   const activePouchIndex =
@@ -105,11 +108,9 @@ export function TrialOpticalStudio({
 
   return (
     <div className="optical border border-[#d59e5b30] rounded-[23px] bg-[#171311] p-5 sm:p-7 shadow-[0_30px_72px_rgba(0,0,0,0.24)] text-[#f7f2eb]">
-      <div className="text-[10px] uppercase tracking-[0.23em] font-extrabold text-[#e5b869] mb-1">
-        TEAPILOT OPTICAL STUDIO — VERIFIED SAMPLES
+      <div className="text-[10px] uppercase tracking-[0.23em] font-extrabold text-[#e5b869] mb-1"><StorefrontText id="copy_944809e648df7cd7" fallback="TEAPILOT OPTICAL STUDIO — VERIFIED SAMPLES" />
       </div>
-      <p className="text-[#a89a8e] text-[12px] mb-5">
-        Choose a sachet and camera stage. Photography captures authentic garden leaf color and liquor extraction.
+      <p className="text-[#a89a8e] text-[12px] mb-5"><StorefrontText id="copy_cb5b294d06391427" fallback="Choose a sachet and camera stage. Photography captures authentic garden leaf color and liquor extraction." />
       </p>
 
       {/* 4 Pouch Tabs */}
@@ -141,8 +142,7 @@ export function TrialOpticalStudio({
                   : "bg-[#261e19] border-[#544537] text-[#c5ad94] hover:border-[#8c745f]"
               }`}
             >
-              <span className="block text-[9px] uppercase tracking-[0.12em] text-[#e5b869] font-bold mb-1">
-                POUCH 0{idx + 1} · {c.weight_g}G
+              <span className="block text-[9px] uppercase tracking-[0.12em] text-[#e5b869] font-bold mb-1"><StorefrontText id="copy_1976a5088adf9992" fallback="POUCH 0" />{idx + 1} · {c.weight_g}G
               </span>
               <strong className="block text-[13px] font-serif font-normal truncate">
                 {c.name}
@@ -191,11 +191,9 @@ export function TrialOpticalStudio({
             <div className="w-20 h-20 rounded-full border-2 border-dashed border-[#e5b86966] bg-[#221a16] flex items-center justify-center mb-3">
               <span className="text-[#e5b869] text-2xl font-serif">❖</span>
             </div>
-            <strong className="block font-serif text-[18px] text-[#f7eedb] mb-1">
-              Photo pending verification
+            <strong className="block font-serif text-[18px] text-[#f7eedb] mb-1"><StorefrontText id="copy_921108aecb3a4c73" fallback="Photo pending verification" />
             </strong>
-            <p className="text-[11px] text-[#a89a8e] max-w-xs mb-3">
-              Batch photo for {activePouch.name} ({selectedStage.replace("_", " ")}) is undergoing spectral verification.
+            <p className="text-[11px] text-[#a89a8e] max-w-xs mb-3"><StorefrontText id="copy_fcce88d9c95443bd" fallback="Batch photo for" /> {activePouch.name} ({selectedStage.replace("_", " ")}<StorefrontText id="copy_7b94e3dab0a35754" fallback=") is undergoing spectral verification." />
             </p>
             {packagingAsset && (
               <button
@@ -205,8 +203,7 @@ export function TrialOpticalStudio({
                   setSelectedGalleryIdx(null);
                 }}
                 className="text-[11px] text-[#e5b869] font-semibold underline hover:text-[#ffd68a] transition-colors"
-              >
-                View {activePouch.name} pouch artwork →
+              ><StorefrontText id="copy_dcc839a4015c4b7d" fallback="View" /> {activePouch.name}<StorefrontText id="copy_b796e703195942ba" fallback="pouch artwork →" />
               </button>
             )}
           </div>
@@ -273,8 +270,7 @@ export function TrialOpticalStudio({
       {galleryImages.length > 0 && (
         <div className="kit-gallery-strip mt-6 pt-5 border-t border-[#4d332a]">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-[0.16em] text-[#e5b869] font-bold">
-              DISCOVERY PACK GALLERY ({galleryImages.length} VIEWS)
+            <span className="text-[10px] uppercase tracking-[0.16em] text-[#e5b869] font-bold"><StorefrontText id="copy_716a981c3786927a" fallback="DISCOVERY PACK GALLERY (" />{galleryImages.length}<StorefrontText id="copy_bac25d1ae9144b5e" fallback=" VIEWS)" />
             </span>
             <span className="text-[11px] text-[#a89a8e]">
               Click thumbnail to preview box &amp; lifestyle mockups

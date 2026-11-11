@@ -4,6 +4,26 @@ const version = JSON.parse(execFileSync(process.execPath,["scripts/generate-gtm-
 const code = version.customTemplate.find((t: {name:string})=>t.name==="TF Meta - Event properties").templateData.split("___SANDBOXED_JS_FOR_WEB_TEMPLATE___")[1].split("___WEB_PERMISSIONS___")[0];
 const evaluate = (data: unknown) => new Function("data","require",code)(data,(name:string)=>({getType:(v:unknown)=>Array.isArray(v)?"array":typeof v,makeNumber:Number})[name as "getType"|"makeNumber"]);
 describe("Meta retargeting merge",()=>{
+ it("can generate a minimal Purchase-only merge without Google or other Meta tags",()=>{
+  const patch=JSON.parse(execFileSync(process.execPath,["scripts/generate-gtm-meta-retargeting.mjs","--purchase-only","--stdout"],{encoding:"utf8"})).containerVersion;
+  expect(patch.tag.map((t:{name:string})=>t.name)).toEqual(["Meta Pixel - Purchase - Teafloww"]);
+  expect(patch.trigger.map((t:{triggerId:string})=>t.triggerId)).toEqual(["11"]);
+  const names=new Set([...patch.variable,...patch.builtInVariable].map((v:{name:string})=>v.name));names.add("_event");
+  for(const match of JSON.stringify(patch).matchAll(/\{\{([^}]+)\}\}/g))expect(names.has(match[1]),match[1]).toBe(true);
+ });
+ it("sends catalog contents on the existing Purchase tag with its original totals and event ID",()=>{
+  const purchase = version.tag.find((t:{name:string})=>t.name==="Meta Pixel - Purchase - Teafloww");
+  const html = purchase.parameter.find((p:{key:string})=>p.key==="html").value;
+  const props = evaluate({event:"teafloww_purchase",ecommerce:{value:90,currency:"INR",items:[{item_id:"TFW-006-100G",price:30,quantity:2},{item_id:"TFW-005-100G",price:30,quantity:1}]}});
+  const calls: unknown[][] = [];
+  const replacements: Record<string,unknown> = {"TF Meta - Event properties":props,"DLV - TF Purchase Value":110,"DLV - TF Purchase Currency":"INR","DLV - TF Purchase Order ID":"order-1","DLV - TF Purchase Event ID":"purchase_order-1"};
+  const run = (properties: unknown) => new Function("fbq",html.replace(/<\/?script>/g,"").replace(/\{\{([^}]+)\}\}/g,(_:string,name:string)=>name==="TF Meta - Event properties"?JSON.stringify(properties):String(replacements[name])))((...args:unknown[])=>calls.push(args));
+  run(props);
+  expect(calls).toEqual([["trackSingle","29619022431117471","Purchase",{...props,value:110,currency:"INR",order_id:"order-1"},{eventID:"purchase_order-1"}]]);
+  run({});
+  expect(calls).toHaveLength(1);
+  expect(purchase.consentSettings.consentType.list.map((p:{value:string})=>p.value)).toEqual(["ad_storage","ad_user_data","ad_personalization"]);
+ });
  it("adds exact funnel mappings without duplicating existing PageView or Purchase",()=>{
   expect(version.tag.filter((t:{name:string})=>t.name.startsWith("TF Meta - ")).map((t:{name:string})=>t.name)).toEqual(["TF Meta - ViewContent","TF Meta - AddToCart","TF Meta - InitiateCheckout","TF Meta - AddPaymentInfo","TF Meta - Lead","TF Meta - Search"]);
   expect(version.trigger.filter((t:{name:string})=>t.name.startsWith("TF Meta - ")).map((t:{customEventFilter:Array<{parameter:Array<{value:string}>}>})=>t.customEventFilter[0].parameter[1].value)).toEqual(["view_item","add_to_cart","begin_checkout","add_payment_info","generate_lead","search"]);

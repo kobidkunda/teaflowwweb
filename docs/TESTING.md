@@ -1,5 +1,36 @@
 # Testing and Screenshot Guide
 
+## Meta catalogue matching — 11 November 2026
+
+Executed the Purchase regression before the fix: it failed because the emitted
+Meta payload omitted SKU contents. After the fix, 39 focused tests pass across
+GTM export/mapping, consent/deduplication, PurchaseStatus retry and tracking CSP.
+Focused ESLint and changed-file whitespace checks pass. The complete import's
+Google tags are compared against the saved baseline without changes. A minimal
+Purchase-only import has no Google/base/funnel tag edits and resolves every
+included variable reference. Purchase transport is mocked; no real charge or
+synthetic live conversion was created.
+
+Live catalogue read-back verified six new sets with 16/8/4/8/8/4 SKU members,
+the retained All Products set, and exact equality of all 24 unique CSV feed IDs
+with Meta retailer IDs. See `analytics/META_CATALOG_MATCHING_2026-11-11.json`.
+
+`npm run check` was attempted and stopped at TypeScript parsing of JSX in the
+unrelated untracked `tests/unit/add-to-cart-prompt.test.ts`. A temporary config
+excluding that file exposed additional unrelated duplicate StorefrontText imports
+and a nullable Product error. No errors named the changed Meta/Purchase files.
+The broad suite excluding that malformed test completed with 2,954 passing,
+10 failing and six skipped tests (172 passing files, eight failing files,
+one skipped). Failures concern unrelated storefront markup/spacing, private-label
+markup, and console logging in the untracked recommendations module. Those
+concurrent changes were retained. The broad run preceded the final two added
+GTM assertions; the final 39-test focused run includes them.
+
+Full check/build is not reported as passing. GTM workspace export/backup,
+publication, Meta Test Events receipt, fresh match-rate verification and website
+deployment remain pending. The available catalogue health window ends November 9
+and has no measured records; a null rate is not evidence of a resolved warning.
+
 ## Setup
 npm install
 npm run db:setup

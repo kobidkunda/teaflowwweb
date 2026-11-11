@@ -1,0 +1,177 @@
+{
+  "date": "2026-11-11",
+  "catalog_id": "949209234720485",
+  "dataset_id": "29619022431117471",
+  "sets": [
+    {
+      "product_set_id": "3254198558099890",
+      "catalog_id": "949209234720485",
+      "name": "Retail Packs",
+      "product_count": 4,
+      "product_set_type": "dynamic_set",
+      "creation_time": "2026-11-11T07:49:17-08:00",
+      "next_steps": [
+        "Use ads_catalog_list_product_sets to view the full product set",
+        "Use ads_catalog_list_products with entity_id set to the product set ID to see which products are in the set",
+        "Use ads_catalog_update_product_set to modify the filter or name"
+      ],
+      "filter_rule": "{\"and\":[{\"availability\":{\"eq\":\"in stock\"}},{\"or\":[{\"retailer_id\":{\"eq\":\"TFW-005-500G\"}},{\"retailer_id\":{\"eq\":\"TFW-007-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-008-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-008-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-005-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-006-100G\"}},{\"retailer_id\":{\"eq\":\"TFW-005-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-008-100G\"}},{\"retailer_id\":{\"eq\":\"TFW-006-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-500G\"}},{\"retailer_id\":{\"eq\":\"TFW-008-500G\"}},{\"retailer_id\":{\"eq\":\"TFW-005-100G\"}},{\"retailer_id\":{\"eq\":\"TFW-007-100G\"}},{\"retailer_id\":{\"eq\":\"TFW-006-500G\"}}]}]}",
+      "client_conversation_id": "Qp7mL2xR9vT4nB6aH8kC",
+      "variant_count": 16,
+      "ids": [
+        "TFW-005-100G",
+        "TFW-005-1KG",
+        "TFW-005-250G",
+        "TFW-005-500G",
+        "TFW-006-100G",
+        "TFW-006-1KG",
+        "TFW-006-250G",
+        "TFW-006-500G",
+        "TFW-007-100G",
+        "TFW-007-1KG",
+        "TFW-007-250G",
+        "TFW-007-500G",
+        "TFW-008-100G",
+        "TFW-008-1KG",
+        "TFW-008-250G",
+        "TFW-008-500G"
+      ],
+      "verified": true
+    },
+    {
+      "product_set_id": "3297334190655389",
+      "catalog_id": "949209234720485",
+      "name": "Bulk Packs",
+      "product_count": 2,
+      "product_set_type": "dynamic_set",
+      "creation_time": "2026-11-11T07:49:23-08:00",
+      "next_steps": [
+        "Use ads_catalog_list_product_sets to view the full product set",
+        "Use ads_catalog_list_products with entity_id set to the product set ID to see which products are in the set",
+        "Use ads_catalog_update_product_set to modify the filter or name"
+      ],
+      "size_guidance": "This is a small product selection. Total product quantity does not establish ad-deliverable quantity or a universal ad minimum. Before ad creation, assess the selected format with ads_catalog_get_dynamic_ads_health using product_set_id and ad_creation_use_case. Check catalog setup separately.",
+      "filter_rule": "{\"and\":[{\"availability\":{\"eq\":\"in stock\"}},{\"or\":[{\"retailer_id\":{\"eq\":\"TFW-006-10KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-25KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-5KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-35KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-35KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-25KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-5KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-10KG\"}}]}]}",
+      "client_conversation_id": "Qp7mL2xR9vT4nB6aH8kC",
+      "variant_count": 8,
+      "ids": [
+        "TFW-006-10KG",
+        "TFW-006-25KG",
+        "TFW-006-35KG",
+        "TFW-006-5KG",
+        "TFW-007-10KG",
+        "TFW-007-25KG",
+        "TFW-007-35KG",
+        "TFW-007-5KG"
+      ],
+      "verified": true
+    },
+    {
+      "product_set_id": "1836449387375832",
+      "catalog_id": "949209234720485",
+      "name": "Everyday Chai",
+      "product_count": 1,
+      "product_set_type": "dynamic_set",
+      "creation_time": "2026-11-11T07:49:27-08:00",
+      "next_steps": [
+        "Use ads_catalog_list_product_sets to view the full product set",
+        "Use ads_catalog_list_products with entity_id set to the product set ID to see which products are in the set",
+        "Use ads_catalog_update_product_set to modify the filter or name"
+      ],
+      "size_guidance": "This is a small product selection. Total product quantity does not establish ad-deliverable quantity or a universal ad minimum. Before ad creation, assess the selected format with ads_catalog_get_dynamic_ads_health using product_set_id and ad_creation_use_case. Check catalog setup separately.",
+      "filter_rule": "{\"and\":[{\"availability\":{\"eq\":\"in stock\"}},{\"or\":[{\"retailer_id\":{\"eq\":\"TFW-005-500G\"}},{\"retailer_id\":{\"eq\":\"TFW-005-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-005-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-005-100G\"}}]}]}",
+      "client_conversation_id": "Qp7mL2xR9vT4nB6aH8kC",
+      "variant_count": 4,
+      "ids": [
+        "TFW-005-100G",
+        "TFW-005-1KG",
+        "TFW-005-250G",
+        "TFW-005-500G"
+      ],
+      "verified": true
+    },
+    {
+      "product_set_id": "1644228937179059",
+      "catalog_id": "949209234720485",
+      "name": "Elaichi Chai",
+      "product_count": 1,
+      "product_set_type": "dynamic_set",
+      "creation_time": "2026-11-11T07:49:31-08:00",
+      "next_steps": [
+        "Use ads_catalog_list_product_sets to view the full product set",
+        "Use ads_catalog_list_products with entity_id set to the product set ID to see which products are in the set",
+        "Use ads_catalog_update_product_set to modify the filter or name"
+      ],
+      "size_guidance": "This is a small product selection. Total product quantity does not establish ad-deliverable quantity or a universal ad minimum. Before ad creation, assess the selected format with ads_catalog_get_dynamic_ads_health using product_set_id and ad_creation_use_case. Check catalog setup separately.",
+      "filter_rule": "{\"and\":[{\"availability\":{\"eq\":\"in stock\"}},{\"or\":[{\"retailer_id\":{\"eq\":\"TFW-006-10KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-5KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-100G\"}},{\"retailer_id\":{\"eq\":\"TFW-006-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-006-35KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-25KG\"}},{\"retailer_id\":{\"eq\":\"TFW-006-500G\"}}]}]}",
+      "client_conversation_id": "Qp7mL2xR9vT4nB6aH8kC",
+      "variant_count": 8,
+      "ids": [
+        "TFW-006-100G",
+        "TFW-006-10KG",
+        "TFW-006-1KG",
+        "TFW-006-250G",
+        "TFW-006-25KG",
+        "TFW-006-35KG",
+        "TFW-006-500G",
+        "TFW-006-5KG"
+      ],
+      "verified": true
+    },
+    {
+      "product_set_id": "2243825256539526",
+      "catalog_id": "949209234720485",
+      "name": "Ginger Chai",
+      "product_count": 1,
+      "product_set_type": "dynamic_set",
+      "creation_time": "2026-11-11T07:49:36-08:00",
+      "next_steps": [
+        "Use ads_catalog_list_product_sets to view the full product set",
+        "Use ads_catalog_list_products with entity_id set to the product set ID to see which products are in the set",
+        "Use ads_catalog_update_product_set to modify the filter or name"
+      ],
+      "size_guidance": "This is a small product selection. Total product quantity does not establish ad-deliverable quantity or a universal ad minimum. Before ad creation, assess the selected format with ads_catalog_get_dynamic_ads_health using product_set_id and ad_creation_use_case. Check catalog setup separately.",
+      "filter_rule": "{\"and\":[{\"availability\":{\"eq\":\"in stock\"}},{\"or\":[{\"retailer_id\":{\"eq\":\"TFW-007-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-007-25KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-35KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-500G\"}},{\"retailer_id\":{\"eq\":\"TFW-007-5KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-10KG\"}},{\"retailer_id\":{\"eq\":\"TFW-007-100G\"}}]}]}",
+      "client_conversation_id": "Qp7mL2xR9vT4nB6aH8kC",
+      "variant_count": 8,
+      "ids": [
+        "TFW-007-100G",
+        "TFW-007-10KG",
+        "TFW-007-1KG",
+        "TFW-007-250G",
+        "TFW-007-25KG",
+        "TFW-007-35KG",
+        "TFW-007-500G",
+        "TFW-007-5KG"
+      ],
+      "verified": true
+    },
+    {
+      "product_set_id": "1437966238476165",
+      "catalog_id": "949209234720485",
+      "name": "Masala Chai",
+      "product_count": 1,
+      "product_set_type": "dynamic_set",
+      "creation_time": "2026-11-11T07:49:40-08:00",
+      "next_steps": [
+        "Use ads_catalog_list_product_sets to view the full product set",
+        "Use ads_catalog_list_products with entity_id set to the product set ID to see which products are in the set",
+        "Use ads_catalog_update_product_set to modify the filter or name"
+      ],
+      "size_guidance": "This is a small product selection. Total product quantity does not establish ad-deliverable quantity or a universal ad minimum. Before ad creation, assess the selected format with ads_catalog_get_dynamic_ads_health using product_set_id and ad_creation_use_case. Check catalog setup separately.",
+      "filter_rule": "{\"and\":[{\"availability\":{\"eq\":\"in stock\"}},{\"or\":[{\"retailer_id\":{\"eq\":\"TFW-008-1KG\"}},{\"retailer_id\":{\"eq\":\"TFW-008-250G\"}},{\"retailer_id\":{\"eq\":\"TFW-008-100G\"}},{\"retailer_id\":{\"eq\":\"TFW-008-500G\"}}]}]}",
+      "client_conversation_id": "Qp7mL2xR9vT4nB6aH8kC",
+      "variant_count": 4,
+      "ids": [
+        "TFW-008-100G",
+        "TFW-008-1KG",
+        "TFW-008-250G",
+        "TFW-008-500G"
+      ],
+      "verified": true
+    }
+  ],
+  "retained_all_products_set": "2661373077646339",
+  "gtm_publication": "pending authenticated workspace export, merge, preview and publication",
+  "website_deployment": "not performed"
+}

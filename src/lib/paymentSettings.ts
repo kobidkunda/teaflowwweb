@@ -53,6 +53,14 @@ export const paymentSettingsSchema = z.object({
   prepaid_discount_max_rupees: z.coerce.number().min(0).default(100),
   min_order_for_discount_rupees: z.coerce.number().min(0).default(0),
   payment_discount_badge_text: z.string().max(100).default("⚡ Instant 2% Off with UPI · 1% Off on Cards"),
+  // Wholesale Order Payment & Advance PG Rules
+  wholesale_advance_percent: z.coerce.number().min(0).max(100).default(0),
+  wholesale_bank_beneficiary: z.string().max(100).default("Nirva"),
+  wholesale_bank_name: z.string().max(100).default("HDFC Bank"),
+  wholesale_bank_account_number: z.string().max(50).default(""),
+  wholesale_bank_ifsc: z.string().max(20).default(""),
+  wholesale_bank_branch: z.string().max(100).default("Siliguri"),
+  wholesale_bank_upi_id: z.string().max(100).default(""),
 });
 
 export type PaymentSettingsInput = z.infer<typeof paymentSettingsSchema>;
@@ -270,6 +278,15 @@ export function getPaymentSettings(baseUrl = "https://teafloww.com"): PaymentSet
 
     min_order_for_discount_rupees: Number(map.get("min_order_for_discount_rupees") ?? "0"),
     payment_discount_badge_text: map.get("payment_discount_badge_text") || "⚡ Instant 2% Off with UPI · 1% Off on Cards",
+
+    // Wholesale Order Payment & Advance PG Rules
+    wholesale_advance_percent: Math.min(100, Math.max(0, Number(map.get("wholesale_advance_percent") || "0"))),
+    wholesale_bank_beneficiary: map.get("wholesale_bank_beneficiary") || "Nirva",
+    wholesale_bank_name: map.get("wholesale_bank_name") || "HDFC Bank",
+    wholesale_bank_account_number: map.get("wholesale_bank_account_number") || "",
+    wholesale_bank_ifsc: map.get("wholesale_bank_ifsc") || "",
+    wholesale_bank_branch: map.get("wholesale_bank_branch") || "Siliguri",
+    wholesale_bank_upi_id: map.get("wholesale_bank_upi_id") || "",
   };
 }
 
@@ -306,6 +323,13 @@ export function updatePaymentSettings(rawInput: unknown): PaymentSettings {
     ["gateway_direct_purchase", parsed.gateway_direct_purchase],
     ["gateway_sample_kit", parsed.gateway_sample_kit],
     ["gateway_subscription", parsed.gateway_subscription],
+    ["wholesale_advance_percent", String(Math.min(100, Math.max(0, Math.round(parsed.wholesale_advance_percent))))],
+    ["wholesale_bank_beneficiary", parsed.wholesale_bank_beneficiary.trim()],
+    ["wholesale_bank_name", parsed.wholesale_bank_name.trim()],
+    ["wholesale_bank_account_number", parsed.wholesale_bank_account_number.trim()],
+    ["wholesale_bank_ifsc", parsed.wholesale_bank_ifsc.trim().toUpperCase()],
+    ["wholesale_bank_branch", parsed.wholesale_bank_branch.trim()],
+    ["wholesale_bank_upi_id", parsed.wholesale_bank_upi_id.trim()],
     ["youpi_enabled", parsed.youpi_enabled ? "1" : "0"],
     ["youpi_api_url", parsed.youpi_api_url.trim()],
     ["youpi_checkout_url", parsed.youpi_checkout_url.trim()],

@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import { liveOrder, validGuestToken, syncYoupiOrderStatus } from "@/lib/international/orders";
 import { convertPaise, formatMoney } from "@/lib/international/money";
 import type { Quote } from "@/lib/international/models";
+import { getStoreSettings } from "@/lib/storeSettings";
 import { PurchaseStatus } from "@/components/international/PurchaseStatus";
+import { WholesaleBankDetailsCard } from "@/components/international/WholesaleBankDetailsCard";
 import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
 import {
   CheckCircle2,
@@ -56,7 +58,25 @@ export default async function PurchasePage({
   }
 
   const q = JSON.parse(order.document) as Quote;
-  const isConfirmed = order.payment_status === "paid" || order.payment_status === "cod_due" || order.payment_status === "cod_remitted";
+  const isBankTransfer = order.payment_status === "pending_bank_transfer";
+  const isAdvancePaid = order.payment_status === "advance_paid";
+  const isWholesale = Boolean(q.wholesale) || isBankTransfer || isAdvancePaid;
+  const isConfirmed =
+    order.payment_status === "paid" ||
+    order.payment_status === "cod_due" ||
+    order.payment_status === "cod_remitted" ||
+    isBankTransfer ||
+    isAdvancePaid;
+
+  const storeSettings = getStoreSettings();
+  const bankDetails = q.wholesale?.bankDetails || {
+    beneficiary: storeSettings.wholesale_bank_beneficiary,
+    bankName: storeSettings.wholesale_bank_name,
+    accountNumber: storeSettings.wholesale_bank_account_number,
+    ifsc: storeSettings.wholesale_bank_ifsc,
+    branch: storeSettings.wholesale_bank_branch,
+    upiId: storeSettings.wholesale_bank_upi_id,
+  };
 
   const reference = id.slice(0, 8).toUpperCase();
   const formatCur = (minor: number) => formatMoney(minor, q.currency, q.input.locale);
@@ -68,6 +88,7 @@ export default async function PurchasePage({
     card: "Credit / Debit Card",
     netbanking: "NetBanking",
     prepaid: "Online Prepaid",
+    bank_transfer: "Direct Bank Transfer (A/C Transfer)",
   };
 
   return (
@@ -105,12 +126,20 @@ export default async function PurchasePage({
               TeaFloww · Direct-from-Origin Harvest
             </p>
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-serif text-[#171713] font-normal leading-tight">
-              {order.payment_status === "cod_due"
+              {isBankTransfer
+                ? "Wholesale Order Confirmed"
+                : isAdvancePaid
+                ? "Wholesale Advance Payment Received"
+                : order.payment_status === "cod_due"
                 ? "Your order is confirmed."
                 : "Thank you for your order."}
             </h1>
             <p className="text-sm text-[#5c6659] mt-2 max-w-2xl">
-              {order.payment_status === "cod_due"
+              {isBankTransfer
+                ? "Your wholesale order has been recorded. Please complete the account transfer using the bank details below before dispatch. Surface transport will be booked upon payment confirmation."
+                : isAdvancePaid
+                ? "Advance payment received. Balance due via direct account transfer before commercial road transport dispatch."
+                : order.payment_status === "cod_due"
                 ? "We have received your cash-on-delivery order. Please keep the exact amount ready upon delivery."
                 : "Payment received. Our tea masters at our Siliguri estate hub are preparing your freshly harvested orthodox teas for dispatch within 24–48 hours."}
             </p>
@@ -124,10 +153,20 @@ export default async function PurchasePage({
                 className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                   order.payment_status === "paid"
                     ? "bg-[#e8f5e9] text-[#2e7d32]"
+                    : isAdvancePaid
+                    ? "bg-[#e0f2fe] text-[#0369a1]"
+                    : isBankTransfer
+                    ? "bg-[#fff8e1] text-[#b39156]"
                     : "bg-[#fff8e1] text-[#b39156]"
                 }`}
               >
-                {order.payment_status === "paid" ? "Paid" : "Payment Due on Delivery"}
+                {order.payment_status === "paid"
+                  ? "Paid"
+                  : isAdvancePaid
+                  ? "Advance Paid · Balance Due"
+                  : isBankTransfer
+                  ? "Awaiting Bank Transfer"
+                  : "Payment Due on Delivery"}
               </span>
             </div>
           </div>
@@ -157,7 +196,11 @@ export default async function PurchasePage({
             </h1>
             <p className="text-sm text-[#5c6659] mt-2 max-w-2xl">
               {order.payment_status === "payment_failed"
-                ? "Your online payment could not be completed or was cancelled. If funds were debited, they will be automatically refunded by your bank within 3–5 business days. Please retry paying online or switch this order to Cash on Delivery (COD) below to confirm your order immediately."
+                ? isWholesale
+                  ? "Your online advance payment could not be completed. You may retry paying the advance online or proceed directly with bank transfer."
+                  : "Your online payment could not be completed or was cancelled. If funds were debited, they will be automatically refunded by your bank within 3–5 business days. Please retry paying online or switch this order to Cash on Delivery (COD) below to confirm your order immediately."
+                : isWholesale
+                ? "We have not yet received confirmation from your payment provider. If you completed payment, it may take a few moments to sync."
                 : "We have not yet received confirmation from your payment provider. If you completed payment, it may take a few moments to sync. You can retry paying online, or switch this order to Cash on Delivery (COD) to prevent dispatch delays."}
             </p>
 
@@ -186,12 +229,34 @@ export default async function PurchasePage({
         token={token}
         initial={order.payment_status}
         analytics={quoteAnalytics(q)}
+        isWholesale={isWholesale}
       />
 
       {/* Two Column Order Details Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Tea Items & Destination */}
         <div className="lg:col-span-7 space-y-6">
+          {/* Wholesale Bank Details Card (if wholesale order) */}
+          {isWholesale && (
+            <WholesaleBankDetailsCard
+              beneficiary={bankDetails.beneficiary}
+              bankName={bankDetails.bankName}
+              accountNumber={bankDetails.accountNumber}
+              ifsc={bankDetails.ifsc}
+              branch={bankDetails.branch}
+              upiId={bankDetails.upiId}
+              orderReference={reference}
+              totalMinor={q.totalMinor}
+              advanceMinor={q.wholesale?.advanceMinor}
+              balanceMinor={q.wholesale?.balanceMinor}
+              currency={q.currency}
+              paymentStatus={order.payment_status}
+              advancePercent={q.wholesale?.advancePercent}
+              whatsappNumber={storeSettings.whatsapp_number}
+              locale={q.input.locale}
+            />
+          )}
+
           {/* Ordered Items List */}
           <section
             className="p-6 rounded-2xl border border-[#ded7cb] bg-white shadow-sm"
@@ -305,9 +370,11 @@ export default async function PurchasePage({
               </div>
 
               <div className="flex justify-between text-[#5c6659]">
-                <dt>Express Delivery</dt>
+                <dt>{isWholesale ? "Commercial Road Freight" : "Express Delivery"}</dt>
                 <dd className="font-medium text-[#171713]">
-                  {q.components.shipping === 0 ? (
+                  {isWholesale ? (
+                    <span className="text-[#b39156] font-semibold">To-Pay Bilty (Payable on Delivery)</span>
+                  ) : q.components.shipping === 0 ? (
                     <span className="text-[#2e7d32] font-semibold">Free Delivery</span>
                   ) : (
                     formatCur(q.components.shipping)
@@ -329,14 +396,52 @@ export default async function PurchasePage({
                 </div>
               ) : null}
 
-              <div className="pt-3 border-t border-[#f0ede6] flex justify-between items-baseline">
-                <dt className="text-base font-bold text-[#171713]">
-                  {order.payment_status === "cod_due" ? "Total Due on Delivery" : "Total Amount Paid"}
-                </dt>
-                <dd className="text-xl font-bold text-[#23483a]">
-                  {formatCur(q.totalMinor)}
-                </dd>
-              </div>
+              {isWholesale ? (
+                <div className="pt-3 border-t border-[#f0ede6] space-y-2">
+                  <div className="flex justify-between items-baseline">
+                    <dt className="text-base font-bold text-[#171713]">Total Order Value</dt>
+                    <dd className="text-xl font-bold text-[#23483a]">{formatCur(q.totalMinor)}</dd>
+                  </div>
+
+                  {(q.wholesale?.advanceMinor ?? 0) > 0 ? (
+                    <>
+                      <div className="flex justify-between items-baseline text-xs text-[#2e7d32]">
+                        <dt className="font-medium">
+                          {isAdvancePaid || order.payment_status === "paid" ? "Advance Paid Online" : "Advance Due Online"} ({q.wholesale?.advancePercent}%)
+                        </dt>
+                        <dd className="font-semibold">{formatCur(q.wholesale!.advanceMinor)}</dd>
+                      </div>
+
+                      <div className="flex justify-between items-baseline text-sm font-bold text-[#b39156] pt-1 border-t border-dashed border-[#e6e0d5]">
+                        <dt>
+                          {order.payment_status === "paid" ? "Balance (Settled)" : "Balance Due Before Dispatch"}
+                        </dt>
+                        <dd className="text-lg text-[#23483a]">
+                          {order.payment_status === "paid" ? "₹0" : formatCur(q.wholesale!.balanceMinor)}
+                        </dd>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between items-baseline text-sm font-bold text-[#b39156] pt-1 border-t border-dashed border-[#e6e0d5]">
+                      <dt>
+                        {order.payment_status === "paid" ? "Bank Transfer (Settled)" : "Total Due via Bank Transfer"}
+                      </dt>
+                      <dd className="text-lg text-[#23483a]">
+                        {order.payment_status === "paid" ? "₹0" : formatCur(q.totalMinor)}
+                      </dd>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="pt-3 border-t border-[#f0ede6] flex justify-between items-baseline">
+                  <dt className="text-base font-bold text-[#171713]">
+                    {order.payment_status === "cod_due" ? "Total Due on Delivery" : "Total Amount Paid"}
+                  </dt>
+                  <dd className="text-xl font-bold text-[#23483a]">
+                    {formatCur(q.totalMinor)}
+                  </dd>
+                </div>
+              )}
             </dl>
 
             <div className="mt-4 pt-4 border-t border-[#f0ede6] flex items-center justify-between text-xs text-[#5c6659]">

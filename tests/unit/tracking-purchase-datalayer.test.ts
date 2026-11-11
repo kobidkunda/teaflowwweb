@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { trackPurchase, type TrackingItem } from "@/lib/seo/tracking";
-import { updateTrackingConsent, CONSENT_KEY } from "@/lib/seo/consent";
+import { updateTrackingConsent } from "@/lib/seo/consent";
 
 describe("trackPurchase GTM & Meta Pixel dataLayer event", () => {
   const localStorageStore = new Map<string, string>();
@@ -83,6 +83,21 @@ describe("trackPurchase GTM & Meta Pixel dataLayer event", () => {
     expect(teaflowwPurchaseEvent?.tf_purchase_currency).toBe("INR");
     expect(teaflowwPurchaseEvent?.tf_purchase_order_id).toBe("order-abc-123");
     expect(teaflowwPurchaseEvent?.tf_purchase_event_id).toBe("purchase_order-abc-123");
+    expect(teaflowwPurchaseEvent?.ecommerce).toEqual({ currency: "INR", value: 1900, items: sampleItems });
+  });
+
+  it("does not emit a purchase before consent and allows a later consented retry", () => {
+    updateTrackingConsent({ analytics: false, marketing: false });
+    expect(trackPurchase("consent-order", 1900, 0, 0, sampleItems)).toBe(false);
+    expect(window.dataLayer?.filter(e => e.event === "teafloww_purchase")).toHaveLength(0);
+    updateTrackingConsent({ analytics: false, marketing: true });
+    expect(trackPurchase("consent-order", 1900, 0, 0, sampleItems)).toBe(true);
+    expect(window.dataLayer?.filter(e => e.event === "teafloww_purchase")).toHaveLength(1);
+  });
+
+  it("rejects purchases without items instead of reusing old ecommerce contents", () => {
+    expect(trackPurchase("empty-order", 1900, 0, 0, [])).toBe(false);
+    expect(window.dataLayer?.filter(e => e.event === "teafloww_purchase")).toHaveLength(0);
   });
 
   it("calculates total amount if total argument is omitted", () => {

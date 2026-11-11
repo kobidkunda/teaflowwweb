@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { MessageCircle, X, ExternalLink, Sparkles } from "lucide-react";
@@ -104,13 +105,11 @@ export function PrivateLabelWhatsAppHelp({
                 <MessageCircle size={18} fill="#092B23" />
               </div>
               <div>
-                <h2 className="text-sm font-semibold tracking-wide text-[#FFFCF7] leading-tight">
-                  Private Label Concierge
+                <h2 className="text-sm font-semibold tracking-wide text-[#FFFCF7] leading-tight"><StorefrontText id="copy_1f2e96b98cb097b5" fallback="Private Label Concierge" />
                 </h2>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse inline-block" />
-                  <span className="text-[11px] text-[#A3B8B0]">
-                    Direct from Siliguri Origin Desk
+                  <span className="text-[11px] text-[#A3B8B0]"><StorefrontText id="copy_4388acc5c7230d24" fallback="Direct from Siliguri Origin Desk" />
                   </span>
                 </div>
               </div>
@@ -127,14 +126,13 @@ export function PrivateLabelWhatsAppHelp({
 
           {/* Card Body */}
           <div className="p-4 space-y-3.5 text-xs bg-[#092B23]/95">
-            <p className="text-[#DDE4DC] leading-relaxed">
-              Stuck choosing tea blends, packaging sizes, or custom dielines? Message our team directly on WhatsApp for real-time guidance.
+            <p className="text-[#DDE4DC] leading-relaxed"><StorefrontText id="copy_3543d35a85b55e23" fallback="Stuck choosing tea blends, packaging sizes, or custom dielines? Message our team directly on WhatsApp for real-time guidance." />
             </p>
 
             {/* Quick Question Chips */}
             <div>
               <span className="block text-[11px] uppercase font-semibold tracking-wider text-[#D7B474] mb-2 flex items-center gap-1">
-                <Sparkles size={12} /> Common Questions
+                <Sparkles size={12} /><StorefrontText id="copy_dfbe4d437b595147" fallback="Common Questions" />
               </span>
               <div className="flex flex-wrap gap-1.5">
                 {QUICK_HELP_TOPICS.map((item) => {
@@ -161,8 +159,7 @@ export function PrivateLabelWhatsAppHelp({
 
             {/* Optional Specific Note */}
             <div>
-              <label htmlFor="pl-whatsapp-note" className="block text-[11px] text-[#A3B8B0] mb-1">
-                Specific question or target volume (optional):
+              <label htmlFor="pl-whatsapp-note" className="block text-[11px] text-[#A3B8B0] mb-1"><StorefrontText id="copy_8e6ecfeeef5d8284" fallback="Specific question or target volume (optional):" />
               </label>
               <input
                 id="pl-whatsapp-note"
@@ -188,13 +185,12 @@ export function PrivateLabelWhatsAppHelp({
                 className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba59] active:bg-[#1da850] text-[#092B23] font-bold py-2.5 px-4 rounded-lg text-xs tracking-wide transition-all shadow-md transform hover:-translate-y-0.5"
               >
                 <MessageCircle size={16} fill="#092B23" />
-                <span>Chat on WhatsApp ({displayPhone})</span>
+                <span><StorefrontText id="copy_272abea25f3ae801" fallback="Chat on WhatsApp (" />{displayPhone})</span>
                 <ExternalLink size={13} className="opacity-80" />
               </a>
             </div>
 
-            <div className="text-[10px] text-center text-[#A3B8B0]/80">
-              Response commitment: Mon–Sat · 09:00 to 18:00 IST
+            <div className="text-[10px] text-center text-[#A3B8B0]/80"><StorefrontText id="copy_91fb52ec4e1df7dc" fallback="Response commitment: Mon–Sat · 09:00 to 18:00 IST" />
             </div>
           </div>
         </div>

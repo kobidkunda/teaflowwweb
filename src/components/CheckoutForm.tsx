@@ -59,7 +59,15 @@ export function CheckoutForm() {
   );
   const [discount, setDiscount] = useState(0);
 
-  const quote = quoteTotals(subtotal, discount);
+  const hasWholesale = items.some((x) => x.isWholesale || x.quantity > 20);
+  const baseQuote = quoteTotals(subtotal, discount);
+  const quote = hasWholesale
+    ? {
+        ...baseQuote,
+        shippingPaise: 0,
+        totalPaise: Math.max(0, subtotal - discount),
+      }
+    : baseQuote;
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const shipProgress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
 
@@ -304,6 +312,12 @@ export function CheckoutForm() {
           </section>
 
           <ul className="checkout-trust" aria-label="Good to know">
+            {hasWholesale && (
+              <li style={{ color: "#7d5615", fontWeight: 600 }}>
+                <Truck size={18} aria-hidden="true" />
+                <span><StorefrontText id="copy_d46903366e5f6981" fallback="Wholesale Transport: Dispatched via surface cargo. Freight charges are extra and to-pay on delivery." /></span>
+              </li>
+            )}
             <li><ShieldCheck size={18} aria-hidden="true" /> <StorefrontText id="copy_bf5e3040c5d5d3a2" fallback="No real payment collected — this records a complimentary demo order." /> </li>
             <li><Truck size={18} aria-hidden="true" /> <StorefrontText id="copy_a0aab610f08ce212" fallback="Complimentary shipping unlocked for orders above ₹1,500 (flat ₹99 under)." /> </li>
             <li><Lock size={18} aria-hidden="true" /> <StorefrontText id="copy_1fbd4be4b23b933a" fallback="GST included in quoted prices. The server re-verifies every line." /> </li>
@@ -342,15 +356,15 @@ export function CheckoutForm() {
                           type="button"
                           aria-label={"Decrease quantity of " + x.name}
                           disabled={loading || x.quantity <= 1}
-                          onClick={() => changeQuantity(x.variantId, x.quantity - 1)}
-                        >−</button>
+                          onClick={() => changeQuantity(x.variantId, x.isWholesale ? Math.max(1, x.quantity - 10) : x.quantity - 1)}
+                        >{x.isWholesale ? "−10" : "−"}</button>
                         <span aria-live="polite" aria-label={"Quantity: " + x.quantity}>{x.quantity}</span>
                         <button
                           type="button"
                           aria-label={"Increase quantity of " + x.name}
-                          disabled={loading || x.quantity >= 20}
-                          onClick={() => changeQuantity(x.variantId, x.quantity + 1)}
-                        >+</button>
+                          disabled={loading || x.quantity >= (x.isWholesale ? 10000 : 20)}
+                          onClick={() => changeQuantity(x.variantId, x.isWholesale ? Math.min(10000, x.quantity + 10) : x.quantity + 1)}
+                        >{x.isWholesale ? "+10" : "+"}</button>
                       </div>
                       <button
                         type="button"
@@ -404,7 +418,13 @@ export function CheckoutForm() {
               <div>
                 <span> <StorefrontText id="copy_ad5751430e295f0c" fallback="Shipping" /> </span>
                 <strong>
-                  {quote.shippingPaise ? formatINR(quote.shippingPaise) : <span className="free-shipping-tag"> <StorefrontText id="copy_40a759107d744ceb" fallback="Complimentary" /> </span>}
+                  {hasWholesale ? (
+                    <span style={{ fontSize: "12px", color: "#684407" }}><StorefrontText id="copy_8c1a37c222148652" fallback="Transport Extra (To-Pay)" /></span>
+                  ) : quote.shippingPaise ? (
+                    formatINR(quote.shippingPaise)
+                  ) : (
+                    <span className="free-shipping-tag"> <StorefrontText id="copy_40a759107d744ceb" fallback="Complimentary" /> </span>
+                  )}
                 </strong>
               </div>
               {quote.taxPaise ? (

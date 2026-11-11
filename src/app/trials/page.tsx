@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { constructMetadata } from "@/lib/seo/metadata";
@@ -76,9 +77,9 @@ export default async function TrialsCataloguePage({
       <nav className="sr-only" aria-label="Breadcrumb">
         <ol>
           <li>
-            <Link href="/">Home</Link>
+            <Link href="/"><StorefrontText id="copy_3a78695388b38b5c" fallback="Home" /></Link>
           </li>
-          <li aria-current="page">Trials</li>
+          <li aria-current="page"><StorefrontText id="copy_9d3e674e1c363b5f" fallback="Trials" /></li>
         </ol>
       </nav>
 

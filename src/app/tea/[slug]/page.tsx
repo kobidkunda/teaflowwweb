@@ -1,3 +1,4 @@
+import React from "react";
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { requestContext } from "@/lib/international/context";
 import { localize } from "@/lib/international/translations";
@@ -16,6 +17,8 @@ import { PDPInteractiveTabs } from "@/components/PDPInteractiveTabs";
 import { StickyPurchaseBar } from "@/components/StickyPurchaseBar";
 import { PDPTracker } from "@/components/analytics/PDPTracker";
 import { ProductDossierPdf } from "@/components/pdp/ProductDossierPdf";
+import { PDPRecommendations } from "@/components/PDPRecommendations";
+import { getRecommendationsForProduct } from "@/lib/recommendations";
 
 export const dynamic = "force-dynamic";
 
@@ -74,7 +77,7 @@ export default async function ProductPage({
   const ctx = await requestContext();
   const original = getProductBySlug(slug);
   const p = original ? localize(original, `product:${original.id}`, ctx.locale) : null;
-  if (!p) notFound();
+  if (!original || !p) notFound();
 
   let isDraftPreview = false;
   if (p.is_enabled === 0 || p.status === "draft" || p.status === "archived") {
@@ -88,6 +91,7 @@ export default async function ProductPage({
   }
 
   const images = getProductImages(p.id);
+  const recommendations = getRecommendationsForProduct(original);
   const productJsonLd = getProductSchema(p, p.variants, images);
   const categorySlug = p.category
     ? p.category.toLowerCase().replace(/&/g, "").replace(/\s+/g, "-").replace(/--+/g, "-").replace(/^-|-$/g, "")
@@ -213,11 +217,16 @@ export default async function ProductPage({
 
       {/* 4. Interactive Connoisseur Experience (Cupping Profile, Steeping Guide, Estate Terroir) */}
       {p.ingredients && <section className="container" aria-label="Ingredients" style={{ paddingBlock: 24 }}>
-        <h2 className="font-serif text-2xl">Ingredients</h2><p>{p.ingredients}</p>
+        <h2 className="font-serif text-2xl"><StorefrontText id="copy_87675db83a32caa1" fallback="Ingredients" /></h2><p>{p.ingredients}</p>
       </section>}
       <PDPInteractiveTabs product={p} images={images} />
 
       {/* 5. Recommendations Carousel / Grid */}
+      <PDPRecommendations
+        items={recommendations}
+        currentCategory={p.category}
+        currentTeaName={p.name}
+      />
 
 
       {/* 6. Scroll-Triggered Sticky Bottom Purchase Bar */}

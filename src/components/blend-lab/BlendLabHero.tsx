@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,9 +19,9 @@ export function BlendLabHero({ content }: { content?: BlendLabContentData }) {
         <p className="bl-hero-description">{content?.texts.heroDescription || "A professional tea evaluation and blending service for cafés, tea brands and bulk buyers. Get practical insights, explore possibilities and create a blend that fits your taste and business goals."}</p>
         <div className="bl-actions">
           <Link className="bl-button" href="#plans">{image?.cta_label || "Choose your evaluation"}<ArrowRight size={16} aria-hidden="true" /></Link>
-          <Link className="bl-button bl-button-outline" href="#method">Explore the method</Link>
+          <Link className="bl-button bl-button-outline" href="#method"><StorefrontText id="copy_348810b9a22e4e40" fallback="Explore the method" /></Link>
         </div>
-        <ul className="bl-hero-notes" aria-label="Our approach"><li>Leaf, infusion & cup</li><li>Practical sensory insights</li><li>Your brewing method</li></ul>
+        <ul className="bl-hero-notes" aria-label="Our approach"><li>Leaf, infusion & cup</li><li><StorefrontText id="copy_6b7fa5cd9cbd32f0" fallback="Practical sensory insights" /></li><li><StorefrontText id="copy_a744020f712951d2" fallback="Your brewing method" /></li></ul>
       </div>
       <figure className="bl-hero-art">
         <Image src={image?.image_url || "/images/blend-lab/workshop-hero.webp"} alt={image?.alt_text || "Illustration of dry tea, infused leaves, amber liquor and milk tea in porcelain tasting bowls"} fill priority sizes="(max-width: 700px) 100vw, 55vw" />

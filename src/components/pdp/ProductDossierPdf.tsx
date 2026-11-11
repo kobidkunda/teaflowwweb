@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useRef, useEffect, useState } from "react";
 import {
   FileText,
@@ -117,8 +118,7 @@ export function ProductDossierPdf({
           <div className="relative shrink-0">
             <div className="w-11 h-13 rounded-lg bg-gradient-to-b from-[#8f2d24] to-[#6d1f18] text-white flex flex-col items-center justify-center shadow-xs">
               <FileText className="w-5 h-5 text-amber-100" strokeWidth={2.2} />
-              <span className="text-[8px] font-black tracking-widest text-amber-200 uppercase mt-0.5">
-                PDF
+              <span className="text-[8px] font-black tracking-widest text-amber-200 uppercase mt-0.5"><StorefrontText id="copy_1d393b0081b632c5" fallback="PDF" />
               </span>
             </div>
             <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#2c4e38] text-white flex items-center justify-center text-[9px] shadow-xs">
@@ -129,8 +129,7 @@ export function ProductDossierPdf({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase bg-[#2c4e38]/10 text-[#2c4e38]">
-                <Award className="w-3 h-3 text-[#2c4e38]" />
-                Official Garden Dossier
+                <Award className="w-3 h-3 text-[#2c4e38]" /><StorefrontText id="copy_7f033f369e57f7ba" fallback="Official Garden Dossier" />
               </span>
               {estate && (
                 <span className="text-[11px] font-semibold text-[#666052] truncate">
@@ -143,8 +142,7 @@ export function ProductDossierPdf({
               {displayTitle}
             </h3>
 
-            <p className="text-xs text-[#596055] mt-0.5 line-clamp-2 leading-relaxed">
-              Certified single-estate cupping notes, batch origin verification, and garden analysis sheet.
+            <p className="text-xs text-[#596055] mt-0.5 line-clamp-2 leading-relaxed"><StorefrontText id="copy_266f774c8fae2e44" fallback="Certified single-estate cupping notes, batch origin verification, and garden analysis sheet." />
             </p>
           </div>
         </div>
@@ -161,7 +159,7 @@ export function ProductDossierPdf({
             data-testid="pdp-view-dossier-btn"
           >
             <Eye className="w-3.5 h-3.5 text-emerald-300" />
-            <span>View Dossier</span>
+            <span><StorefrontText id="copy_7f51be266c4306c6" fallback="View Dossier" /></span>
           </button>
 
           {/* Direct Download Button */}
@@ -174,7 +172,7 @@ export function ProductDossierPdf({
             data-testid="pdp-download-dossier-btn"
           >
             <Download className="w-3.5 h-3.5 text-[#b36b3d]" />
-            <span className="hidden xs:inline">Download</span>
+            <span className="hidden xs:inline"><StorefrontText id="copy_d6eafe8235910042" fallback="Download" /></span>
           </a>
         </div>
       </div>
@@ -196,8 +194,7 @@ export function ProductDossierPdf({
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-11 rounded bg-gradient-to-b from-[#8f2d24] to-[#6d1f18] text-white flex flex-col items-center justify-center shrink-0 shadow-2xs">
               <FileText className="w-4 h-4 text-amber-100" />
-              <span className="text-[7px] font-black tracking-widest text-amber-200 uppercase">
-                PDF
+              <span className="text-[7px] font-black tracking-widest text-amber-200 uppercase"><StorefrontText id="copy_1d393b0081b632c5" fallback="PDF" />
               </span>
             </div>
 
@@ -210,7 +207,7 @@ export function ProductDossierPdf({
                   {displayTitle}
                 </h2>
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-[#e8f0eb] text-[#2c4e38]">
-                  <Sparkles className="w-2.5 h-2.5" /> Authenticated
+                  <Sparkles className="w-2.5 h-2.5" /><StorefrontText id="copy_6ab694cfc6fa5d8c" fallback="Authenticated" />
                 </span>
               </div>
               <p id="pdp-pdf-dialog-desc" className="text-xs text-[#63685e] truncate mt-0.5">
@@ -234,7 +231,7 @@ export function ProductDossierPdf({
               title="Open full PDF document in a new browser tab"
             >
               <ExternalLink className="w-3.5 h-3.5 text-[#555e50]" />
-              <span>Full Screen</span>
+              <span><StorefrontText id="copy_f024d23702d28653" fallback="Full Screen" /></span>
             </a>
 
             {/* Direct Download */}
@@ -245,7 +242,7 @@ export function ProductDossierPdf({
               title="Download PDF"
             >
               <Download className="w-3.5 h-3.5 text-emerald-200" />
-              <span className="hidden sm:inline">Download</span>
+              <span className="hidden sm:inline"><StorefrontText id="copy_d6eafe8235910042" fallback="Download" /></span>
             </a>
 
             {/* Accessible Native Close Button via <form method="dialog"> */}
@@ -276,23 +273,21 @@ export function ProductDossierPdf({
 
           {/* Mobile & Small Screen Fallback Ribbon */}
           <div className="sm:hidden px-4 py-2.5 bg-[#fbf8f1] border-t border-[#dcd4c4] text-center text-[11px] text-[#555a50] flex items-center justify-between gap-2">
-            <span>Viewing on mobile?</span>
+            <span><StorefrontText id="copy_62bcfd7f757b302f" fallback="Viewing on mobile?" /></span>
             <div className="flex gap-2">
               <a
                 href={pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#2c4e38] font-bold underline"
-              >
-                Open Fullscreen
+              ><StorefrontText id="copy_7d3752038344b933" fallback="Open Fullscreen" />
               </a>
               <span className="text-[#999]">•</span>
               <a
                 href={`${pdfUrl}?download=1`}
                 download
                 className="text-[#b36b3d] font-bold underline"
-              >
-                Download PDF
+              ><StorefrontText id="copy_6183be0883d2a89c" fallback="Download PDF" />
               </a>
             </div>
           </div>

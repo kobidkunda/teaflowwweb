@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState } from "react";
 import Link from "next/link";
 import type { TrialPublicDto } from "@/lib/trials/types";
@@ -23,6 +24,16 @@ export function TrialPDPInteractiveView({ trial }: TrialPDPInteractiveViewProps)
 
   const components = trial.components || [];
   const activeComponent = components[activePouchIndex] || components[0];
+
+  // In /trials/4-x-25-gm (and any trial where milk_tea is absent but packaging is present),
+  // ensure the authentic packaging photo is shown initially instead of missing photo fallback.
+  const hasMilkTea = Boolean(
+    components[0]?.assets?.some(
+      (a) => a.stage.toLowerCase().replace(/[\s_-]+/g, "_") === "milk_tea"
+    )
+  );
+  const initialStage =
+    trial.slug === "4-x-25-gm" || !hasMilkTea ? "packaging" : "milk_tea";
 
   // Localized trial title and description
   const localizedTitle =
@@ -51,9 +62,9 @@ export function TrialPDPInteractiveView({ trial }: TrialPDPInteractiveViewProps)
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <nav aria-label="Breadcrumb trail" className="breadcrumbs text-[11px] text-[#bea585] uppercase tracking-wider font-semibold">
               <ol className="flex items-center gap-2">
-                <li><Link href="/" className="hover:underline">HOME</Link></li>
+                <li><Link href="/" className="hover:underline"><StorefrontText id="copy_36e65c39f83b8df9" fallback="HOME" /></Link></li>
                 <li aria-hidden="true">/</li>
-                <li><Link href="/trials" className="hover:underline">TEA TRIALS</Link></li>
+                <li><Link href="/trials" className="hover:underline"><StorefrontText id="copy_3625f384c0ca8f47" fallback="TEA TRIALS" /></Link></li>
                 <li aria-hidden="true">/</li>
                 <li aria-current="page" className="text-[#e5b869] truncate max-w-[200px] sm:max-w-none">
                   {trial.title}
@@ -76,6 +87,7 @@ export function TrialPDPInteractiveView({ trial }: TrialPDPInteractiveViewProps)
               locale={locale}
               heroImage={trial.hero_image}
               galleryImages={trial.gallery_images}
+              initialStage={initialStage}
             />
 
             <TrialBuyBox trial={localizedTrial} />

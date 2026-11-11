@@ -167,11 +167,9 @@ export function getSiteNavigation(): SiteNavigation {
   const defaultNav: NavLinkItem[] = [
     { label: "Shop Tea", href: "/shop" },
     { label: "Leaf to Cup", href: "/leaf-to-cup" },
-    { label: "Black Teas", href: "/collections/black-tea" },
     { label: "Wholesale & Bulk", href: "/wholesale" },
     { label: "Private Label", href: "/private-label" },
     { label: "Blend Lab", href: "/blend-lab" },
-    { label: "Tea Finder", href: "/tea-finder" },
     { label: "Trials & Samples", href: "/trials" },
   ];
 
@@ -195,7 +193,15 @@ export function getSiteNavigation(): SiteNavigation {
   if (rawHeader) {
     try {
       const parsed = JSON.parse(rawHeader);
-      if (Array.isArray(parsed) && parsed.length > 0) headerLinks = parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        headerLinks = parsed.filter(
+          (item) =>
+            item?.href !== "/collections/black-tea" &&
+            item?.href !== "/tea-finder" &&
+            item?.label !== "Black Teas" &&
+            item?.label !== "Tea Finder"
+        );
+      }
     } catch { /* use default */ }
   }
 

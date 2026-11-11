@@ -1,4 +1,5 @@
 "use client";
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { trackLead } from "@/lib/seo/tracking";
 
 import React, { useState } from "react";
@@ -86,11 +87,9 @@ export function ConsultationLeadForm({
               >
                 &#10003;
               </div>
-              <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: "#143C31", margin: "0 0 8px" }}>
-                Enquiry Received
+              <h3 style={{ fontFamily: "Georgia, serif", fontSize: "1.5rem", color: "#143C31", margin: "0 0 8px" }}><StorefrontText id="copy_e672e3ab553cf4ca" fallback="Enquiry Received" />
               </h3>
-              <p style={{ color: "#65746D", fontSize: "1rem", lineHeight: 1.5, margin: "0 0 20px" }}>
-                Your enquiry has been saved. Reference: {reference}. Our team will review your requirements and contact you. Sample availability, pricing and delivery will be confirmed separately.
+              <p style={{ color: "#65746D", fontSize: "1rem", lineHeight: 1.5, margin: "0 0 20px" }}><StorefrontText id="copy_253605c672e55e76" fallback="Your enquiry has been saved. Reference:" /> {reference}<StorefrontText id="copy_92b771ef86906780" fallback=". Our team will review your requirements and contact you. Sample availability, pricing and delivery will be confirmed separately." />
               </p>
               <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "12px", marginBottom: "8px" }}>
                 <a
@@ -111,7 +110,7 @@ export function ConsultationLeadForm({
                   }}
                 >
                   <MessageCircle size={18} fill="#092B23" />
-                  <span>Open in WhatsApp with Ticket</span>
+                  <span><StorefrontText id="copy_1e1b79827febaefb" fallback="Open in WhatsApp with Ticket" /></span>
                   <ExternalLink size={14} />
                 </a>
                 <button
@@ -119,8 +118,7 @@ export function ConsultationLeadForm({
                   onClick={() => setSubmitted(false)}
                   className={styles.secondaryCta}
                   style={{ color: "#143C31", borderColor: "#143C31", minHeight: "44px" }}
-                >
-                  Submit Another Request
+                ><StorefrontText id="copy_91557cb30373e66e" fallback="Submit Another Request" />
                 </button>
               </div>
             </div>
@@ -133,8 +131,7 @@ export function ConsultationLeadForm({
                     <label
                       htmlFor="lead-name"
                       style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "#171713", marginBottom: "6px" }}
-                    >
-                      Your Name *
+                    ><StorefrontText id="copy_fa414f1e7ce0e0f1" fallback="Your Name *" />
                     </label>
                     <input
                       id="lead-name"
@@ -160,8 +157,7 @@ export function ConsultationLeadForm({
                     <label
                       htmlFor="lead-email"
                       style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "#171713", marginBottom: "6px" }}
-                    >
-                      Work Email *
+                    ><StorefrontText id="copy_2164ddd3a90af32e" fallback="Work Email *" />
                     </label>
                     <input
                       id="lead-email"
@@ -189,8 +185,7 @@ export function ConsultationLeadForm({
                     <label
                       htmlFor="lead-brand"
                       style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "#171713", marginBottom: "6px" }}
-                    >
-                      Brand / Company Name
+                    ><StorefrontText id="copy_9e27a0fba18530d8" fallback="Brand / Company Name" />
                     </label>
                     <input
                       id="lead-brand"
@@ -215,8 +210,7 @@ export function ConsultationLeadForm({
                     <label
                       htmlFor="lead-units"
                       style={{ display: "block", fontSize: "0.875rem", fontWeight: 600, color: "#171713", marginBottom: "6px" }}
-                    >
-                      Planned First Run Quantity
+                    ><StorefrontText id="copy_b5081f547960bba6" fallback="Planned First Run Quantity" />
                     </label>
                     <select
                       id="lead-units"
@@ -296,7 +290,7 @@ export function ConsultationLeadForm({
                   flexWrap: "wrap",
                 }}
               >
-                <span>Stuck or need an instant answer?</span>
+                <span><StorefrontText id="copy_63cbdb70988e214b" fallback="Stuck or need an instant answer?" /></span>
                 <a
                   href={`https://wa.me/${cleanDigits}?text=${encodeURIComponent(
                     "Hello TeaFloww! I'm on the Private Label page and have a quick question before submitting my consultation form.\n\nURL: https://teafloww.com/private-label"
@@ -314,7 +308,7 @@ export function ConsultationLeadForm({
                   aria-label="Direct WhatsApp consultation"
                 >
                   <MessageCircle size={14} color="#25D366" fill="#25D366" />
-                  <span>Chat directly on WhatsApp ({displayPhone}) &rarr;</span>
+                  <span><StorefrontText id="copy_e784d9d49932cec3" fallback="Chat directly on WhatsApp (" />{displayPhone}) &rarr;</span>
                 </a>
               </div>
             </form>

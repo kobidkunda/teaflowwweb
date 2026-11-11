@@ -1,5 +1,14 @@
 export type PackagingFormat = "loose_leaf_pouch" | "luxury_tin" | "pyramid_bags";
 
+export interface WholesaleSlab {
+  id?: number;
+  product_id?: number;
+  variant_id: number;
+  min_qty: number;
+  price_paise: number;
+  created_at?: string;
+}
+
 export interface Variant {
   id: number;
   product_id: number;
@@ -10,6 +19,7 @@ export interface Variant {
   price_paise: number;
   compare_at_price_paise?: number | null;
   stock: number;
+  wholesale_slabs?: WholesaleSlab[];
   product_name?: string;
   product_slug?: string;
   product_category?: string;
@@ -40,6 +50,7 @@ export interface Product {
   inventory?: number;
   pdf_url?: string | null;
   pdf_title?: string | null;
+  wholesale_moq?: number | null;
 
   // 6-Axis sensory profile (integers 0–5)
   floral: number;

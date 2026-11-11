@@ -35,11 +35,30 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
     }
     const id = Number(key.slice(8));
     const row = db.prepare(`SELECT v.id AS "variantId",v.product_id AS "productId",v.price_paise AS "pricePaise",v.grams,v.sku,v.stock,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=? AND ${enabledProductCondition("p")} AND p.status='published'`).get(id) as (QuoteLine & { stock: number; pricepaise?: number; variantid?: number; productId?: number; productid?: number }) | undefined;
-    if (!row || quantity > 20 || row.stock < quantity || m.blockedSkus.includes(row.sku)) throw new CommerceError("A selected tea is unavailable for this destination or quantity.");
-    const pricePaise = row.pricePaise ?? row.pricepaise ?? 0;
+    if (!row || row.stock < quantity || m.blockedSkus.includes(row.sku)) throw new CommerceError("A selected tea is unavailable for this destination or quantity.");
     const variantId = row.variantId ?? row.variantid ?? id;
-    lines.push({ variantId, quantity, pricePaise, grams: row.grams, sku: row.sku?.trim() || `HTH-${row.productId ?? row.productid}-${variantId}`, name: row.name });
+    let unitPrice = row.pricePaise ?? row.pricepaise ?? 0;
+    let isWholesale = false;
+    let slabRows: Array<{ min_qty: number; price_paise: number }> = [];
+    try {
+      slabRows = db.prepare("SELECT min_qty, price_paise FROM wholesale_slabs WHERE variant_id=? ORDER BY min_qty DESC").all(variantId) as Array<{ min_qty: number; price_paise: number }>;
+      const activeSlab = slabRows.find((s) => quantity >= s.min_qty);
+      if (activeSlab) {
+        unitPrice = activeSlab.price_paise;
+        isWholesale = true;
+      }
+    } catch {}
+
+    if (quantity > 20 && !isWholesale) {
+      if (slabRows.length > 0) {
+        const minRequired = Math.min(...slabRows.map((s) => s.min_qty));
+        throw new CommerceError(`Minimum wholesale quantity is ${minRequired} units.`);
+      }
+      throw new CommerceError("Maximum retail quantity is 20 per variant. For larger orders, wholesale pricing slabs apply.");
+    }
+    lines.push({ variantId, quantity, pricePaise: unitPrice, grams: row.grams, sku: row.sku?.trim() || `HTH-${row.productId ?? row.productid}-${variantId}`, name: row.name, isWholesale });
   }
+  const hasWholesale = lines.some((l) => Boolean(l.isWholesale));
   const subtotalPaise = lines.reduce((s, l) => s + l.pricePaise * l.quantity, 0);
   const coupon = input.coupon ? validateCouponServer(input.coupon, subtotalPaise) : null;
   if (coupon && !coupon.valid) throw new CommerceError(coupon.reason);
@@ -56,7 +75,10 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   let codFeePaise = m.cod.feePaise;
 
   const paySettings = getPaymentSettings();
-  if (!paySettings.online_payment_enabled && input.method !== "cod") {
+  if (hasWholesale && input.method === "cod") {
+    throw new CommerceError("Cash on delivery is not available for wholesale orders. Please proceed with account transfer or online payment.");
+  }
+  if (!paySettings.online_payment_enabled && input.method !== "cod" && input.method !== "bank_transfer") {
     throw new CommerceError("Online payment is currently disabled. Please checkout using Cash on Delivery.");
   }
 
@@ -114,34 +136,50 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   const fx = rateFor(input.currency, true);
 
   let rate: import("./providers").ShippingRate;
-  try {
-    rate = await shippingRate(input, lines, pack, m.duties === "included");
-  } catch (err) {
-    if (m.code === "IN" && m.shipping === "flat" && err instanceof CommerceError && err.message.includes("service is temporarily unavailable")) {
-      rate = {
-        id: "standard-flat",
-        costPaise: flatShippingPaise,
-        expires: Date.now() + 15 * 60000,
-        cod: true,
-        ddp: false,
-        dutiesPaise: 0,
-      };
-    } else {
-      throw err;
+  if (hasWholesale) {
+    rate = {
+      id: "wholesale_transport_topay",
+      costPaise: 0,
+      expires: Date.now() + 30 * 60000,
+      cod: false,
+      ddp: false,
+      dutiesPaise: 0,
+    };
+  } else {
+    try {
+      rate = await shippingRate(input, lines, pack, m.duties === "included");
+    } catch (err) {
+      if (m.code === "IN" && m.shipping === "flat" && err instanceof CommerceError && err.message.includes("service is temporarily unavailable")) {
+        rate = {
+          id: "standard-flat",
+          costPaise: flatShippingPaise,
+          expires: Date.now() + 15 * 60000,
+          cod: true,
+          ddp: false,
+          dutiesPaise: 0,
+        };
+      } else {
+        throw err;
+      }
     }
   }
-  if (rate.expires <= Date.now() || (m.duties === "included" && !rate.ddp) || (input.method === "cod" && !rate.cod)) throw new CommerceError("The selected delivery option is unavailable.");
+  if (!hasWholesale && (rate.expires <= Date.now() || (m.duties === "included" && !rate.ddp) || (input.method === "cod" && !rate.cod))) {
+    throw new CommerceError("The selected delivery option is unavailable.");
+  }
 
   const override = m.deliveryOverrides.find(r => r.postcodes.includes(input.address.postcode)) || m.deliveryOverrides.find(r => r.states.some(s => s.toLowerCase() === input.address.state.toLowerCase()));
   const threshold = override ? override.freeAbovePaise : freeAbovePaise;
   const baseShipping = override ? override.flatPaise : m.shipping === "flat" ? flatShippingPaise : rate.costPaise;
-  const shippingPaise = (!override && m.shipping === "included") || (threshold !== null && shippingBasis >= threshold) ? 0 : Math.max(0, baseShipping + m.handlingPaise - m.subsidyPaise);
+  const shippingPaise = hasWholesale
+    ? 0
+    : (!override && m.shipping === "included") || (threshold !== null && shippingBasis >= threshold)
+    ? 0
+    : Math.max(0, baseShipping + m.handlingPaise - m.subsidyPaise);
 
   // Payment method discount (e.g. 2% instant discount for UPI, 1% for Card in India)
   let paymentDiscountPaise = subscriptionSavings.extra;
-  if (!subscription && m.code === "IN" && input.method !== "cod") {
+  if (!hasWholesale && !subscription && m.code === "IN" && input.method !== "cod" && input.method !== "bank_transfer") {
     try {
-      const paySettings = getPaymentSettings();
       const discountResult = calculatePaymentMethodDiscountPaise(input.method, merchandise, paySettings);
       paymentDiscountPaise = discountResult.discountPaise;
     } catch {}
@@ -160,10 +198,35 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   };
 
   const totalPaise = netMerchandisePaise + shippingPaise + rate.dutiesPaise + (m.taxInclusive ? 0 : taxPaise) + (input.method === "cod" ? codFeePaise : 0);
+
+  let wholesaleMeta: import("./models").WholesaleQuoteMeta | undefined = undefined;
+  if (hasWholesale) {
+    const advancePercent = Math.min(100, Math.max(0, Math.round(Number(paySettings.wholesale_advance_percent ?? 0))));
+    const advancePaise = Math.round((totalPaise * advancePercent) / 100);
+    const balancePaise = totalPaise - advancePaise;
+    wholesaleMeta = {
+      isWholesale: true,
+      advancePercent,
+      advancePaise,
+      balancePaise,
+      advanceMinor: convert(advancePaise),
+      balanceMinor: convert(balancePaise),
+      bankDetails: {
+        beneficiary: paySettings.wholesale_bank_beneficiary || "Nirva",
+        bankName: paySettings.wholesale_bank_name || "HDFC Bank",
+        accountNumber: paySettings.wholesale_bank_account_number || "",
+        ifsc: paySettings.wholesale_bank_ifsc || "",
+        branch: paySettings.wholesale_bank_branch || "Siliguri",
+        upiId: paySettings.wholesale_bank_upi_id || "",
+      },
+    };
+  }
+
   const q: Quote = { ...(subscription ? { subscription, subscriptionDiscountPaise: subscriptionSavings.base } : {}), id: randomUUID(), owner, fingerprint: hash(input), input, lines, marketVersion: m.version, currency: input.currency, rate: fx.rate, rateId: fx.id,
-    expires: Math.min(Date.now() + 15 * 60000, rate.expires), created: Date.now(), carrier: rate.id, carrierCostPaise: rate.costPaise, dutiesPaise: rate.dutiesPaise,
+    expires: Math.min(Date.now() + 15 * 60000, rate.expires), created: Date.now(), carrier: hasWholesale ? "wholesale_transport_topay" : rate.id, carrierCostPaise: hasWholesale ? 0 : rate.costPaise, dutiesPaise: rate.dutiesPaise,
     subtotalPaise, discountPaise, paymentDiscountPaise, shippingPaise, taxPaise, totalPaise,
-    analyticsTaxMinor: convert(taxPaise), components, totalMinor: Object.values(components).reduce((s, v) => s + v, 0), package: pack };
+    analyticsTaxMinor: convert(taxPaise), components, totalMinor: Object.values(components).reduce((s, v) => s + v, 0), package: pack,
+    wholesale: wholesaleMeta };
   db.prepare("INSERT INTO commerce_quotes (id,owner,document,expires_ms) VALUES (?,?,?,?)").run(q.id, owner, JSON.stringify(q), q.expires);
   return q;
 }
@@ -193,5 +256,6 @@ export function publicQuote(q: Quote) {
     shippingPaise: q.shippingPaise,
     totalPaise: q.totalPaise,
     lines: q.lines,
+    wholesale: q.wholesale,
   };
 }

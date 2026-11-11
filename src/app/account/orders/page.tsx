@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -103,14 +104,12 @@ export default function MyOrdersPage() {
     <div className="container page-shell py-10 max-w-5xl mx-auto px-4 sm:px-6">
       {/* Breadcrumb */}
       <nav className="breadcrumbs mb-4 text-xs text-[#737067]" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-[#171713]">
-          Teafloww
+        <Link href="/" className="hover:text-[#171713]"><StorefrontText id="copy_9b6432cc6a0e89e7" fallback="Teafloww" />
         </Link>{" "}
         /{" "}
-        <Link href="/account" className="hover:text-[#171713]">
-          Account
+        <Link href="/account" className="hover:text-[#171713]"><StorefrontText id="copy_7e1b0d5641f2640c" fallback="Account" />
         </Link>{" "}
-        / <span className="text-[#171713] font-bold" aria-current="page">My Orders</span>
+        / <span className="text-[#171713] font-bold" aria-current="page"><StorefrontText id="copy_00db793f2b8cff97" fallback="My Orders" /></span>
       </nav>
 
       {/* Header */}
@@ -119,11 +118,9 @@ export default function MyOrdersPage() {
           <p className="eyebrow text-xs font-bold uppercase tracking-wider text-[#b39156]">
             Order Management &amp; Dispatch
           </p>
-          <h1 className="text-2xl sm:text-3xl font-serif text-[#171713] font-normal">
-            My Orders
+          <h1 className="text-2xl sm:text-3xl font-serif text-[#171713] font-normal"><StorefrontText id="copy_00db793f2b8cff97" fallback="My Orders" />
           </h1>
-          <p className="text-xs sm:text-sm text-[#5c6659] mt-1">
-            Track current deliveries from Siliguri hub, view detailed invoices, and manage past shipments.
+          <p className="text-xs sm:text-sm text-[#5c6659] mt-1"><StorefrontText id="copy_95f512d85c4d339b" fallback="Track current deliveries from Siliguri hub, view detailed invoices, and manage past shipments." />
           </p>
         </div>
 
@@ -131,7 +128,7 @@ export default function MyOrdersPage() {
           href="/shop"
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#23483a] text-white text-xs font-bold hover:bg-[#1a362b] transition-colors self-start sm:self-center"
         >
-          <span>Explore Teas</span> <ArrowRight size={14} />
+          <span><StorefrontText id="copy_b51c1ea9a3042ad2" fallback="Explore Teas" /></span> <ArrowRight size={14} />
         </Link>
       </div>
 
@@ -186,7 +183,7 @@ export default function MyOrdersPage() {
       {/* Orders List */}
       {loading ? (
         <div className="py-16 text-center text-xs text-[#5c6659]">
-          <p>Loading your orders…</p>
+          <p><StorefrontText id="copy_c0df4899b4216d2a" fallback="Loading your orders…" /></p>
         </div>
       ) : filteredOrders.length === 0 ? (
         <div className="p-12 text-center rounded-2xl border border-[#ded7cb] bg-[#fffefa] my-6">
@@ -207,8 +204,7 @@ export default function MyOrdersPage() {
             <Link
               href="/shop"
               className="px-5 py-2.5 rounded-lg bg-[#23483a] text-white text-xs font-bold hover:bg-[#1a362b] transition-colors inline-flex items-center gap-2"
-            >
-              Explore Orthodox Teas <ArrowRight size={14} />
+            ><StorefrontText id="copy_034ba41ecdeaa391" fallback="Explore Orthodox Teas" /> <ArrowRight size={14} />
             </Link>
           </div>
         </div>
@@ -229,8 +225,7 @@ export default function MyOrdersPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#eee8dc]">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-[#171713]">
-                        Order #{order.reference}
+                      <span className="text-sm font-bold text-[#171713]"><StorefrontText id="copy_a458d68f7f27f131" fallback="Order #" />{order.reference}
                       </span>
                       <span className="text-xs text-[#737067]">
                         · {new Date(order.created_at).toLocaleDateString("en-IN", {
@@ -240,8 +235,7 @@ export default function MyOrdersPage() {
                         })}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#737067] mt-0.5">
-                      ID: {order.id}
+                    <p className="text-[11px] text-[#737067] mt-0.5"><StorefrontText id="copy_3ea36adcd1e02c94" fallback="ID:" /> {order.id}
                     </p>
                   </div>
 
@@ -282,7 +276,7 @@ export default function MyOrdersPage() {
                 {/* Items Preview */}
                 <div className="py-4 border-b border-[#eee8dc]">
                   <p className="text-xs font-semibold text-[#171713] mb-3">
-                    {order.item_count} {order.item_count === 1 ? "Item" : "Items"} in Package
+                    {order.item_count} {order.item_count === 1 ? "Item" : "Items"}<StorefrontText id="copy_55380ead8b3617f8" fallback="in Package" />
                   </p>
                   <div className="space-y-3">
                     {order.items.length > 0 ? (
@@ -300,7 +294,7 @@ export default function MyOrdersPage() {
                                 {item.productName}
                               </p>
                               <p className="text-[11px] text-[#5c6659]">
-                                {item.estate} · {item.grams}g pouch · Qty: {item.quantity}
+                                {item.estate} · {item.grams}<StorefrontText id="copy_7147f22849002423" fallback="g pouch · Qty:" /> {item.quantity}
                               </p>
                             </div>
                           </div>
@@ -318,7 +312,7 @@ export default function MyOrdersPage() {
                 {/* Action Row */}
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
                   <div className="text-xs text-[#5c6659]">
-                    <span>Payment: </span>
+                    <span><StorefrontText id="copy_563a4f27ed4ccd35" fallback="Payment:" /> </span>
                     <strong className="text-[#171713] capitalize">
                       {order.payment_status}
                     </strong>
@@ -331,7 +325,7 @@ export default function MyOrdersPage() {
                       className="px-3.5 py-2 rounded-lg border border-[#c2bcae] text-xs font-semibold text-[#171713] hover:bg-[#f5f1e8] transition-colors inline-flex items-center gap-1.5"
                     >
                       <Truck size={14} className="text-[#23483a]" />
-                      <span>Track Order</span>
+                      <span><StorefrontText id="copy_73a75653065cfd73" fallback="Track Order" /></span>
                     </Link>
 
                     {/* Order Details Button */}
@@ -352,8 +346,7 @@ export default function MyOrdersPage() {
                           setCancelError(null);
                         }}
                         className="px-3 py-2 rounded-lg border border-[#fca5a5] text-xs font-semibold text-[#b91c1c] hover:bg-[#fef2f2] transition-colors"
-                      >
-                        Cancel Order
+                      ><StorefrontText id="copy_205f0163b0d783b2" fallback="Cancel Order" />
                       </button>
                     )}
                   </div>
@@ -373,11 +366,9 @@ export default function MyOrdersPage() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
         >
           <div className="w-full max-w-md rounded-2xl bg-[#fffefa] border border-[#ded7cb] p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
-            <h3 id="cancel-modal-title" className="text-lg font-serif font-bold text-[#171713]">
-              Cancel Order #{cancelModalOrder.reference}?
+            <h3 id="cancel-modal-title" className="text-lg font-serif font-bold text-[#171713]"><StorefrontText id="copy_a432e33b47e9eedd" fallback="Cancel Order #" />{cancelModalOrder.reference}?
             </h3>
-            <p className="text-xs text-[#5c6659] mt-1.5 leading-relaxed">
-              Are you sure you want to cancel this order? Once cancelled, the items will be returned to inventory and any pending charge will not be captured.
+            <p className="text-xs text-[#5c6659] mt-1.5 leading-relaxed"><StorefrontText id="copy_21a53829ac50c0d2" fallback="Are you sure you want to cancel this order? Once cancelled, the items will be returned to inventory and any pending charge will not be captured." />
             </p>
 
             {cancelError && (
@@ -387,8 +378,7 @@ export default function MyOrdersPage() {
             )}
 
             <div className="mt-4">
-              <label htmlFor="cancel-reason" className="block text-xs font-semibold text-[#171713] mb-1">
-                Reason for cancellation *
+              <label htmlFor="cancel-reason" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_8a899eb47f221a83" fallback="Reason for cancellation *" />
               </label>
               <select
                 id="cancel-reason"
@@ -410,8 +400,7 @@ export default function MyOrdersPage() {
                 onClick={() => setCancelModalOrder(null)}
                 disabled={Boolean(cancellingId)}
                 className="px-4 py-2 rounded-lg border border-[#c2bcae] text-xs font-semibold text-[#171713] hover:bg-[#f5f1e8] transition-colors"
-              >
-                Keep Order
+              ><StorefrontText id="copy_83dce9e54e12b492" fallback="Keep Order" />
               </button>
               <button
                 type="button"

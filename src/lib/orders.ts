@@ -5,6 +5,7 @@ export type Order = {
   subtotal_paise: number; shipping_paise: number; discount_paise: number; total_paise: number;
   coupon_code: string | null; status: string; payment_status: string; dispatch_status: string;
   created_at: string; items: OrderItem[];
+  wholesale?: import("@/lib/international/models").WholesaleQuoteMeta;
 };
 export class OrderTransitionError extends Error {}
 const DISPATCH_NEXT: Record<string, string[]> = {
@@ -47,6 +48,7 @@ function hydrateCommerceOrder(row: { id: string; document: string; payment_statu
         unit_price_paise: l.pricePaise,
         sku: l.sku,
       })),
+      wholesale: q?.wholesale,
     };
   } catch {
     return {

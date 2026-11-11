@@ -29,6 +29,7 @@ interface Variant {
   price_paise: number;
   stock: number;
   servings: number;
+  wholesale_slabs?: Array<{ min_qty: number; price_paise: number }>;
 }
 
 interface ProductImage {
@@ -573,6 +574,7 @@ function ProductDossierContent() {
                 <th>Packaging Format</th>
                 <th>Net Weight</th>
                 <th>Price (INR)</th>
+                <th>Wholesale Slabs</th>
                 <th>Per-Cup Price</th>
                 <th>Stock Units</th>
               </tr>
@@ -589,6 +591,19 @@ function ProductDossierContent() {
                     <td>{v.packaging_format.replace(/_/g, " ")}</td>
                     <td>{v.grams}g</td>
                     <td>₹{priceInr}</td>
+                    <td>
+                      {v.wholesale_slabs && v.wholesale_slabs.length > 0 ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                          {v.wholesale_slabs.map((s, si) => (
+                            <span key={si} style={{ background: "#eaf3e9", color: "#2e683f", padding: "2px 6px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                              {s.min_qty}+: ₹{Math.round(s.price_paise / 100)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ color: "#999", fontSize: 12 }}>—</span>
+                      )}
+                    </td>
                     <td style={{ color: "#6a6e64" }}>~₹{perCup} / cup</td>
                     <td>
                       <span

@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -16,16 +17,16 @@ export function GoalExplorer() {
   return (
     <section className="bl-goals bl-wrap" aria-labelledby="goal-explorer-title">
       <div className="bl-goal-copy">
-        <p className="bl-eyebrow">WHAT BRINGS YOU HERE?</p>
-        <h2 id="goal-explorer-title">Choose your goal.</h2>
+        <p className="bl-eyebrow"><StorefrontText id="copy_e31304f92b87f92a" fallback="WHAT BRINGS YOU HERE?" /></p>
+        <h2 id="goal-explorer-title"><StorefrontText id="copy_b6dadcbce82dc3a5" fallback="Choose your goal." /></h2>
         <div aria-live="polite" aria-atomic="true"><p>{goal.description}</p></div>
-        <Link className="bl-button" href={`/blend-lab/start?plan=${goal.plan}`}>Choose this goal<ArrowRight size={16} aria-hidden="true" /></Link>
+        <Link className="bl-button" href={`/blend-lab/start?plan=${goal.plan}`}><StorefrontText id="copy_3640e5c998c943d1" fallback="Choose this goal" /><ArrowRight size={16} aria-hidden="true" /></Link>
       </div>
       <div className="bl-goal-controls">
         <div className="bl-goal-options" role="group" aria-label="Your tea goal">
           {goals.map((item, index) => <button key={item.id} type="button" aria-pressed={index === selected} aria-controls="bl-goal-audience" onClick={() => setSelected(index)}>{item.label}</button>)}
         </div>
-        <div id="bl-goal-audience" className="bl-goal-audience" aria-live="polite" aria-atomic="true"><p className="bl-eyebrow">WHO IS THIS FOR?</p><p>{goal.audience}</p></div>
+        <div id="bl-goal-audience" className="bl-goal-audience" aria-live="polite" aria-atomic="true"><p className="bl-eyebrow"><StorefrontText id="copy_fb24d086819420ca" fallback="WHO IS THIS FOR?" /></p><p>{goal.audience}</p></div>
       </div>
     </section>
   );

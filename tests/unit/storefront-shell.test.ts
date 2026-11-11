@@ -31,8 +31,7 @@ describe("StorefrontShell Component Layout Isolation", () => {
     // Contains storefront header and navigation links
     expect(markup).toContain("TEAFLOWW");
     expect(markup).toContain("Shop Tea");
-    expect(markup).toContain("Black Teas");
-    expect(markup).toContain("Tea Finder");
+    expect(markup).toContain("Leaf to Cup");
     expect(markup).toContain("Blend Lab");
     expect(markup).toContain("Track Order");
     expect(markup).toContain('id="shop-content"');

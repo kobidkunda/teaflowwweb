@@ -50,14 +50,31 @@ export const addressSchema = z.object({
     ctx.addIssue({ code: "custom", path: ["postcode"], message: "Enter a six-digit PIN code." });
 });
 export const quoteSchema = z.object({ address: addressSchema, currency: currencySchema, locale: localeSchema.default("en"),
-  method: z.enum(["prepaid", "upi", "card", "netbanking", "cod"]).default("prepaid"), coupon: z.string().trim().max(24).default(""),
-  items: z.array(z.object({ variantId: z.number().int().min(0).default(0), trialId: z.string().trim().min(1).max(100).optional(), quantity: z.number().int().min(1).max(20) }).strict().refine(l => l.trialId ? l.variantId === 0 : l.variantId > 0, "Choose a product variant or tasting kit.")).min(1).max(30),
+  method: z.enum(["prepaid", "upi", "card", "netbanking", "cod", "bank_transfer"]).default("prepaid"), coupon: z.string().trim().max(24).default(""),
+  items: z.array(z.object({ variantId: z.number().int().min(0).default(0), trialId: z.string().trim().min(1).max(100).optional(), quantity: z.number().int().min(1).max(10000) }).strict().refine(l => l.trialId ? l.variantId === 0 : l.variantId > 0, "Choose a product variant or tasting kit.")).min(1).max(30),
 }).strict();
 export type QuoteInput = z.infer<typeof quoteSchema>;
 export class CommerceError extends Error {}
-export type QuoteLine = { trialId?: string; trialTracked?: boolean; variantId: number; quantity: number; pricePaise: number; grams: number; sku: string; name: string };
+export type QuoteLine = { trialId?: string; trialTracked?: boolean; variantId: number; quantity: number; pricePaise: number; grams: number; sku: string; name: string; isWholesale?: boolean };
+export type WholesaleQuoteMeta = {
+  isWholesale: boolean;
+  advancePercent: number;
+  advancePaise: number;
+  balancePaise: number;
+  advanceMinor: number;
+  balanceMinor: number;
+  bankDetails: {
+    beneficiary: string;
+    bankName: string;
+    accountNumber: string;
+    ifsc: string;
+    branch: string;
+    upiId: string;
+  };
+};
 export type Quote = { subscription?: import("@/lib/subscriptions/model").SubscriptionQuote; subscriptionDiscountPaise?: number; id: string; owner: string; fingerprint: string; input: QuoteInput; lines: QuoteLine[]; marketVersion: number;
   currency: string; rate: string; rateId: string | null; expires: number; created: number; carrier: string; carrierCostPaise: number;
   dutiesPaise: number; subtotalPaise: number; discountPaise: number; paymentDiscountPaise?: number; shippingPaise: number; taxPaise: number; totalPaise: number;
   analyticsTaxMinor?: number; components: { merchandise: number; shipping: number; duties: number; tax: number; cod: number; paymentDiscount?: number }; totalMinor: number; package: Package;
+  wholesale?: WholesaleQuoteMeta;
 };

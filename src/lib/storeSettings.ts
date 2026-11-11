@@ -11,6 +11,14 @@ export interface StoreSettings {
   shipping_flat_paise: number;
   free_shipping_threshold_paise: number;
   min_delivery_order_paise: number;
+  wholesale_moq: number;
+  wholesale_advance_percent: number;
+  wholesale_bank_beneficiary: string;
+  wholesale_bank_name: string;
+  wholesale_bank_account_number: string;
+  wholesale_bank_ifsc: string;
+  wholesale_bank_branch: string;
+  wholesale_bank_upi_id: string;
   contact_email: string;
   whatsapp_number: string;
   // Extended branding & identity
@@ -54,6 +62,22 @@ export interface UpdateStoreSettingsInput {
   shippingFlatFeePaise?: number;
   free_shipping_threshold_paise?: number;
   freeShippingThresholdPaise?: number;
+  wholesale_moq?: number;
+  wholesaleMoq?: number;
+  wholesale_advance_percent?: number;
+  wholesaleAdvancePercent?: number;
+  wholesale_bank_beneficiary?: string;
+  wholesaleBankBeneficiary?: string;
+  wholesale_bank_name?: string;
+  wholesaleBankName?: string;
+  wholesale_bank_account_number?: string;
+  wholesaleBankAccountNumber?: string;
+  wholesale_bank_ifsc?: string;
+  wholesaleBankIfsc?: string;
+  wholesale_bank_branch?: string;
+  wholesaleBankBranch?: string;
+  wholesale_bank_upi_id?: string;
+  wholesaleBankUpiId?: string;
   contact_email?: string;
   contactEmail?: string;
   whatsapp_number?: string;
@@ -117,6 +141,14 @@ export function getStoreSettings(): StoreSettings {
   );
   const freeThreshold = Number(map.get("free_shipping_threshold_paise") || "59900");
   const minDeliveryPaise = Number(map.get("min_delivery_order_paise") || "0");
+  const wholesaleMoq = Math.max(1, Number(map.get("wholesale_moq") || "50"));
+  const wholesaleAdvancePercent = Math.min(100, Math.max(0, Number(map.get("wholesale_advance_percent") || "0")));
+  const wholesaleBankBeneficiary = map.get("wholesale_bank_beneficiary") || "Nirva";
+  const wholesaleBankName = map.get("wholesale_bank_name") || "HDFC Bank";
+  const wholesaleBankAccountNumber = map.get("wholesale_bank_account_number") || "";
+  const wholesaleBankIfsc = map.get("wholesale_bank_ifsc") || "";
+  const wholesaleBankBranch = map.get("wholesale_bank_branch") || "Siliguri";
+  const wholesaleBankUpiId = map.get("wholesale_bank_upi_id") || "";
   const email = map.get("contact_email") || "support@himalayantea.com";
   const storeName = map.get("store_name") || "Himalayan Tea House";
   const whatsapp = map.get("whatsapp_number") || "+91 98320 12345";
@@ -157,6 +189,14 @@ export function getStoreSettings(): StoreSettings {
     shipping_flat_paise: shippingPaise,
     free_shipping_threshold_paise: freeThreshold,
     min_delivery_order_paise: minDeliveryPaise,
+    wholesale_moq: wholesaleMoq,
+    wholesale_advance_percent: wholesaleAdvancePercent,
+    wholesale_bank_beneficiary: wholesaleBankBeneficiary,
+    wholesale_bank_name: wholesaleBankName,
+    wholesale_bank_account_number: wholesaleBankAccountNumber,
+    wholesale_bank_ifsc: wholesaleBankIfsc,
+    wholesale_bank_branch: wholesaleBankBranch,
+    wholesale_bank_upi_id: wholesaleBankUpiId,
     contact_email: email,
     whatsapp_number: whatsapp,
     brand_name: brandName,
@@ -245,6 +285,40 @@ export function updateStoreSettings(input: UpdateStoreSettingsInput): StoreSetti
     }
     if (rawFreeThreshold !== undefined) {
       upsertStmt.run("free_shipping_threshold_paise", freeThreshold);
+    }
+    const rawWholesaleMoq = input.wholesale_moq ?? input.wholesaleMoq;
+    if (rawWholesaleMoq !== undefined) {
+      const wMoq = String(Math.max(1, Number(rawWholesaleMoq) || 50));
+      upsertStmt.run("wholesale_moq", wMoq);
+    }
+    const rawWholesaleAdvance = input.wholesale_advance_percent ?? input.wholesaleAdvancePercent;
+    if (rawWholesaleAdvance !== undefined) {
+      const wAdv = String(Math.min(100, Math.max(0, Math.round(Number(rawWholesaleAdvance)) || 0)));
+      upsertStmt.run("wholesale_advance_percent", wAdv);
+    }
+    const rawBankBeneficiary = input.wholesale_bank_beneficiary ?? input.wholesaleBankBeneficiary;
+    if (rawBankBeneficiary !== undefined) {
+      upsertStmt.run("wholesale_bank_beneficiary", rawBankBeneficiary.trim());
+    }
+    const rawBankName = input.wholesale_bank_name ?? input.wholesaleBankName;
+    if (rawBankName !== undefined) {
+      upsertStmt.run("wholesale_bank_name", rawBankName.trim());
+    }
+    const rawBankAccount = input.wholesale_bank_account_number ?? input.wholesaleBankAccountNumber;
+    if (rawBankAccount !== undefined) {
+      upsertStmt.run("wholesale_bank_account_number", rawBankAccount.trim());
+    }
+    const rawBankIfsc = input.wholesale_bank_ifsc ?? input.wholesaleBankIfsc;
+    if (rawBankIfsc !== undefined) {
+      upsertStmt.run("wholesale_bank_ifsc", rawBankIfsc.trim().toUpperCase());
+    }
+    const rawBankBranch = input.wholesale_bank_branch ?? input.wholesaleBankBranch;
+    if (rawBankBranch !== undefined) {
+      upsertStmt.run("wholesale_bank_branch", rawBankBranch.trim());
+    }
+    const rawBankUpi = input.wholesale_bank_upi_id ?? input.wholesaleBankUpiId;
+    if (rawBankUpi !== undefined) {
+      upsertStmt.run("wholesale_bank_upi_id", rawBankUpi.trim());
     }
     upsertStmt.run("contact_email", contactEmail);
     upsertStmt.run("whatsapp_number", whatsappNumber);

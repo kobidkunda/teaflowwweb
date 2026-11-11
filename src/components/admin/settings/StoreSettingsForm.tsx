@@ -13,10 +13,18 @@ export function StoreSettingsForm() {
   const [storeName, setStoreName] = useState("Himalayan Tea House");
   const [currency, setCurrency] = useState("INR");
   const [taxRatePercent, setTaxRatePercent] = useState<number>(5);
-  const [shippingFeeRupees, setShippingFeeRupees] = useState<number>(99);
-  const [freeShippingRupees, setFreeShippingRupees] = useState<number>(1500);
   const [contactEmail, setContactEmail] = useState("concierge@himalayanteahouse.com");
   const [whatsappNumber, setWhatsappNumber] = useState("+91 98320 12345");
+  const [wholesaleMoq, setWholesaleMoq] = useState<number>(50);
+
+  // Wholesale Payment & Bank Details
+  const [wholesaleAdvancePercent, setWholesaleAdvancePercent] = useState<number>(0);
+  const [wholesaleBankBeneficiary, setWholesaleBankBeneficiary] = useState("Nirva");
+  const [wholesaleBankName, setWholesaleBankName] = useState("HDFC Bank");
+  const [wholesaleBankAccountNumber, setWholesaleBankAccountNumber] = useState("");
+  const [wholesaleBankIfsc, setWholesaleBankIfsc] = useState("");
+  const [wholesaleBankBranch, setWholesaleBankBranch] = useState("");
+  const [wholesaleBankUpiId, setWholesaleBankUpiId] = useState("");
 
   // Field validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,10 +40,17 @@ export function StoreSettingsForm() {
         setStoreName(data.settings.store_name || "Himalayan Tea House");
         setCurrency(data.settings.currency || "INR");
         setTaxRatePercent(data.settings.tax_rate_percent ?? 5);
-        setShippingFeeRupees(Math.round((data.settings.shipping_flat_fee_paise ?? 9900) / 100));
-        setFreeShippingRupees(Math.round((data.settings.free_shipping_threshold_paise ?? 150000) / 100));
         setContactEmail(data.settings.contact_email || "concierge@himalayanteahouse.com");
         setWhatsappNumber(data.settings.whatsapp_number || "+91 98320 12345");
+        setWholesaleMoq(data.settings.wholesale_moq ?? 50);
+
+        setWholesaleAdvancePercent(data.settings.wholesale_advance_percent ?? 0);
+        setWholesaleBankBeneficiary(data.settings.wholesale_bank_beneficiary || "Nirva");
+        setWholesaleBankName(data.settings.wholesale_bank_name || "HDFC Bank");
+        setWholesaleBankAccountNumber(data.settings.wholesale_bank_account_number || "");
+        setWholesaleBankIfsc(data.settings.wholesale_bank_ifsc || "");
+        setWholesaleBankBranch(data.settings.wholesale_bank_branch || "");
+        setWholesaleBankUpiId(data.settings.wholesale_bank_upi_id || "");
       }
     } catch {
       setStatusMessage({ type: "error", text: "Unable to load store settings from database." });
@@ -93,6 +108,14 @@ export function StoreSettingsForm() {
         tax_rate_percent: Number(taxRatePercent),
         contact_email: contactEmail.trim().toLowerCase(),
         whatsapp_number: whatsappNumber.trim(),
+        wholesale_moq: Math.max(1, Number(wholesaleMoq) || 50),
+        wholesale_advance_percent: Math.min(100, Math.max(0, Number(wholesaleAdvancePercent) || 0)),
+        wholesale_bank_beneficiary: wholesaleBankBeneficiary.trim(),
+        wholesale_bank_name: wholesaleBankName.trim(),
+        wholesale_bank_account_number: wholesaleBankAccountNumber.trim(),
+        wholesale_bank_ifsc: wholesaleBankIfsc.trim().toUpperCase(),
+        wholesale_bank_branch: wholesaleBankBranch.trim(),
+        wholesale_bank_upi_id: wholesaleBankUpiId.trim(),
       };
 
       const res = await fetch("/api/admin/settings", {
@@ -107,9 +130,17 @@ export function StoreSettingsForm() {
       if (res.ok) {
         setStatusMessage({ type: "success", text: "Store operational settings successfully saved." });
       } else {
+        const fieldErrors = data?.detail?.fieldErrors;
+        const fieldErrorMsg = fieldErrors && typeof fieldErrors === "object"
+          ? Object.entries(fieldErrors)
+              .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(", ") : String(errs)}`)
+              .join("; ")
+          : "";
         setStatusMessage({
           type: "error",
-          text: data?.error || "Failed to update store settings.",
+          text: fieldErrorMsg
+            ? `${data?.error || "Failed to update store settings."} (${fieldErrorMsg})`
+            : (data?.error || "Failed to update store settings."),
         });
       }
     } catch {
@@ -124,7 +155,7 @@ export function StoreSettingsForm() {
       <div style={{ marginBottom: "24px" }}>
         <h1 style={{ margin: "0 0 6px 0", fontSize: "28px", fontWeight: 700 }}>Store Operational Settings</h1>
         <p style={{ margin: 0, color: "#63665e", fontSize: "14px" }}>
-          Configure currency codes, tax rates, flat delivery rules, free shipping thresholds, and store concierge contact.
+          Configure currency codes, tax rates, wholesale minimum order quantities, and store concierge contact. Delivery rules &amp; shipping thresholds are managed in Shipping Settings.
         </p>
       </div>
 
@@ -288,6 +319,219 @@ export function StoreSettingsForm() {
                 </div>
                 <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#63665e" }}>Default Indian tea GST is 5%</p>
                 {errors.taxRate && <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#8f2f2a" }}>{errors.taxRate}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="wholesale_moq" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                  Global Wholesale MOQ (Units) *
+                </label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    id="wholesale_moq"
+                    name="wholesale_moq"
+                    type="number"
+                    min={1}
+                    max={10000}
+                    step={1}
+                    value={wholesaleMoq}
+                    onChange={(e) => setWholesaleMoq(Math.max(1, parseInt(e.target.value) || 1))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: "6px",
+                      border: "1px solid #d9d4c8",
+                      fontSize: "14px",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
+                <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#63665e" }}>Minimum order quantity required for Wholesale Mode across the store (products can optionally override).</p>
+              </div>
+
+              {/* Wholesale Payment Rules & Direct Bank Details */}
+              <div
+                style={{
+                  gridColumn: "span 2",
+                  background: "#faf8f4",
+                  padding: "20px",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d4c8",
+                }}
+              >
+                <div style={{ marginBottom: "16px" }}>
+                  <h3 style={{ margin: "0 0 4px 0", fontSize: "16px", fontWeight: 700, color: "#1d2a24" }}>
+                    Wholesale Orders: Direct Bank Transfer &amp; Advance PG Settings
+                  </h3>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#63665e", lineHeight: 1.5 }}>
+                    Wholesale orders are dispatched via commercial road transport (To-Pay Bilty). Cash on Delivery (COD) is strictly unavailable. Configure the online advance percentage required at checkout, and company bank account details for direct A/C transfers.
+                  </p>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "8px" }}>
+                  <div>
+                    <label htmlFor="wholesale_advance_percent" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                      Wholesale Advance Percent (0–100%)
+                    </label>
+                    <input
+                      id="wholesale_advance_percent"
+                      name="wholesale_advance_percent"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={wholesaleAdvancePercent}
+                      onChange={(e) => setWholesaleAdvancePercent(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d4c8",
+                        fontSize: "14px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#63665e" }}>
+                      {wholesaleAdvancePercent === 0
+                        ? "0% = Skip PG payment at checkout. Order placed as Awaiting Bank Transfer."
+                        : `Customer pays ${wholesaleAdvancePercent}% online via PG at checkout. Balance (${100 - wholesaleAdvancePercent}%) due via A/C transfer before dispatch.`}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="wholesale_bank_beneficiary" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                      Beneficiary Account Name
+                    </label>
+                    <input
+                      id="wholesale_bank_beneficiary"
+                      name="wholesale_bank_beneficiary"
+                      type="text"
+                      value={wholesaleBankBeneficiary}
+                      onChange={(e) => setWholesaleBankBeneficiary(e.target.value)}
+                      placeholder="e.g. Nirva"
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d4c8",
+                        fontSize: "14px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="wholesale_bank_name" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                      Bank Name
+                    </label>
+                    <input
+                      id="wholesale_bank_name"
+                      name="wholesale_bank_name"
+                      type="text"
+                      value={wholesaleBankName}
+                      onChange={(e) => setWholesaleBankName(e.target.value)}
+                      placeholder="e.g. HDFC Bank"
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d4c8",
+                        fontSize: "14px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="wholesale_bank_account_number" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                      Account Number
+                    </label>
+                    <input
+                      id="wholesale_bank_account_number"
+                      name="wholesale_bank_account_number"
+                      type="text"
+                      value={wholesaleBankAccountNumber}
+                      onChange={(e) => setWholesaleBankAccountNumber(e.target.value)}
+                      placeholder="e.g. 50200012345678"
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d4c8",
+                        fontSize: "14px",
+                        fontFamily: "monospace",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="wholesale_bank_ifsc" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                      IFSC Code
+                    </label>
+                    <input
+                      id="wholesale_bank_ifsc"
+                      name="wholesale_bank_ifsc"
+                      type="text"
+                      value={wholesaleBankIfsc}
+                      onChange={(e) => setWholesaleBankIfsc(e.target.value.toUpperCase())}
+                      placeholder="e.g. HDFC0000123"
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d4c8",
+                        fontSize: "14px",
+                        fontFamily: "monospace",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="wholesale_bank_branch" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                      Branch Name
+                    </label>
+                    <input
+                      id="wholesale_bank_branch"
+                      name="wholesale_bank_branch"
+                      type="text"
+                      value={wholesaleBankBranch}
+                      onChange={(e) => setWholesaleBankBranch(e.target.value)}
+                      placeholder="e.g. Siliguri"
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d4c8",
+                        fontSize: "14px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="wholesale_bank_upi_id" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                      UPI ID (Optional)
+                    </label>
+                    <input
+                      id="wholesale_bank_upi_id"
+                      name="wholesale_bank_upi_id"
+                      type="text"
+                      value={wholesaleBankUpiId}
+                      onChange={(e) => setWholesaleBankUpiId(e.target.value)}
+                      placeholder="e.g. nirva@okhdfcbank"
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d4c8",
+                        fontSize: "14px",
+                        fontFamily: "monospace",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div style={{ gridColumn: "span 2", background: "#f4f7f4", padding: "16px", borderRadius: "8px", border: "1px solid #c9dec9", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>

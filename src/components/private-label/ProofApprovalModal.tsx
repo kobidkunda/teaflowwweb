@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useRef, useState } from "react";
 
 export interface ProofApprovalModalProps {
@@ -154,9 +155,7 @@ export function ProofApprovalModal({
           </button>
         </div>
 
-        <p style={{ fontSize: "0.875rem", color: "#65746D", lineHeight: 1.5, marginBottom: "20px" }}>
-          Please review and sign off on the mechanical safe zones, color registration, and mandatory
-          FSSAI regulations and Siliguri manufacturing standards for <strong>{brandName}</strong> on{" "}
+        <p style={{ fontSize: "0.875rem", color: "#65746D", lineHeight: 1.5, marginBottom: "20px" }}><StorefrontText id="copy_511ee685d18615d5" fallback="Please review and sign off on the mechanical safe zones, color registration, and mandatory FSSAI regulations and Siliguri manufacturing standards for" /> <strong>{brandName}</strong> on{" "}
           <strong>{packagingName}</strong>.
         </p>
 
@@ -175,9 +174,9 @@ export function ProofApprovalModal({
             Production Terms &amp; Conditions:
           </div>
           <ul style={{ margin: 0, paddingLeft: "18px" }}>
-            <li>Colors rendered on RGB screens are simulations; physical print will align to CMYK / Pantone spot ink specifications.</li>
-            <li>Rotogravure cylinder engraving and plate tooling charges are non-refundable once preflight proofs are locked.</li>
-            <li>Production release requires operator review of applicable labeling requirements and the approved artwork.</li>
+            <li><StorefrontText id="copy_72050ef65d0d6c87" fallback="Colors rendered on RGB screens are simulations; physical print will align to CMYK / Pantone spot ink specifications." /></li>
+            <li><StorefrontText id="copy_c83c7afc21a85d90" fallback="Rotogravure cylinder engraving and plate tooling charges are non-refundable once preflight proofs are locked." /></li>
+            <li><StorefrontText id="copy_3aa487760b64f7ff" fallback="Production release requires operator review of applicable labeling requirements and the approved artwork." /></li>
           </ul>
         </div>
 
@@ -204,7 +203,7 @@ export function ProofApprovalModal({
         </label>
 
         {!previewOnly && <div style={{ marginBottom: 16 }}>
-          {proofPreviewUrl && (/^\/(?!\/)/.test(proofPreviewUrl) || /^https:\/\//.test(proofPreviewUrl)) && <p><a href={proofPreviewUrl} target="_blank" rel="noopener noreferrer">Open the proof document for review</a></p>}
+          {proofPreviewUrl && (/^\/(?!\/)/.test(proofPreviewUrl) || /^https:\/\//.test(proofPreviewUrl)) && <p><a href={proofPreviewUrl} target="_blank" rel="noopener noreferrer"><StorefrontText id="copy_aae65ccbe643c25a" fallback="Open the proof document for review" /></a></p>}
           <label htmlFor="proof-signer">Authorized signer&apos;s full name</label>
           <input id="proof-signer" autoComplete="name" value={signerName} onChange={event => setSignerName(event.target.value)} minLength={2} maxLength={100} style={{ width: "100%", minHeight: 44, marginTop: 6, border: "1px solid #DDE4DC", padding: 10 }} />
         </div>}
@@ -212,8 +211,7 @@ export function ProofApprovalModal({
           <label
             htmlFor="proof-comments"
             style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#171713", marginBottom: "6px" }}
-          >
-            Special Production Notes / Batch Instructions (Optional):
+          ><StorefrontText id="copy_52a98f4b8d434d78" fallback="Special Production Notes / Batch Instructions (Optional):" />
           </label>
           <textarea
             id="proof-comments"
@@ -249,8 +247,7 @@ export function ProofApprovalModal({
               fontSize: "0.875rem",
               cursor: "pointer",
             }}
-          >
-            Cancel
+          ><StorefrontText id="copy_19766ed6ccb2f4a3" fallback="Cancel" />
           </button>
           <button
             type="button"

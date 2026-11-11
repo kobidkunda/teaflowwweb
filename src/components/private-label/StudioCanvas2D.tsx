@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { PackagingDielineAction } from "./detail/PackagingDielineAction";
 import React, { useState, useEffect, useId } from "react";
 import { calculateSafeZone } from "@/lib/private-label/compatibility";
@@ -418,9 +419,7 @@ export function StudioCanvas2D({
         >
           <span aria-hidden="true">⚠️</span>
           <span>
-            <strong>Resolution Warning:</strong> Artwork is {artworkDpi} DPI (recommended: 300
-            DPI). Preflight verification will require high-resolution vector or 300 DPI artwork
-            prior to plate production.
+            <strong><StorefrontText id="copy_a7109a775d0ad5fe" fallback="Resolution Warning:" /></strong> <StorefrontText id="copy_ad2f53d3ef955a71" fallback="Artwork is" /> {artworkDpi} <StorefrontText id="copy_c1dbfa3221530793" fallback="DPI (recommended: 300 DPI). Preflight verification will require high-resolution vector or 300 DPI artwork prior to plate production." />
           </span>
         </div>
       )}
@@ -445,8 +444,7 @@ export function StudioCanvas2D({
         >
           <span aria-hidden="true">🚫</span>
           <span>
-            <strong>Safe-Zone Breach:</strong> Elements extend beyond printable margins into seal or
-            zipper areas.
+            <strong><StorefrontText id="copy_e191792a36d0bd0d" fallback="Safe-Zone Breach:" /></strong><StorefrontText id="copy_8e5db3aa41e55d32" fallback="Elements extend beyond printable margins into seal or zipper areas." />
           </span>
         </div>
       )}
@@ -492,7 +490,7 @@ export function StudioCanvas2D({
             }}
           >
             <div style={{ fontSize: "0.75rem", color: "#65746D" }}>
-              <strong>TECHNICAL DIE CUT TEMPLATE</strong> &bull; {widthMm}mm &times; {heightMm}mm
+              <strong><StorefrontText id="copy_08c831e901f04a9e" fallback="TECHNICAL DIE CUT TEMPLATE" /></strong> &bull; {widthMm}mm &times; {heightMm}mm
             </div>
             <div
               style={{
@@ -513,8 +511,7 @@ export function StudioCanvas2D({
                   fontSize: "0.75rem",
                   color: "#B45309",
                 }}
-              >
-                Front Face ({safeZone.labelSafeWidthMm}mm)
+              ><StorefrontText id="copy_1e58e2761d8b24bf" fallback="Front Face (" />{safeZone.labelSafeWidthMm}<StorefrontText id="copy_faeae1a8b921c5e6" fallback="mm)" />
               </div>
               <div
                 style={{
@@ -526,12 +523,10 @@ export function StudioCanvas2D({
                   fontSize: "0.75rem",
                   color: "#B45309",
                 }}
-              >
-                Back Face + Legal Reserve
+              ><StorefrontText id="copy_1ddaac32de542b8a" fallback="Back Face + Legal Reserve" />
               </div>
             </div>
-            <div style={{ fontSize: "0.6875rem", color: "#8E9E96", textAlign: "right" }}>
-              Bleed: {safeZone.bleedMm}mm &bull; Scale 1:1
+            <div style={{ fontSize: "0.6875rem", color: "#8E9E96", textAlign: "right" }}><StorefrontText id="copy_b8f5cc2b2aec5a8b" fallback="Bleed:" /> {safeZone.bleedMm}mm &bull; Scale 1:1
             </div>
           </div>
         ) : (
@@ -663,8 +658,7 @@ export function StudioCanvas2D({
                       fontWeight: 700,
                       letterSpacing: "0.08em",
                     }}
-                  >
-                    SEAL RESERVE
+                  ><StorefrontText id="copy_e3b02066588eda6c" fallback="SEAL RESERVE" />
                   </span>
                 </div>
 
@@ -745,8 +739,7 @@ export function StudioCanvas2D({
                     color: isDarkSilhouette ? "#DDE4DC" : "#65746D",
                     marginTop: "4px",
                   }}
-                >
-                  SINGLE ESTATE ARTISANAL TEA
+                ><StorefrontText id="copy_a55677cea7d2ae1d" fallback="SINGLE ESTATE ARTISANAL TEA" />
                 </div>
                 <div
                   style={{
@@ -759,8 +752,7 @@ export function StudioCanvas2D({
                     border: isDarkSilhouette ? "1px solid rgba(215, 180, 116, 0.4)" : "none",
                     borderRadius: "4px",
                   }}
-                >
-                  Net Wt: {fillWeightGrams}g
+                ><StorefrontText id="copy_c33335cd55af1f5b" fallback="Net Wt:" /> {fillWeightGrams}g
                 </div>
               </div>
             ) : null}
@@ -778,7 +770,7 @@ export function StudioCanvas2D({
                 }}
               >
                 <div style={{ fontSize: "0.75rem", color: isDarkSilhouette ? "#FFFCF7" : "#171713" }}>
-                  <strong>Steeping Ritual:</strong>
+                  <strong><StorefrontText id="copy_cd7e8e0392a17ce0" fallback="Steeping Ritual:" /></strong>
                   <br />
                   2.5g &bull; 90&deg;C &bull; 3 mins
                 </div>
@@ -797,16 +789,14 @@ export function StudioCanvas2D({
                     color: "#171713",
                   }}
                 >
-                  <div style={{ fontWeight: "bold", color: "#143C31" }}>
-                    FSSAI Lic No: 19CTHPK8646J2ZY
+                  <div style={{ fontWeight: "bold", color: "#143C31" }}><StorefrontText id="copy_e7b02084ca7378df" fallback="FSSAI Lic No: 19CTHPK8646J2ZY" />
                   </div>
                   <div>
-                    <strong>Blended &amp; Packed by:</strong> Nirva, 00, Fulbari Ghoshpukur Bypass,
-                    Fulbari, Binnaguri, Dist Jalpaiguri City Siliguri , West Bengal, 734015
+                    <strong>Blended &amp; Packed by:</strong><StorefrontText id="copy_0930702caacf8c53" fallback="Nirva, 00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri, Dist Jalpaiguri City Siliguri , West Bengal, 734015" />
                   </div>
                   <div style={{ marginTop: "2px", display: "flex", justifyContent: "space-between" }}>
-                    <span>Net Wt: {fillWeightGrams}g</span>
-                    <span>Batch: TF-2601</span>
+                    <span><StorefrontText id="copy_c33335cd55af1f5b" fallback="Net Wt:" /> {fillWeightGrams}g</span>
+                    <span><StorefrontText id="copy_7f745873dd828a54" fallback="Batch: TF-2601" /></span>
                   </div>
                 </div>
               </div>
@@ -835,7 +825,7 @@ export function StudioCanvas2D({
           padding: "4px 8px",
         }}
       >
-        <span role="note">Digital Mockup — Illustrative Only</span>
+        <span role="note"><StorefrontText id="copy_7e061867d601dee9" fallback="Digital Mockup — Illustrative Only" /></span>
         <span>
           {packName} &bull; {widthMm} &times; {heightMm} mm
         </span>

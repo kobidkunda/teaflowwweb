@@ -82,7 +82,7 @@ export default async function ShippingPage() {
           <div className="p-5 bg-[#f7f5f0] border border-[#ece7dc] rounded-xl text-sm sm:text-base space-y-2">
             {minDeliveryOrderRupees > 0 && (
               <p>
-                • <strong>Minimum Delivery Order:</strong> A minimum bag value of <strong>₹{minDeliveryOrderRupees.toLocaleString("en-IN")}</strong> is required to place an order for delivery.
+                • <strong><StorefrontText id="copy_2b878d09702094a0" fallback="Minimum Delivery Order:" /></strong><StorefrontText id="copy_7611ea51afdae783" fallback="A minimum bag value of" /> <strong>₹{minDeliveryOrderRupees.toLocaleString("en-IN")}</strong><StorefrontText id="copy_8836e909cf1659d6" fallback="is required to place an order for delivery." />
               </p>
             )}
             <p>

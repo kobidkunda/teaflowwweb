@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -77,7 +78,7 @@ export default function AccountPage() {
   if (loading) {
     return (
       <div className="container page-shell py-16 text-center">
-        <p className="text-xs text-[#5c6659]">Loading your TeaFloww account…</p>
+        <p className="text-xs text-[#5c6659]"><StorefrontText id="copy_b026341871d3829a" fallback="Loading your TeaFloww account…" /></p>
       </div>
     );
   }
@@ -100,13 +101,11 @@ export default function AccountPage() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#b39156] mb-1">
               <Sparkles size={14} />
-              <span>TeaFloww Connoisseur</span>
+              <span><StorefrontText id="copy_93913793b5b887a9" fallback="TeaFloww Connoisseur" /></span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-serif text-[#171713] font-normal">
-              Namaste, {customer.name || customer.email.split("@")[0]}
+            <h1 className="text-2xl sm:text-3xl font-serif text-[#171713] font-normal"><StorefrontText id="copy_e203b8137479f101" fallback="Namaste," /> {customer.name || customer.email.split("@")[0]}
             </h1>
-            <p className="text-xs sm:text-sm text-[#46524a] mt-1">
-              Account: {customer.email} {customer.phone ? `· ${customer.phone}` : ""}
+            <p className="text-xs sm:text-sm text-[#46524a] mt-1"><StorefrontText id="copy_23cc97b03f581741" fallback="Account:" /> {customer.email} {customer.phone ? `· ${customer.phone}` : ""}
             </p>
           </div>
 
@@ -116,15 +115,14 @@ export default function AccountPage() {
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#c2bcae] bg-white text-xs font-semibold text-[#8b2323] hover:bg-[#fee2e2] transition-colors self-start sm:self-center"
           >
             <LogOut size={14} />
-            <span>Sign Out</span>
+            <span><StorefrontText id="copy_0b184bc5d5341998" fallback="Sign Out" /></span>
           </button>
         </div>
 
         {/* Quick Highlights Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-[#d8e2d5]">
           <div className="p-4 rounded-xl bg-white border border-[#e1ded6] shadow-sm">
-            <span className="text-[11px] font-bold text-[#737067] uppercase tracking-wider">
-              Total Orders
+            <span className="text-[11px] font-bold text-[#737067] uppercase tracking-wider"><StorefrontText id="copy_8075b35a285e300a" fallback="Total Orders" />
             </span>
             <p className="text-2xl font-serif font-bold text-[#171713] mt-1">
               {orders.length}
@@ -132,8 +130,7 @@ export default function AccountPage() {
           </div>
 
           <div className="p-4 rounded-xl bg-white border border-[#e1ded6] shadow-sm">
-            <span className="text-[11px] font-bold text-[#737067] uppercase tracking-wider">
-              Active Shipments
+            <span className="text-[11px] font-bold text-[#737067] uppercase tracking-wider"><StorefrontText id="copy_99231d2a198821b4" fallback="Active Shipments" />
             </span>
             <p className="text-2xl font-serif font-bold text-[#23483a] mt-1">
               {activeOrders.length}
@@ -141,8 +138,7 @@ export default function AccountPage() {
           </div>
 
           <div className="p-4 rounded-xl bg-white border border-[#e1ded6] shadow-sm">
-            <span className="text-[11px] font-bold text-[#737067] uppercase tracking-wider">
-              Saved Addresses
+            <span className="text-[11px] font-bold text-[#737067] uppercase tracking-wider"><StorefrontText id="copy_919b4b003f2a4701" fallback="Saved Addresses" />
             </span>
             <p className="text-2xl font-serif font-bold text-[#171713] mt-1">
               {addressCount}
@@ -155,25 +151,21 @@ export default function AccountPage() {
       {recentOrder && (
         <section className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-serif font-bold text-[#171713]">
-              Most Recent Order
+            <h2 className="text-base font-serif font-bold text-[#171713]"><StorefrontText id="copy_228319b8aaf8b755" fallback="Most Recent Order" />
             </h2>
             <Link
               href="/account/orders"
               className="text-xs font-semibold text-[#23483a] hover:underline flex items-center gap-1"
-            >
-              View all {orders.length} orders <ChevronRight size={14} />
+            ><StorefrontText id="copy_30a64216eaeac5d3" fallback="View all" /> {orders.length}<StorefrontText id="copy_1c168adb00d208e4" fallback="orders" /> <ChevronRight size={14} />
             </Link>
           </div>
 
           <div className="p-5 rounded-xl border border-[#d8d2c4] bg-[#fffefa] shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#eee8dc]">
               <div>
-                <span className="text-xs font-bold text-[#171713]">
-                  Order #{recentOrder.reference}
+                <span className="text-xs font-bold text-[#171713]"><StorefrontText id="copy_a458d68f7f27f131" fallback="Order #" />{recentOrder.reference}
                 </span>
-                <p className="text-xs text-[#5c6659] mt-0.5">
-                  Placed on {new Date(recentOrder.created_at).toLocaleDateString("en-IN", {
+                <p className="text-xs text-[#5c6659] mt-0.5"><StorefrontText id="copy_bef9707be900fb31" fallback="Placed on" /> {new Date(recentOrder.created_at).toLocaleDateString("en-IN", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
@@ -215,8 +207,7 @@ export default function AccountPage() {
               <Link
                 href={`/track?id=${recentOrder.id}`}
                 className="px-4 py-2 rounded-lg border border-[#c2bcae] text-[#171713] text-xs font-semibold hover:bg-[#f5f1e8] transition-colors"
-              >
-                Track Live Shipment
+              ><StorefrontText id="copy_58a16085d0d3b3ad" fallback="Track Live Shipment" />
               </Link>
             </div>
           </div>
@@ -236,13 +227,11 @@ export default function AccountPage() {
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors">
-                My Orders
+              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors"><StorefrontText id="copy_00db793f2b8cff97" fallback="My Orders" />
               </h3>
               <ChevronRight size={18} className="text-[#a8a499] group-hover:text-[#23483a] transition-colors" />
             </div>
-            <p className="text-xs text-[#5c6659] mt-1">
-              Review full itemizations, GST tax invoices, courier tracking status, and self-service order cancellations.
+            <p className="text-xs text-[#5c6659] mt-1"><StorefrontText id="copy_f8e8f1b211dcbe3c" fallback="Review full itemizations, GST tax invoices, courier tracking status, and self-service order cancellations." />
             </p>
           </div>
         </Link>
@@ -257,13 +246,11 @@ export default function AccountPage() {
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors">
-                Private Label Studio
+              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors"><StorefrontText id="copy_fa75dc95001ee8a5" fallback="Private Label Studio" />
               </h3>
               <ChevronRight size={18} className="text-[#a8a499] group-hover:text-[#23483a] transition-colors" />
             </div>
-            <p className="text-xs text-[#5c6659] mt-1">
-              Custom branded packaging runs, trial sample kits, 7-stage QC tracking, and B2B contracts.
+            <p className="text-xs text-[#5c6659] mt-1"><StorefrontText id="copy_0914ba6a4adfd806" fallback="Custom branded packaging runs, trial sample kits, 7-stage QC tracking, and B2B contracts." />
             </p>
           </div>
         </Link>
@@ -278,13 +265,11 @@ export default function AccountPage() {
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors">
-                Saved Addresses
+              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors"><StorefrontText id="copy_919b4b003f2a4701" fallback="Saved Addresses" />
               </h3>
               <ChevronRight size={18} className="text-[#a8a499] group-hover:text-[#23483a] transition-colors" />
             </div>
-            <p className="text-xs text-[#5c6659] mt-1">
-              Add, edit, and organize multiple delivery destinations across India with 1-click checkout autofill.
+            <p className="text-xs text-[#5c6659] mt-1"><StorefrontText id="copy_ab638c20b60c1d47" fallback="Add, edit, and organize multiple delivery destinations across India with 1-click checkout autofill." />
             </p>
           </div>
         </Link>
@@ -299,13 +284,11 @@ export default function AccountPage() {
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors">
-                Single-Estate Catalog
+              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors"><StorefrontText id="copy_d1228f86134924cb" fallback="Single-Estate Catalog" />
               </h3>
               <ChevronRight size={18} className="text-[#a8a499] group-hover:text-[#23483a] transition-colors" />
             </div>
-            <p className="text-xs text-[#5c6659] mt-1">
-              Explore freshly harvested orthodox flushes from Darjeeling, Dooars, and Assam directly from Siliguri.
+            <p className="text-xs text-[#5c6659] mt-1"><StorefrontText id="copy_06301060b14a8114" fallback="Explore freshly harvested orthodox flushes from Darjeeling, Dooars, and Assam directly from Siliguri." />
             </p>
           </div>
         </Link>
@@ -320,13 +303,11 @@ export default function AccountPage() {
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors">
-                Customer Care Concierge
+              <h3 className="text-base font-serif font-bold text-[#171713] group-hover:text-[#23483a] transition-colors"><StorefrontText id="copy_077f33d29dc4297f" fallback="Customer Care Concierge" />
               </h3>
               <ChevronRight size={18} className="text-[#a8a499] group-hover:text-[#23483a] transition-colors" />
             </div>
-            <p className="text-xs text-[#5c6659] mt-1">
-              Reach our licensed tasters and customer care in Siliguri for brewing advice or delivery inquiries.
+            <p className="text-xs text-[#5c6659] mt-1"><StorefrontText id="copy_37a9fcf2bacf2cf9" fallback="Reach our licensed tasters and customer care in Siliguri for brewing advice or delivery inquiries." />
             </p>
           </div>
         </Link>

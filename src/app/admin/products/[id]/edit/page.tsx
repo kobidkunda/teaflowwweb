@@ -39,6 +39,18 @@ export default async function EditProductPage({
     verified_origin: product.verified_origin || "",
     ingredients: product.ingredients || "",
     status: product.status || "published",
+    wholesale_moq: product.wholesale_moq ?? null,
+    variants: (product.variants || []).map((v) => ({
+      id: v.id,
+      sku: v.sku,
+      packaging_format: v.packaging_format,
+      grams: v.grams,
+      price_paise: v.price_paise,
+      compare_at_price_paise: v.compare_at_price_paise ?? null,
+      stock: v.stock,
+      servings: v.servings,
+      wholesale_slabs: v.wholesale_slabs || [],
+    })),
     price:
       product.price ??
       (product.variants?.[0]?.price_paise

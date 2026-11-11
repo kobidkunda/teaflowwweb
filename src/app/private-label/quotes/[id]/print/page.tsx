@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
@@ -69,7 +70,7 @@ export default function PrintableQuotePage() {
   if (error || !quote) {
     return (
       <div style={{ padding: "40px", maxWidth: "600px", margin: "auto", fontFamily: "sans-serif" }}>
-        <h2 style={{ color: "#C53030" }}>Quotation Error</h2>
+        <h2 style={{ color: "#C53030" }}><StorefrontText id="copy_ef83ea322e7b4a96" fallback="Quotation Error" /></h2>
         <p>{error || "Unable to retrieve quotation details."}</p>
         <Link
           href="/private-label/studio"
@@ -80,8 +81,7 @@ export default function PrintableQuotePage() {
             textDecoration: "underline",
             fontWeight: "bold",
           }}
-        >
-          ← Return to Private Label Studio
+        ><StorefrontText id="copy_3aca6ba9cffef28a" fallback="← Return to Private Label Studio" />
         </Link>
       </div>
     );
@@ -147,8 +147,7 @@ export default function PrintableQuotePage() {
             alignItems: "center",
             gap: "6px",
           }}
-        >
-          ← Return to Studio
+        ><StorefrontText id="copy_ac91d57ff79d1a6f" fallback="← Return to Studio" />
         </Link>
 
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -176,8 +175,7 @@ export default function PrintableQuotePage() {
               cursor: "pointer",
               fontSize: "14px",
             }}
-          >
-            🖨️ Print / Save as PDF
+          ><StorefrontText id="copy_8b90d4debbf54d3f" fallback="🖨️ Print / Save as PDF" />
           </button>
         </div>
       </div>
@@ -209,8 +207,7 @@ export default function PrintableQuotePage() {
               textAlign: "center",
               marginBottom: "20px",
             }}
-          >
-            QUOTATION EXPIRED — Rates are subject to market review. Contact info@teafloww.com for re-issuance.
+          ><StorefrontText id="copy_0f7e6ab3fc8d8628" fallback="QUOTATION EXPIRED — Rates are subject to market review. Contact info@teafloww.com for re-issuance." />
           </div>
         )}
 
@@ -234,16 +231,13 @@ export default function PrintableQuotePage() {
                 letterSpacing: "-0.5px",
                 fontWeight: "800",
               }}
-            >
-              TEAFLOWW
+            ><StorefrontText id="copy_783fb833f84ab51c" fallback="TEAFLOWW" />
             </h1>
             <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#4A5568", lineHeight: 1.5 }}>
-              <strong>{TEAFLOWW_BRAND_CONSTANTS.entityName}</strong> | GSTIN:{" "}
+              <strong>{TEAFLOWW_BRAND_CONSTANTS.entityName}</strong><StorefrontText id="copy_1a14858fc24977a9" fallback="| GSTIN:" />{" "}
               <strong>{TEAFLOWW_BRAND_CONSTANTS.gstin}</strong>
-              <br />
-              Works: {TEAFLOWW_BRAND_CONSTANTS.worksAddress}
-              <br />
-              Email: {TEAFLOWW_BRAND_CONSTANTS.email} | Phone: {TEAFLOWW_BRAND_CONSTANTS.phone}
+              <br /><StorefrontText id="copy_3fd1f825eaedf6be" fallback="Works:" /> {TEAFLOWW_BRAND_CONSTANTS.worksAddress}
+              <br /><StorefrontText id="copy_17507dcf845793fa" fallback="Email:" /> {TEAFLOWW_BRAND_CONSTANTS.email}<StorefrontText id="copy_041b6e1d040c66f7" fallback="| Phone:" /> {TEAFLOWW_BRAND_CONSTANTS.phone}
             </p>
           </div>
 
@@ -258,15 +252,11 @@ export default function PrintableQuotePage() {
                 fontSize: "12px",
                 fontWeight: "700",
               }}
-            >
-              14-Day Price Lock Guarantee
+            ><StorefrontText id="copy_0881e54746deac0d" fallback="14-Day Price Lock Guarantee" />
             </span>
-            <div style={{ marginTop: "8px", fontSize: "12px", color: "#4A5568", lineHeight: 1.5 }}>
-              Ref: <strong>{quote.quote_number || quote.id}</strong> (Rev {quote.revision || 1})
-              <br />
-              Status: <strong>{quote.status.toUpperCase()}</strong> ({isFirm ? "Firm Price" : "Commercial Estimate"})
-              <br />
-              Issued: <strong>{issuedDate}</strong> | Valid Until: <strong>{validUntilDate}</strong>
+            <div style={{ marginTop: "8px", fontSize: "12px", color: "#4A5568", lineHeight: 1.5 }}><StorefrontText id="copy_823960a09c435a3a" fallback="Ref:" /> <strong>{quote.quote_number || quote.id}</strong><StorefrontText id="copy_6dd971f579515534" fallback="(Rev" /> {quote.revision || 1})
+              <br /><StorefrontText id="copy_755c8b2a9fb11446" fallback="Status:" /> <strong>{quote.status.toUpperCase()}</strong> ({isFirm ? "Firm Price" : "Commercial Estimate"})
+              <br /><StorefrontText id="copy_2b7dcdb1716bb130" fallback="Issued:" /> <strong>{issuedDate}</strong><StorefrontText id="copy_606fbfc984b8e691" fallback="| Valid Until:" /> <strong>{validUntilDate}</strong>
             </div>
           </div>
         </div>
@@ -299,17 +289,13 @@ export default function PrintableQuotePage() {
                 <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "left", width: "40px" }}>
                   #
                 </th>
-                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "left" }}>
-                  Configuration / Specification
+                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "left" }}><StorefrontText id="copy_c21b51c8a225c7cc" fallback="Configuration / Specification" />
                 </th>
-                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "right", width: "90px" }}>
-                  Quantity
+                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "right", width: "90px" }}><StorefrontText id="copy_822bab8d41bca8d7" fallback="Quantity" />
                 </th>
-                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "right", width: "120px" }}>
-                  Unit Price
+                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "right", width: "120px" }}><StorefrontText id="copy_14f6248d714ca9c7" fallback="Unit Price" />
                 </th>
-                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "right", width: "130px" }}>
-                  Line Total
+                <th style={{ padding: "10px 12px", fontSize: "12px", textAlign: "right", width: "130px" }}><StorefrontText id="copy_30952dac50bb9b6e" fallback="Line Total" />
                 </th>
               </tr>
             </thead>
@@ -343,7 +329,7 @@ export default function PrintableQuotePage() {
                 <tr style={{ borderBottom: "1px solid #E2E8F0" }}>
                   <td style={{ padding: "10px 12px", fontSize: "13px" }}>1</td>
                   <td style={{ padding: "10px 12px", fontSize: "13px" }}>
-                    <strong>Private Label Custom Tea Project</strong>
+                    <strong><StorefrontText id="copy_4014ae9c8afea10d" fallback="Private Label Custom Tea Project" /></strong>
                   </td>
                   <td style={{ padding: "10px 12px", fontSize: "13px", textAlign: "right" }}>1</td>
                   <td style={{ padding: "10px 12px", fontSize: "13px", textAlign: "right" }}>
@@ -362,7 +348,7 @@ export default function PrintableQuotePage() {
         <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "24px" }}>
           <div style={{ width: "360px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "13px" }}>
-              <span>Base Tea Leaf Blend Cost:</span>
+              <span><StorefrontText id="copy_45f1f2009cf6f984" fallback="Base Tea Leaf Blend Cost:" /></span>
               <span>{formatPaiseToInr(quote.tea_subtotal_paise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "13px" }}>
@@ -370,7 +356,7 @@ export default function PrintableQuotePage() {
               <span>{formatPaiseToInr(quote.packaging_subtotal_paise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "13px" }}>
-              <span>Surface Printing Run:</span>
+              <span><StorefrontText id="copy_993bf08f5e444174" fallback="Surface Printing Run:" /></span>
               <span>{formatPaiseToInr(quote.printing_subtotal_paise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "13px" }}>
@@ -378,7 +364,7 @@ export default function PrintableQuotePage() {
               <span>{formatPaiseToInr(quote.tooling_setup_paise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "13px" }}>
-              <span>Cleanroom Nitrogen Filling:</span>
+              <span><StorefrontText id="copy_6bfa838d720204da" fallback="Cleanroom Nitrogen Filling:" /></span>
               <span>{formatPaiseToInr(quote.labor_subtotal_paise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: "13px" }}>
@@ -412,7 +398,7 @@ export default function PrintableQuotePage() {
                 color: "#143C31",
               }}
             >
-              <span>Grand Total (INR):</span>
+              <span><StorefrontText id="copy_327a0b0ff05ca817" fallback="Grand Total (INR):" /></span>
               <span>{formatPaiseToInr(quote.grand_total_paise)}</span>
             </div>
           </div>
@@ -428,16 +414,14 @@ export default function PrintableQuotePage() {
               color: "#143C31",
               fontWeight: "700",
             }}
-          >
-            Milestone Payment Terms (50 / 50 Schedule)
+          ><StorefrontText id="copy_5640d0474ce58085" fallback="Milestone Payment Terms (50 / 50 Schedule)" />
           </h3>
           <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "12px", color: "#4A5568", lineHeight: 1.6 }}>
             <li>
-              <strong>50% Advance Deposit ({formatPaiseToInr(depositPaise)})</strong>: Due upon digital artwork
-              proof sign-off to allocate inventory and initiate printing.
+              <strong><StorefrontText id="copy_6c1a6d444a44cb29" fallback="50% Advance Deposit (" />{formatPaiseToInr(depositPaise)})</strong><StorefrontText id="copy_6d58af540ab8be9a" fallback=": Due upon digital artwork proof sign-off to allocate inventory and initiate printing." />
             </li>
             <li>
-              <strong>50% Final Balance ({formatPaiseToInr(balancePaise)})</strong>: Due upon sensory cupping &
+              <strong><StorefrontText id="copy_1c848ef4b814726d" fallback="50% Final Balance (" />{formatPaiseToInr(balancePaise)})</strong>: Due upon sensory cupping &
               seal integrity sign-off prior to dispatch from Siliguri.
             </li>
           </ul>
@@ -445,17 +429,11 @@ export default function PrintableQuotePage() {
 
         {/* Statutory & Legal Disclaimers */}
         <div style={{ borderTop: "1px solid #E2E8F0", paddingTop: "12px", fontSize: "11px", color: "#718096" }}>
-          <p style={{ margin: "0 0 4px" }}>
-            • Natural agricultural commodity declaration: Variations in leaf appearance and seasonal cup characteristics
-            may occur.
+          <p style={{ margin: "0 0 4px" }}><StorefrontText id="copy_aa7348faebfb44d1" fallback="• Natural agricultural commodity declaration: Variations in leaf appearance and seasonal cup characteristics may occur." />
           </p>
-          <p style={{ margin: "0 0 4px" }}>
-            • 14-day price lock guarantee from date of issue. Commercial disputes subject to Siliguri / Jalpaiguri
-            jurisdiction.
+          <p style={{ margin: "0 0 4px" }}><StorefrontText id="copy_7828c6c5d79e822a" fallback="• 14-day price lock guarantee from date of issue. Commercial disputes subject to Siliguri / Jalpaiguri jurisdiction." />
           </p>
-          <p style={{ margin: 0 }}>
-            • FSSAI Central License compliant food-grade facility. Retained cleanroom batch samples stored for 24
-            months.
+          <p style={{ margin: 0 }}><StorefrontText id="copy_b42e68e086c10b33" fallback="• FSSAI Central License compliant food-grade facility. Retained cleanroom batch samples stored for 24 months." />
           </p>
         </div>
       </div>

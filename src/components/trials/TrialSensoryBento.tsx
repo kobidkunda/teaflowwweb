@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import type { TrialPublicDto } from "@/lib/trials/types";
 import { CheckCircle2, ShieldCheck } from "lucide-react";
@@ -31,24 +32,21 @@ export function TrialSensoryBento({ activeComponent, claims = [] }: TrialSensory
     >
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6 border-b border-[#eeeae3] pb-4">
         <div>
-          <div className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#7c4f1c] mb-1">
-            SENSORY BENCHMARK
+          <div className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#7c4f1c] mb-1"><StorefrontText id="copy_7fb3879a4c61779d" fallback="SENSORY BENCHMARK" />
           </div>
-          <h2 className="font-serif text-[28px] sm:text-[34px] leading-tight font-normal">
-            Cupping profile: <em className="italic text-[#ae8452]">{activeComponent?.name}</em>
+          <h2 className="font-serif text-[28px] sm:text-[34px] leading-tight font-normal"><StorefrontText id="copy_f9429b605fd62519" fallback="Cupping profile:" /> <em className="italic text-[#ae8452]">{activeComponent?.name}</em>
           </h2>
         </div>
         <div
           data-testid="sensory-score"
           className="sensory-score bg-[#faf7f0] border border-[#e6dfd0] rounded-xl px-3 py-2 text-right"
         >
-          <div className="text-[10px] uppercase tracking-[0.1em] text-[#67756d] font-bold">
-            CUPSCORE EVALUATION
+          <div className="text-[10px] uppercase tracking-[0.1em] text-[#67756d] font-bold"><StorefrontText id="copy_1538576a37597947" fallback="CUPSCORE EVALUATION" />
           </div>
           <strong className="font-serif text-[20px] text-[#143b2f]">
             8.8 <span className="text-[12px] font-sans text-[#7a857e]">/ 10</span>
           </strong>
-          <span className="block text-[9px] text-[#8c948e]">Standard Roadside Pot Boil</span>
+          <span className="block text-[9px] text-[#8c948e]"><StorefrontText id="copy_e2c755b90453ecb8" fallback="Standard Roadside Pot Boil" /></span>
         </div>
       </div>
 
@@ -57,16 +55,14 @@ export function TrialSensoryBento({ activeComponent, claims = [] }: TrialSensory
         {/* Quadrant 1: Aroma */}
         <div className="bg-[#faf7f0] border border-[#e8e2d4] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-2">
-            <strong className="text-[14px] font-serif text-[#143b2f]">Aroma Depth</strong>
+            <strong className="text-[14px] font-serif text-[#143b2f]"><StorefrontText id="copy_ab3ae86ca48aef3d" fallback="Aroma Depth" /></strong>
             <span
               data-testid="sensory-badge"
               className="badge px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#143b2f] text-white"
-            >
-              High Pungency
+            ><StorefrontText id="copy_36892b1aa9ca2bcf" fallback="High Pungency" />
             </span>
           </div>
-          <p className="text-[13px] text-[#55645b] leading-relaxed">
-            Freshly crushed leaf aroma with toasted malt and warm spices, developing sweet caramel tones upon initial rolling boil.
+          <p className="text-[13px] text-[#55645b] leading-relaxed"><StorefrontText id="copy_6c2696ed599b5ef4" fallback="Freshly crushed leaf aroma with toasted malt and warm spices, developing sweet caramel tones upon initial rolling boil." />
           </p>
         </div>
 
@@ -77,24 +73,21 @@ export function TrialSensoryBento({ activeComponent, claims = [] }: TrialSensory
             <span
               data-testid="sensory-badge"
               className="badge px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8c4e28] text-white"
-            >
-              Deep Amber Red
+            ><StorefrontText id="copy_4cce55ef09296957" fallback="Deep Amber Red" />
             </span>
           </div>
-          <p className="text-[13px] text-[#55645b] leading-relaxed">
-            Dense, coppery liquor with intense tea polyphenol extraction. Retains bright amber crown when blended with full-cream milk.
+          <p className="text-[13px] text-[#55645b] leading-relaxed"><StorefrontText id="copy_bd6027311b9afb1d" fallback="Dense, coppery liquor with intense tea polyphenol extraction. Retains bright amber crown when blended with full-cream milk." />
           </p>
         </div>
 
         {/* Quadrant 3: Flavor Notes */}
         <div className="bg-[#faf7f0] border border-[#e8e2d4] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-2">
-            <strong className="text-[14px] font-serif text-[#143b2f]">Flavor Notes</strong>
+            <strong className="text-[14px] font-serif text-[#143b2f]"><StorefrontText id="copy_6c5e09075d6dc634" fallback="Flavor Notes" /></strong>
             <span
               data-testid="sensory-badge"
               className="badge px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#7c4f1c] text-white"
-            >
-              Estate Blend
+            ><StorefrontText id="copy_cfb897ffefa3a878" fallback="Estate Blend" />
             </span>
           </div>
           <div data-testid="tasting-notes-list" className="tasting-notes flex flex-wrap gap-1.5 mt-2">
@@ -116,12 +109,10 @@ export function TrialSensoryBento({ activeComponent, claims = [] }: TrialSensory
             <span
               data-testid="sensory-badge"
               className="badge px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#143b2f] text-white"
-            >
-              Smooth Viscosity
+            ><StorefrontText id="copy_e81cf4fa6f0e79fe" fallback="Smooth Viscosity" />
             </span>
           </div>
-          <p className="text-[13px] text-[#55645b] leading-relaxed">
-            Thick, non-chalky coating that cuts cleanly through milk fats without lingering astringency or bitterness on the palate.
+          <p className="text-[13px] text-[#55645b] leading-relaxed"><StorefrontText id="copy_97db043cff1e5574" fallback="Thick, non-chalky coating that cuts cleanly through milk fats without lingering astringency or bitterness on the palate." />
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useId } from "react";
 import {
   calculateCostPerCup,
@@ -54,22 +55,18 @@ export function TrialCostCalculator({
       className="cost-calculator calc border border-[#e6e0d4] bg-[#fffaf2] rounded-[22px] p-6 sm:p-8 shadow-[0_20px_40px_rgba(20,59,47,0.07)] text-[#0d0b0a]"
     >
       <div className="mb-6">
-        <div className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#ab7f4a] mb-1">
-          TRUTHFUL COST-PER-CUP ARITHMETIC
+        <div className="text-[10px] uppercase tracking-[0.2em] font-extrabold text-[#ab7f4a] mb-1"><StorefrontText id="copy_258e522c23fe1682" fallback="TRUTHFUL COST-PER-CUP ARITHMETIC" />
         </div>
-        <h2 className="font-serif text-[28px] sm:text-[36px] leading-tight font-normal">
-          Numbers you can <em className="italic text-[#ae8452]">actually verify.</em>
+        <h2 className="font-serif text-[28px] sm:text-[36px] leading-tight font-normal"><StorefrontText id="copy_7e4e86fc8c43bd35" fallback="Numbers you can" /> <em className="italic text-[#ae8452]"><StorefrontText id="copy_cee30ce301610e97" fallback="actually verify." /></em>
         </h2>
-        <p className="text-[#67756d] text-[13px] sm:text-[14px] mt-1 max-w-xl">
-          No automatic 50% savings assumption. Enter the leaf doses and real delivered rate measured for your stall.
+        <p className="text-[#67756d] text-[13px] sm:text-[14px] mt-1 max-w-xl"><StorefrontText id="copy_4f5372e732d52b10" fallback="No automatic 50% savings assumption. Enter the leaf doses and real delivered rate measured for your stall." />
         </p>
       </div>
 
       {/* 4 Input Columns */}
       <div className="calcgrid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div>
-          <label htmlFor={currentPriceId} className="inputlabel text-[11px] font-bold text-[#486050] block mb-1.5">
-            Your current tea ₹/kg
+          <label htmlFor={currentPriceId} className="inputlabel text-[11px] font-bold text-[#486050] block mb-1.5"><StorefrontText id="copy_bfb82c55ddc20069" fallback="Your current tea ₹/kg" />
           </label>
           <input
             id={currentPriceId}
@@ -83,8 +80,7 @@ export function TrialCostCalculator({
         </div>
 
         <div>
-          <label htmlFor={currentDoseId} className="inputlabel text-[11px] font-bold text-[#486050] block mb-1.5">
-            Your current dose g/cup
+          <label htmlFor={currentDoseId} className="inputlabel text-[11px] font-bold text-[#486050] block mb-1.5"><StorefrontText id="copy_0f2c497474edc7c5" fallback="Your current dose g/cup" />
           </label>
           <input
             id={currentDoseId}
@@ -99,8 +95,7 @@ export function TrialCostCalculator({
         </div>
 
         <div>
-          <label htmlFor={trialPriceId} className="inputlabel text-[11px] font-bold text-[#486050] block mb-1.5">
-            TeaFloww rate ₹/kg
+          <label htmlFor={trialPriceId} className="inputlabel text-[11px] font-bold text-[#486050] block mb-1.5"><StorefrontText id="copy_f5614aa4019c1a25" fallback="TeaFloww rate ₹/kg" />
           </label>
           <input
             id={trialPriceId}
@@ -115,8 +110,7 @@ export function TrialCostCalculator({
 
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor={trialDoseId} className="inputlabel text-[11px] font-bold text-[#486050]">
-              TeaFloww dose g/cup
+            <label htmlFor={trialDoseId} className="inputlabel text-[11px] font-bold text-[#486050]"><StorefrontText id="copy_f04a5b99da3c3aa3" fallback="TeaFloww dose g/cup" />
             </label>
             <input
               id={trialDoseId}
@@ -147,8 +141,7 @@ export function TrialCostCalculator({
       <div className="resultgrid grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {/* Current Cost */}
         <div className="result bg-[#f1ede3] rounded-2xl p-4">
-          <small className="block text-[11px] text-[#64716b] mb-1">
-            Current tea cost / cup
+          <small className="block text-[11px] text-[#64716b] mb-1"><StorefrontText id="copy_0f24238254d594e1" fallback="Current tea cost / cup" />
           </small>
           <strong className="text-[24px] font-serif font-bold text-[#194234]">
             {formatCostPerCup(currentCost)}
@@ -157,8 +150,7 @@ export function TrialCostCalculator({
 
         {/* TeaFloww Cost */}
         <div className="result bg-[#f1ede3] rounded-2xl p-4">
-          <small className="block text-[11px] text-[#64716b] mb-1">
-            TeaFloww cost / cup
+          <small className="block text-[11px] text-[#64716b] mb-1"><StorefrontText id="copy_743a06584820a9b7" fallback="TeaFloww cost / cup" />
           </small>
           <strong
             data-testid="cost-per-cup-value"
@@ -176,8 +168,7 @@ export function TrialCostCalculator({
               : "result negative bg-[#faede8] border border-[#f5cfc4]"
           }`}
         >
-          <small className="block text-[11px] text-[#64716b] mb-1">
-            Actual difference / cup
+          <small className="block text-[11px] text-[#64716b] mb-1"><StorefrontText id="copy_0cb0bc903f5ca546" fallback="Actual difference / cup" />
           </small>
           <div className="flex items-center gap-2">
             <strong
@@ -192,8 +183,7 @@ export function TrialCostCalculator({
               <span
                 data-testid="calculator-savings"
                 className="savings-badge bg-[#1d5f38] text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
-              >
-                Cheaper
+              ><StorefrontText id="copy_3c980f65593d7650" fallback="Cheaper" />
               </span>
             )}
           </div>
@@ -201,20 +191,18 @@ export function TrialCostCalculator({
 
         {/* Total Brews Indicator */}
         <div className="result bg-[#f1ede3] rounded-2xl p-4">
-          <small className="block text-[11px] text-[#64716b] mb-1">
-            Yield from {kitWeightGrams}g kit
+          <small className="block text-[11px] text-[#64716b] mb-1"><StorefrontText id="copy_0e0be88eaaa0eef7" fallback="Yield from" /> {kitWeightGrams}<StorefrontText id="copy_f53f22f68b6e4597" fallback="g kit" />
           </small>
           <strong
             data-testid="total-brews-count"
             className="total-brews text-[24px] font-serif font-bold text-[#143b2f]"
           >
-            {totalBrews} cups
+            {totalBrews} <StorefrontText id="copy_43b69e82bee632b3" fallback="cups" />
           </strong>
         </div>
       </div>
 
-      <p className="text-[11px] text-[#858f87] mt-4 leading-relaxed">
-        Arithmetic formula: <code>(Price per kg × Dose in grams) / 1000</code>. Reflects measured dry leaf dosing in an authentic commercial brewing setup.
+      <p className="text-[11px] text-[#858f87] mt-4 leading-relaxed"><StorefrontText id="copy_d3761d869c1282e8" fallback="Arithmetic formula:" /> <code>(Price per kg × Dose in grams) / 1000</code><StorefrontText id="copy_74cb8117cf252bcb" fallback=". Reflects measured dry leaf dosing in an authentic commercial brewing setup." />
       </p>
     </div>
   );

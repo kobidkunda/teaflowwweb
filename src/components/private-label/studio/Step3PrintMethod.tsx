@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import type { PublicPrintMethodDto } from "@/lib/private-label/public-dto";
 import { validateCompatibility } from "@/lib/private-label/compatibility";
@@ -87,9 +88,7 @@ export function Step3PrintMethod({
         >
           Step 3: Print Method &amp; Surface Embellishments
         </h2>
-        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}>
-          Compatible print processes for your selected {familyCode} structure. Choose between short-run
-          digital customization or high-speed industrial rotogravure.
+        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_f89fcce975834b3d" fallback="Compatible print processes for your selected" /> {familyCode}<StorefrontText id="copy_af791b8d209f752a" fallback="structure. Choose between short-run digital customization or high-speed industrial rotogravure." />
         </p>
       </div>
 
@@ -142,8 +141,7 @@ export function Step3PrintMethod({
                       letterSpacing: "0.08em",
                       color: "#143C31",
                     }}
-                  >
-                    Up to {method.max_colors} Colors
+                  ><StorefrontText id="copy_3e2884632c01454f" fallback="Up to" /> {method.max_colors}<StorefrontText id="copy_88c45d9e526c08dd" fallback="Colors" />
                   </span>
                   {isSelected && (
                     <span
@@ -179,8 +177,7 @@ export function Step3PrintMethod({
                   {method.description || "High-precision print technology engineered for food contact."}
                 </p>
 
-                <div style={{ fontSize: "0.75rem", color: "#65746D" }}>
-                  MOQ: <strong>{method.min_order_units}</strong> units
+                <div style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_492f5a49ed026e3f" fallback="MOQ:" /> <strong>{method.min_order_units}</strong><StorefrontText id="copy_c981a30c0e7b420b" fallback="units" />
                 </div>
               </div>
 
@@ -192,10 +189,9 @@ export function Step3PrintMethod({
                   color: "#65746D",
                 }}
               >
-                <div>Setup Fee: {setupFee > 0 ? `₹${setupFee.toFixed(2)}` : "Free"}</div>
+                <div><StorefrontText id="copy_26bdcef886f07a02" fallback="Setup Fee:" /> {setupFee > 0 ? `₹${setupFee.toFixed(2)}` : "Free"}</div>
                 {cylinderFee > 0 && (
-                  <div style={{ color: "#B45309", marginTop: "2px" }}>
-                    Cylinder: ₹{cylinderFee.toFixed(2)} / color
+                  <div style={{ color: "#B45309", marginTop: "2px" }}><StorefrontText id="copy_9249e44e4f57feb7" fallback="Cylinder: ₹" />{cylinderFee.toFixed(2)}<StorefrontText id="copy_087013be39f55aec" fallback="/ color" />
                   </div>
                 )}
               </div>
@@ -228,8 +224,7 @@ export function Step3PrintMethod({
                 color: "#143C31",
                 marginBottom: "8px",
               }}
-            >
-              Number of Spot / Process Colors (1 to {maxColors}):
+            ><StorefrontText id="copy_1ad21c0d352bed03" fallback="Number of Spot / Process Colors (1 to" /> {maxColors}):
             </label>
             <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {Array.from({ length: maxColors }, (_, i) => i + 1).map((cnt) => (

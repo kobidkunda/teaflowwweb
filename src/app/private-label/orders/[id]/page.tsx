@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download, RefreshCw, Package, ShieldCheck, Truck, FileText } from "lucide-react";
@@ -90,7 +91,7 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
       <div className="min-h-screen bg-[#FBF9F4] py-16 px-4">
         <div className="max-w-5xl mx-auto flex flex-col items-center justify-center py-20 text-[#65746D]">
           <RefreshCw className="w-8 h-8 animate-spin text-[#143C31] mb-3" />
-          <p className="text-sm font-medium">Retrieving cleanroom order dossier...</p>
+          <p className="text-sm font-medium"><StorefrontText id="copy_2cdc9df19b79c48f" fallback="Retrieving cleanroom order dossier..." /></p>
         </div>
       </div>
     );
@@ -101,13 +102,13 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
       <div className="min-h-screen bg-[#FBF9F4] py-16 px-4">
         <div className="max-w-3xl mx-auto bg-white border border-[#E8E4DC] rounded-2xl p-8 text-center shadow-xs">
           <Package className="w-12 h-12 text-[#65746D] mx-auto mb-4" />
-          <h1 className="text-2xl font-serif font-bold text-[#143C31] mb-2">Order Notice</h1>
+          <h1 className="text-2xl font-serif font-bold text-[#143C31] mb-2"><StorefrontText id="copy_d419adefbf64e1d1" fallback="Order Notice" /></h1>
           <p className="text-sm text-[#65746D] mb-6">{error || "Order not found."}</p>
           <Link
             href="/account/private-label"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-[#143C31] text-white hover:bg-[#1E5244] transition-colors"
           >
-            <ArrowLeft size={16} /> Return to Private Label Hub
+            <ArrowLeft size={16} /><StorefrontText id="copy_97a8fad7bb829fb0" fallback="Return to Private Label Hub" />
           </Link>
         </div>
       </div>
@@ -126,11 +127,10 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
               href="/account/private-label"
               className="inline-flex items-center gap-1.5 text-xs text-[#65746D] hover:text-[#143C31] transition-colors mb-2"
             >
-              <ArrowLeft size={14} /> Back to Private Label Hub
+              <ArrowLeft size={14} /><StorefrontText id="copy_00b22b44a8ffd53a" fallback="Back to Private Label Hub" />
             </Link>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#143C31]">
-                Order {order.order_number}
+              <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#143C31]"><StorefrontText id="copy_6be090825c997103" fallback="Order" /> {order.order_number}
               </h1>
               <span
                 data-testid="order-status-badge"
@@ -139,8 +139,7 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
                 {order.status.replace(/_/g, " ")}
               </span>
             </div>
-            <p className="text-xs text-[#65746D] mt-1">
-              Placed on {new Date(order.created_at).toLocaleDateString("en-IN", { dateStyle: "long" })}
+            <p className="text-xs text-[#65746D] mt-1"><StorefrontText id="copy_bef9707be900fb31" fallback="Placed on" /> {new Date(order.created_at).toLocaleDateString("en-IN", { dateStyle: "long" })}
             </p>
           </div>
 
@@ -151,7 +150,7 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
               rel="noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-semibold bg-white border border-[#DDE4DC] text-[#143C31] hover:bg-[#F3EFE6] transition-colors shadow-2xs"
             >
-              <Download size={14} /> Print Commercial Summary
+              <Download size={14} /><StorefrontText id="copy_205e33dee78e9ada" fallback="Print Commercial Summary" />
             </a>
           </div>
         </div>
@@ -164,11 +163,9 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
                 <Truck size={18} />
               </div>
               <div>
-                <p className="text-xs font-semibold text-[#143C31]">
-                  Shipment Dispatched via {order.carrier || "Dedicated Logistics"}
+                <p className="text-xs font-semibold text-[#143C31]"><StorefrontText id="copy_0dbc71f602de9220" fallback="Shipment Dispatched via" /> {order.carrier || "Dedicated Logistics"}
                 </p>
-                <p className="text-xs text-[#4A5550]">
-                  Consignment Waybill: <span className="font-mono font-medium">{order.tracking_number}</span>
+                <p className="text-xs text-[#4A5550]"><StorefrontText id="copy_6420dd9a5c77d8d9" fallback="Consignment Waybill:" /> <span className="font-mono font-medium">{order.tracking_number}</span>
                 </p>
               </div>
             </div>
@@ -195,11 +192,11 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
                 <div key={item.id} className="py-3 flex justify-between items-center gap-4 text-xs">
                   <div>
                     <p className="font-semibold text-[#143C31]">{item.description}</p>
-                    <p className="text-[#65746D]">Quantity: {item.quantity.toLocaleString("en-IN")} units</p>
+                    <p className="text-[#65746D]"><StorefrontText id="copy_d4b2cb9601e3ad40" fallback="Quantity:" /> {item.quantity.toLocaleString("en-IN")}<StorefrontText id="copy_c981a30c0e7b420b" fallback="units" /></p>
                   </div>
                   <div className="text-right">
                     <p className="font-semibold text-[#143C31]">{formatPaise(item.line_total_paise)}</p>
-                    <p className="text-[#65746D]">{formatPaise(item.unit_price_paise)} / unit</p>
+                    <p className="text-[#65746D]">{formatPaise(item.unit_price_paise)}<StorefrontText id="copy_98dc6c0dae10b404" fallback="/ unit" /></p>
                   </div>
                 </div>
               ))}
@@ -209,12 +206,12 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
             {order.approved_proof && (
               <div className="mt-6 pt-6 border-t border-[#E8E4DC]">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-[#143C31] mb-2 flex items-center gap-1.5">
-                  <ShieldCheck size={14} className="text-emerald-700" /> Locked Approved Design Proof
+                  <ShieldCheck size={14} className="text-emerald-700" /><StorefrontText id="copy_40d9bc1a911e1732" fallback="Locked Approved Design Proof" />
                 </h3>
                 <div className="bg-[#F8F6F0] border border-[#E8E4DC] rounded-lg p-3 text-xs flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-[#143C31]">Version {order.approved_proof.version_number || 1} Signed</p>
-                    <p className="text-[#65746D]">Approved by {order.approved_proof.signer_name || "Authorized Signer"}</p>
+                    <p className="font-medium text-[#143C31]"><StorefrontText id="copy_dd167905de0defca" fallback="Version" /> {order.approved_proof.version_number || 1}<StorefrontText id="copy_08251562b3407a16" fallback="Signed" /></p>
+                    <p className="text-[#65746D]"><StorefrontText id="copy_8e838c460986340d" fallback="Approved by" /> {order.approved_proof.signer_name || "Authorized Signer"}</p>
                   </div>
                   {order.approved_proof.preview_render_url && (
                     <a
@@ -222,8 +219,7 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
                       target="_blank"
                       rel="noreferrer"
                       className="text-xs text-[#143C31] underline font-medium hover:text-[#1E5244]"
-                    >
-                      View Signed Dieline
+                    ><StorefrontText id="copy_fbadad73653a3c91" fallback="View Signed Dieline" />
                     </a>
                   )}
                 </div>
@@ -235,27 +231,27 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
           <div className="space-y-6">
             <div className="bg-white border border-[#E8E4DC] rounded-xl p-6 shadow-2xs space-y-4">
               <h2 className="text-base font-serif font-bold text-[#143C31] pb-2 border-b border-[#E8E4DC] flex items-center gap-2">
-                <FileText size={16} /> Financial Overview
+                <FileText size={16} /><StorefrontText id="copy_5011fef9c19f4786" fallback="Financial Overview" />
               </h2>
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-[#65746D]">Total Contract Value</span>
+                  <span className="text-[#65746D]"><StorefrontText id="copy_800c3e3adcfb60a5" fallback="Total Contract Value" /></span>
                   <span className="font-semibold text-[#143C31]">{formatPaise(order.total_paise)}</span>
                 </div>
                 <div className="flex justify-between text-emerald-800">
-                  <span>50% Advance Deposit</span>
+                  <span><StorefrontText id="copy_f9314c88d1140184" fallback="50% Advance Deposit" /></span>
                   <span className="font-semibold">{formatPaise(order.deposit_paise)}</span>
                 </div>
                 <div className="flex justify-between text-[#65746D]">
-                  <span>Remaining Balance Due</span>
+                  <span><StorefrontText id="copy_b6ed4faf11284c55" fallback="Remaining Balance Due" /></span>
                   <span className="font-semibold">{formatPaise(order.balance_paise)}</span>
                 </div>
               </div>
 
               <div className="pt-3 border-t border-[#E8E4DC]">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-[#65746D]">Deposit Status</span>
+                  <span className="text-[#65746D]"><StorefrontText id="copy_8812d0e271e5e484" fallback="Deposit Status" /></span>
                   <span className="font-semibold text-emerald-800">
                     {order.deposit_paid_at ? "Payment recorded" : "Awaiting verified payment"}
                   </span>
@@ -265,8 +261,7 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
 
             {/* Delivery Address */}
             <div className="bg-white border border-[#E8E4DC] rounded-xl p-6 shadow-2xs space-y-2 text-xs">
-              <h2 className="text-base font-serif font-bold text-[#143C31] pb-2 border-b border-[#E8E4DC]">
-                Delivery Address
+              <h2 className="text-base font-serif font-bold text-[#143C31] pb-2 border-b border-[#E8E4DC]"><StorefrontText id="copy_ccf2c43ef257b089" fallback="Delivery Address" />
               </h2>
               {order.shipping_address?.line1 || order.shipping_address?.city ? (
                 <>
@@ -284,7 +279,7 @@ export default function OrderDetailPage(props: { params: Promise<{ id: string }>
                   </p>
                 </>
               ) : (
-                <p className="text-[#65746D] italic">To be confirmed prior to consignment dispatch</p>
+                <p className="text-[#65746D] italic"><StorefrontText id="copy_1de99be3ee7029b8" fallback="To be confirmed prior to consignment dispatch" /></p>
               )}
             </div>
           </div>

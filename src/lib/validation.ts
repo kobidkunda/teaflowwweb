@@ -14,14 +14,14 @@ export const checkoutSchema = z.object({
   couponCode: couponCodeSchema,
   items: z.array(z.object({
     variantId: z.number().int().positive(),
-    quantity: z.number().int().min(1).max(20)
+    quantity: z.number().int().min(1).max(10000)
   })).min(1).max(30)
 });
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 
 export const cartItemSchema = z.object({
   variantId: z.number().int().positive(),
-  quantity: z.number().int().positive().max(10),
+  quantity: z.number().int().positive().max(10000),
 });
 export type CartItemInput = z.infer<typeof cartItemSchema>;
 
@@ -145,6 +145,7 @@ export const productSchema = z.object({
   images: z.array(galleryImageSchema).max(100).optional(),
   pdf_url: z.string().trim().max(500).nullable().optional(),
   pdf_title: z.string().trim().max(200).nullable().optional(),
+  wholesale_moq: z.number().int().min(1).nullable().optional(),
   seo_title: z.string().trim().max(200).nullable().optional(),
   seo_description: z.string().trim().max(500).nullable().optional(),
   canonical_override: z.string().trim().max(500).nullable().optional(),
@@ -396,6 +397,10 @@ export function normalizeProductInput(raw: unknown): Record<string, unknown> {
   }
 
   // Pricing normalization
+  if (data.wholesale_moq !== undefined && data.wholesale_moq !== null && data.wholesale_moq !== "") {
+    const wm = parseNum(data.wholesale_moq);
+    data.wholesale_moq = wm !== undefined && wm > 0 ? Math.round(wm) : null;
+  }
   if (data.price !== undefined && data.price !== null) {
     const num = Number(data.price);
     if (!isNaN(num)) {
@@ -526,8 +531,30 @@ export function normalizeVariantInput(raw: unknown): Record<string, unknown> {
     data.servings = Math.max(1, Math.round((Number(data.grams) || 100) / 2));
   }
 
+  if (Array.isArray(data.wholesale_slabs)) {
+    data.wholesale_slabs = data.wholesale_slabs.map((s: unknown) => {
+      if (s && typeof s === "object") {
+        const item = s as Record<string, unknown>;
+        const min_qty = Number(item.min_qty ?? item.qty ?? item.quantity);
+        const price = item.price_paise !== undefined ? Number(item.price_paise) : (item.price !== undefined ? Math.round(Number(item.price) * 100) : 0);
+        return {
+          id: item.id ? Number(item.id) : undefined,
+          min_qty: Math.max(1, Math.round(min_qty || 1)),
+          price_paise: Math.max(0, Math.round(price || 0)),
+        };
+      }
+      return null;
+    }).filter(Boolean);
+  }
+
   return data;
 }
+
+export const wholesaleSlabInputSchema = z.object({
+  id: z.number().int().positive().optional(),
+  min_qty: z.number().int().min(1, "Minimum quantity must be at least 1"),
+  price_paise: z.number().int().min(0, "Price must be non-negative"),
+});
 
 export const variantSchema = z.object({
   id: z.number().int().positive().optional(),
@@ -539,6 +566,7 @@ export const variantSchema = z.object({
   stock: z.number().int().min(0),
   packaging_format: packagingFormatSchema.default("loose_leaf_pouch"),
   servings: z.number().int().min(1).max(1000).default(50),
+  wholesale_slabs: z.array(wholesaleSlabInputSchema).optional(),
   idempotencyKey: idempotencyKeySchema,
 });
 export type VariantInput = z.input<typeof variantSchema>;

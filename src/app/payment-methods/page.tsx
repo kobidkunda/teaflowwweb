@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -111,8 +112,7 @@ export default async function PaymentMethodsPage() {
 
       {/* Breadcrumbs */}
       <nav className="breadcrumbs flex items-center gap-1.5 text-xs text-[#63685e] mb-8" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-[#18231c] transition-colors">
-          Home
+        <Link href="/" className="hover:text-[#18231c] transition-colors"><StorefrontText id="copy_3a78695388b38b5c" fallback="Home" />
         </Link>
         <span className="text-[#a59f92]">/</span>
         <span aria-current="page" className="text-[#18231c] font-semibold">
@@ -126,11 +126,9 @@ export default async function PaymentMethodsPage() {
           <Zap className="w-3.5 h-3.5 text-[#b39156]" />
           <span>{p.payment_discount_badge_text || "⚡ Instant 2% Off with UPI · 1% Off on Cards"}</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-[#171713] font-normal leading-tight">
-          Pay Smarter. Save More on Every Harvest.
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-serif text-[#171713] font-normal leading-tight"><StorefrontText id="copy_1add86a555c8c6a2" fallback="Pay Smarter. Save More on Every Harvest." />
         </h1>
-        <p className="mt-4 text-base sm:text-lg text-[#46524a] leading-relaxed">
-          Why pay extra for Cash on Delivery? Choose instant UPI, QR code, or secure card checkout to claim upfront discounts, priority origin packaging, and free courier delivery on orders above ₹{s.free_shipping_threshold_rupees}.
+        <p className="mt-4 text-base sm:text-lg text-[#46524a] leading-relaxed"><StorefrontText id="copy_c9e78ccec89e14ea" fallback="Why pay extra for Cash on Delivery? Choose instant UPI, QR code, or secure card checkout to claim upfront discounts, priority origin packaging, and free courier delivery on orders above ₹" />{s.free_shipping_threshold_rupees}.
         </p>
       </header>
 

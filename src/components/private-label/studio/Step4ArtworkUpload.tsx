@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { PackagingDielineAction } from "../detail/PackagingDielineAction";
 import React, { useRef } from "react";
 
@@ -80,9 +81,7 @@ export function Step4ArtworkUpload({
         >
           Step 4: Custom Artwork &amp; 2D Preflight Stage
         </h2>
-        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}>
-          Add an image preview or type your brand name to visualize on the live 2D
-          package silhouette. Verify mechanical safe zones and regulatory disclosures.
+        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_8d856d57711d01e5" fallback="Add an image preview or type your brand name to visualize on the live 2D package silhouette. Verify mechanical safe zones and regulatory disclosures." />
         </p>
       </div>
 
@@ -104,8 +103,7 @@ export function Step4ArtworkUpload({
             color: "#143C31",
             marginBottom: "8px",
           }}
-        >
-          Brand Name (Preview on Canvas):
+        ><StorefrontText id="copy_44a1a3a952318e63" fallback="Brand Name (Preview on Canvas):" />
         </label>
         <input
           id="brand-name-input"
@@ -124,8 +122,7 @@ export function Step4ArtworkUpload({
             boxSizing: "border-box",
           }}
         />
-        <div style={{ fontSize: "0.75rem", color: "#8E9E96", marginTop: "4px" }}>
-          Type your brand name to immediately preview on the 2D canvas in the sidebar.
+        <div style={{ fontSize: "0.75rem", color: "#8E9E96", marginTop: "4px" }}><StorefrontText id="copy_df3e5a75f0872cc4" fallback="Type your brand name to immediately preview on the 2D canvas in the sidebar." />
         </div>
       </div>
 
@@ -153,11 +150,9 @@ export function Step4ArtworkUpload({
 
         <div style={{ fontSize: "2rem" }}>🎨</div>
         <div>
-          <div style={{ fontWeight: 600, color: "#143C31", fontSize: "1rem" }}>
-            Add Artwork Preview
+          <div style={{ fontWeight: 600, color: "#143C31", fontSize: "1rem" }}><StorefrontText id="copy_f7fd088de1a54a23" fallback="Add Artwork Preview" />
           </div>
-          <div style={{ fontSize: "0.8125rem", color: "#65746D", marginTop: "2px" }}>
-            Preview: PNG, JPEG or WebP, up to 512 KB. Saved with your draft. Production files and print quality are reviewed separately.
+          <div style={{ fontSize: "0.8125rem", color: "#65746D", marginTop: "2px" }}><StorefrontText id="copy_8c456a11e39bd88c" fallback="Preview: PNG, JPEG or WebP, up to 512 KB. Saved with your draft. Production files and print quality are reviewed separately." />
           </div>
         </div>
 
@@ -180,8 +175,7 @@ export function Step4ArtworkUpload({
         </button>
 
         {artworkFilename && (
-          <div style={{ fontSize: "0.8125rem", color: "#143C31", fontWeight: 500 }}>
-            Uploaded: <strong>{artworkFilename}</strong>{" "}
+          <div style={{ fontSize: "0.8125rem", color: "#143C31", fontWeight: 500 }}><StorefrontText id="copy_6701f7df4b9cac97" fallback="Uploaded:" /> <strong>{artworkFilename}</strong>{" "}
             {artworkDpi ? `(${artworkDpi} DPI)` : ""}
           </div>
         )}
@@ -207,8 +201,7 @@ export function Step4ArtworkUpload({
         >
           <span aria-hidden="true">⚠️</span>
           <span>
-            <strong>Resolution Warning:</strong> Your uploaded asset resolution ({artworkDpi} DPI) is below
-            the 300 DPI threshold required for production engraving. We recommend supplying high-resolution vector artwork.
+            <strong><StorefrontText id="copy_a7109a775d0ad5fe" fallback="Resolution Warning:" /></strong> <StorefrontText id="copy_187ab5b3e3107164" fallback="Your uploaded asset resolution (" />{artworkDpi} <StorefrontText id="copy_db1072eaa2c033be" fallback="DPI) is below the 300 DPI threshold required for production engraving. We recommend supplying high-resolution vector artwork." />
           </span>
         </div>
       )}
@@ -231,8 +224,7 @@ export function Step4ArtworkUpload({
             <div style={{ fontWeight: 600, color: "#143C31", fontSize: "0.9375rem" }}>
               Artwork Placement &amp; Scaling
             </div>
-            <div style={{ fontSize: "0.75rem", color: "#65746D" }}>
-              Nudge artwork coordinates or use keyboard controls on the 2D stage.
+            <div style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_e06a7005e3c202f0" fallback="Nudge artwork coordinates or use keyboard controls on the 2D stage." />
             </div>
           </div>
           <button
@@ -248,8 +240,7 @@ export function Step4ArtworkUpload({
               fontWeight: 500,
               cursor: "pointer",
             }}
-          >
-            Reset (R)
+          ><StorefrontText id="copy_69900693083a16b5" fallback="Reset (R)" />
           </button>
         </div>
 
@@ -258,8 +249,7 @@ export function Step4ArtworkUpload({
             <label
               htmlFor="art-x-offset"
               style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#171713", marginBottom: "4px" }}
-            >
-              X Offset (mm):
+            ><StorefrontText id="copy_9948509f2fa5456a" fallback="X Offset (mm):" />
             </label>
             <input
               id="art-x-offset"
@@ -288,8 +278,7 @@ export function Step4ArtworkUpload({
             <label
               htmlFor="art-y-offset"
               style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#171713", marginBottom: "4px" }}
-            >
-              Y Offset (mm):
+            ><StorefrontText id="copy_7f70ee041b1ef266" fallback="Y Offset (mm):" />
             </label>
             <input
               id="art-y-offset"
@@ -318,8 +307,7 @@ export function Step4ArtworkUpload({
             <label
               htmlFor="art-scale"
               style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#171713", marginBottom: "4px" }}
-            >
-              Scale (%):
+            ><StorefrontText id="copy_6ec13e7e08c4d888" fallback="Scale (%):" />
             </label>
             <input
               id="art-scale"
@@ -349,7 +337,7 @@ export function Step4ArtworkUpload({
         </div>
 
         <div style={{ fontSize: "0.6875rem", color: "#8E9E96", background: "#F8FAF7", padding: "6px 10px", borderRadius: "4px" }}>
-          ⌨️ <strong>Stage Keyboard Controls:</strong> Focus canvas stage &bull; <strong>Arrow keys:</strong> 1mm nudge &bull; <strong>Shift+Arrow:</strong> 10mm jump &bull; <strong>+/-:</strong> zoom &bull; <strong>R:</strong> reset.
+          ⌨️ <strong><StorefrontText id="copy_029fe723f1e8af4f" fallback="Stage Keyboard Controls:" /></strong> Focus canvas stage &bull; <strong><StorefrontText id="copy_4ff61299f0afe77c" fallback="Arrow keys:" /></strong> 1mm nudge &bull; <strong><StorefrontText id="copy_9915e28f725c85f8" fallback="Shift+Arrow:" /></strong> 10mm jump &bull; <strong>+/-:</strong> zoom &bull; <strong>R:</strong><StorefrontText id="copy_2a3eb4e119ea9568" fallback="reset." />
         </div>
       </div>
 
@@ -365,11 +353,9 @@ export function Step4ArtworkUpload({
         }}
       >
         <div>
-          <div style={{ fontWeight: 600, color: "#143C31", fontSize: "0.875rem" }}>
-            Designer Technical Dieline
+          <div style={{ fontWeight: 600, color: "#143C31", fontSize: "0.875rem" }}><StorefrontText id="copy_0e80d8517961d66c" fallback="Designer Technical Dieline" />
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D" }}>
-            Use the approved packaging template, or request one before preparing production artwork.
+          <div style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_5a438ab5e62409d9" fallback="Use the approved packaging template, or request one before preparing production artwork." />
           </div>
         </div>
         <PackagingDielineAction dielineUrl={dielineUrl} variantTitle={packagingTitle} />
@@ -393,8 +379,7 @@ export function Step4ArtworkUpload({
           <div style={{ fontWeight: 600, color: "#143C31", fontSize: "0.9375rem" }}>
             Digital Proof Sign-Off &amp; Preflight Review
           </div>
-          <div style={{ fontSize: "0.8125rem", color: "#65746D" }}>
-            Verify mechanical alignment and approve legal disclaimer.
+          <div style={{ fontSize: "0.8125rem", color: "#65746D" }}><StorefrontText id="copy_eee1e4471dd9209f" fallback="Verify mechanical alignment and approve legal disclaimer." />
           </div>
         </div>
         <button
@@ -434,9 +419,7 @@ export function Step4ArtworkUpload({
           onChange={(e) => onRightsAttestedChange(e.target.checked)}
           style={{ width: "18px", height: "18px", marginTop: "2px", accentColor: "#143C31" }}
         />
-        <span>
-          I attest that I own or hold valid commercial copyright/trademark license for this brand name
-          and artwork, and authorize TeaFloww (Nirva) to reproduce it.
+        <span><StorefrontText id="copy_3d4525d4cf8bdad0" fallback="I attest that I own or hold valid commercial copyright/trademark license for this brand name and artwork, and authorize TeaFloww (Nirva) to reproduce it." />
         </span>
       </label>
 

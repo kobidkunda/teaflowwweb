@@ -1,32 +1,24 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { MessageCircle } from "lucide-react";
 import styles from "../styles/PrivateLabel.module.css";
 import { SectionEyebrow, PreviewNotice } from "../shared/StudioPrimitives";
-import { formatWhatsAppDigits } from "@/lib/private-label/whatsapp";
 
 export interface PrivateLabelHeroProps {
   whatsappNumber?: string;
 }
 
-export function PrivateLabelHero({ whatsappNumber = "+91 7001304853" }: PrivateLabelHeroProps = {}) {
-  const cleanDigits = formatWhatsAppDigits(whatsappNumber);
-  const whatsappUrl = `https://wa.me/${cleanDigits}?text=${encodeURIComponent(
-    "Hello TeaFloww! I'm interested in Private Label Tea Sourcing & Packaging and would like to consult with your tea desk.\n\nURL: https://teafloww.com/private-label"
-  )}`;
-
+export function PrivateLabelHero(_props: PrivateLabelHeroProps = {}) {
   return (
     <section className={styles.heroSection} aria-label="Hero">
       <div className={styles.contentContainer}>
         <div className={styles.heroGrid}>
           <div>
-            <SectionEyebrow>YOUR TEA BRAND, STEP BY STEP</SectionEyebrow>
-            <h1 className={styles.heroTitle}>
-              Bring Your Tea Brand to Life.
+            <SectionEyebrow><StorefrontText id="copy_ed30fbb1c102eaf2" fallback="YOUR TEA BRAND, STEP BY STEP" /></SectionEyebrow>
+            <h1 className={styles.heroTitle}><StorefrontText id="copy_349dad8a4fd25011" fallback="Bring Your Tea Brand to Life." />
             </h1>
-            <p className={styles.heroSubtitle}>
-              Explore tea and packaging options, preview your brand, and request an itemized quotation. Our team will confirm sourcing, materials and production requirements for your project.
+            <p className={styles.heroSubtitle}><StorefrontText id="copy_603edb56529ed13f" fallback="Explore tea and packaging options, preview your brand, and request an itemized quotation. Our team will confirm sourcing, materials and production requirements for your project." />
             </p>
             <div className={styles.heroActions}>
               <Link
@@ -40,24 +32,13 @@ export function PrivateLabelHero({ whatsappNumber = "+91 7001304853" }: PrivateL
                 href="/private-label/packaging"
                 className={styles.secondaryCta}
                 aria-label="Explore Packaging Catalogue"
-              >
-                Explore Packaging Catalogue
+              ><StorefrontText id="copy_6781c0a4c58a9185" fallback="Explore Packaging Catalogue" />
               </Link>
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.whatsappCta}
-                aria-label="Chat directly on WhatsApp with our tea & packaging desk"
-              >
-                <MessageCircle size={18} fill="#25D366" color="#25D366" className={styles.whatsappIcon} />
-                <span>Chat on WhatsApp</span>
-              </a>
             </div>
             <div className={styles.heroTrustIndicators}>
               <span>Tea & packaging selection</span>
-              <span>Configuration-specific minimums</span>
-              <span>Proof review before production</span>
+              <span><StorefrontText id="copy_765fbd3828679d9f" fallback="Configuration-specific minimums" /></span>
+              <span><StorefrontText id="copy_3059c165c8d1ec31" fallback="Proof review before production" /></span>
             </div>
           </div>
 

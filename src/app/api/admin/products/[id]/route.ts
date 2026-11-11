@@ -101,6 +101,7 @@ async function handleUpdate(request: Request, params: Promise<{ id: string }>) {
       status: parsed.data.status ?? current.status ?? "published",
       pdf_url: parsed.data.pdf_url !== undefined ? parsed.data.pdf_url : (current.pdf_url ?? null),
       pdf_title: parsed.data.pdf_title !== undefined ? parsed.data.pdf_title : (current.pdf_title ?? null),
+      wholesale_moq: parsed.data.wholesale_moq !== undefined ? parsed.data.wholesale_moq : (current.wholesale_moq ?? null),
       seo_title: parsed.data.seo_title !== undefined ? parsed.data.seo_title : (current.seo_title ?? null),
       seo_description: parsed.data.seo_description !== undefined ? parsed.data.seo_description : (current.seo_description ?? null),
       canonical_override: parsed.data.canonical_override !== undefined ? parsed.data.canonical_override : (current.canonical_override ?? null),

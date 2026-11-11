@@ -19,11 +19,9 @@ export const DEFAULT_TAGLINE = "Himalayan Single-Estate Teas";
 export const DEFAULT_NAV = [
   { label: "Shop Tea", href: "/shop" },
   { label: "Leaf to Cup", href: "/leaf-to-cup" },
-  { label: "Black Teas", href: "/collections/black-tea" },
   { label: "Wholesale & Bulk", href: "/wholesale" },
   { label: "Private Label", href: "/private-label" },
   { label: "Blend Lab", href: "/blend-lab" },
-  { label: "Tea Finder", href: "/tea-finder" },
   { label: "Trials & Samples", href: "/trials" },
 ];
 
@@ -105,8 +103,14 @@ export function StorefrontHeader({
       ? content.navigation
       : DEFAULT_NAV;
 
-  // Ensure craft story "Leaf to Cup" is always discoverable if using custom nav without it
-  const navItems = [...rawNav];
+  // Filter out removed Black Teas and Tea Finder links defensively
+  const navItems = rawNav.filter(
+    (link) =>
+      link.href !== "/collections/black-tea" &&
+      link.href !== "/tea-finder" &&
+      link.label !== "Black Teas" &&
+      link.label !== "Tea Finder"
+  );
   if (
     content?.navigation &&
     content.navigation.length > 0 &&
@@ -238,15 +242,13 @@ export function StorefrontHeader({
                   href="/account/orders"
                   onClick={() => setMenuOpen(false)}
                   className="text-xs font-semibold text-[#1d2a24] hover:text-[#23483a] py-1"
-                >
-                  📦 My Orders
+                ><StorefrontText id="copy_e2db3a14ccc9b8d3" fallback="📦 My Orders" />
                 </Link>
                 <Link
                   href="/account"
                   onClick={() => setMenuOpen(false)}
                   className="text-xs font-semibold text-[#1d2a24] hover:text-[#23483a] py-1"
-                >
-                  👤 My Account
+                ><StorefrontText id="copy_96c4bd1432e6e0c1" fallback="👤 My Account" />
                 </Link>
               </div>
             )}

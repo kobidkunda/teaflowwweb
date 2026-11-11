@@ -186,7 +186,7 @@ function ShopDossierRow({
           )}
 
           <div className="shop-dossier-btns">
-            <AddToCart product={product} variant={activeVariant} />
+            <AddToCart product={product} variant={activeVariant} disableModal={true} />
             {onQuickView && (
               <button
                 type="button"

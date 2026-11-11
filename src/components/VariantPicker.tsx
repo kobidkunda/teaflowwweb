@@ -42,7 +42,7 @@ export function VariantPicker({
   const formatINR = useDisplayMoney();
   const formatPerCup = (price: number, servings: number) => formatINR(servings > 0 ? Math.round(price / servings) : 0);
 
-  const { add, changeQuantity } = useCart();
+  const { add } = useCart();
 
   const availableFormats = getAvailableFormats(product.variants);
   const formats: PackagingFormat[] =
@@ -85,6 +85,34 @@ export function VariantPicker({
     resolveVariant(product.variants, selectedFormat, selectedGrams) ||
     product.variants.find((v) => v.packaging_format === selectedFormat) ||
     product.variants[0];
+
+  const [purchaseMode, setPurchaseMode] = useState<"retail" | "wholesale">("retail");
+  const isWholesaleMode = purchaseMode === "wholesale";
+  const effectiveMoq = product.wholesale_moq || 50;
+
+  const wholesaleSlabs = (activeVariant?.wholesale_slabs || [])
+    .slice()
+    .sort((a, b) => a.min_qty - b.min_qty);
+
+  let activeWholesaleUnitPaise = activeVariant?.price_paise ?? 19900;
+  if (wholesaleSlabs.length > 0) {
+    const matching = wholesaleSlabs.filter((s) => quantity >= s.min_qty);
+    if (matching.length > 0) {
+      activeWholesaleUnitPaise = matching[matching.length - 1].price_paise;
+    } else {
+      activeWholesaleUnitPaise = wholesaleSlabs[0].price_paise;
+    }
+  }
+
+  const regularUnitPaise = activeVariant?.price_paise ?? 19900;
+  const currentUnitPaise = isWholesaleMode ? activeWholesaleUnitPaise : regularUnitPaise;
+  const totalPricePaise = currentUnitPaise * quantity;
+  const totalSavingsPaise = isWholesaleMode && regularUnitPaise > currentUnitPaise
+    ? (regularUnitPaise - currentUnitPaise) * quantity
+    : 0;
+  const savingsPercent = regularUnitPaise > 0
+    ? Math.round(((regularUnitPaise - currentUnitPaise) / regularUnitPaise) * 100)
+    : 0;
 
   // Notify listeners and StickyPurchaseBar whenever activeVariant changes
   useEffect(() => {
@@ -181,16 +209,17 @@ export function VariantPicker({
     setAddError("");
     try {
       add({
-        variantId: activeVariant.id, sku: activeVariant.sku?.trim() || `HTH-${product.id}-${activeVariant.id}`,
+        variantId: activeVariant.id,
+        sku: activeVariant.sku?.trim() || `HTH-${product.id}-${activeVariant.id}`,
         slug: product.slug,
-        name: product.name,
+        name: product.name + (isWholesaleMode ? " (Wholesale)" : ""),
         grams: activeVariant.grams,
-        pricePaise: activeVariant.price_paise,
+        pricePaise: currentUnitPaise,
+        quantity,
+        isWholesale: isWholesaleMode,
+        wholesaleSlabPrice: isWholesaleMode ? currentUnitPaise : undefined,
+        wholesaleMoq: isWholesaleMode ? effectiveMoq : undefined,
       });
-
-      if (quantity > 1) {
-        changeQuantity(activeVariant.id, quantity);
-      }
 
       setAdded(true);
 
@@ -220,8 +249,8 @@ export function VariantPicker({
       aria-label={`Purchase options for ${product.name}`}
     >
       {/* 1. Rating, Reviews & Share Bar */}
-      <div className="flex items-center justify-between gap-4 py-2 border-b border-[#e8e4dc] mb-4 text-xs">
-
+      <div className="flex items-center justify-between gap-4 py-2 border-b border-[#e8e4dc] mb-3 text-xs">
+        <span className="font-semibold text-[#5a6655] uppercase tracking-wider text-[11px]"><StorefrontText id="copy_97f19ad6e6888594" fallback="Direct from Estate" /></span>
         <button
           type="button"
           onClick={handleShare}
@@ -233,25 +262,81 @@ export function VariantPicker({
         </button>
       </div>
 
+      {/* Mode Switcher: Retail vs Wholesale */}
+      <div
+        className="purchase-mode-switch flex items-center p-1 bg-[#ede8dc] rounded-lg mb-4"
+        role="tablist"
+        aria-label="Select buying mode"
+      >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!isWholesaleMode}
+          onClick={() => {
+            setPurchaseMode("retail");
+            if (quantity > 20) setQuantity(1);
+          }}
+          className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center ${
+            !isWholesaleMode
+              ? "bg-[#1b3022] text-[#fbf8f1] shadow-xs"
+              : "text-[#475244] hover:text-[#1b3022]"
+          }`}
+        ><StorefrontText id="copy_ba217ba9982e9c30" fallback="☕ Retail Packs" />
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={isWholesaleMode}
+          onClick={() => {
+            setPurchaseMode("wholesale");
+            if (quantity < effectiveMoq) setQuantity(effectiveMoq);
+          }}
+          className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center flex items-center justify-center gap-1.5 ${
+            isWholesaleMode
+              ? "bg-[#1b3022] text-[#fbf8f1] shadow-xs"
+              : "text-[#475244] hover:text-[#1b3022]"
+          }`}
+        >
+          <span><StorefrontText id="copy_67b63fbc26e7e25e" fallback="📦 Buy in Wholesale (Bulk Slabs)" /></span>
+          {wholesaleSlabs.length > 0 && (
+            <span className="bg-[#e4761b] text-white text-[10px] px-1.5 py-0.2 rounded font-bold"><StorefrontText id="copy_67a9b3f504fe53f9" fallback="Bulk %" />
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* 2. Price, Taxes & Live In-Stock Indicator */}
       <div
-        className="price-row flex items-baseline justify-between gap-3 mb-1 mt-2"
-        style={{ marginTop: "12px", marginBottom: "4px" }}
+        className="price-row flex items-baseline justify-between gap-3 mb-1 mt-1"
+        style={{ marginTop: "8px", marginBottom: "4px" }}
       >
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
           <div
             className="price-main"
             data-testid="price-main"
             style={{
               fontVariantNumeric: "tabular-nums",
-              fontSize: "34px",
+              fontSize: "32px",
               fontWeight: 700,
               color: "#1b3022",
               lineHeight: 1.1,
             }}
           >
-            {formatINR(activeVariant.price_paise)}
+            {formatINR(currentUnitPaise)}
           </div>
+          {isWholesaleMode && regularUnitPaise > currentUnitPaise && (
+            <div className="flex items-center gap-1.5">
+              <del className="text-sm text-[#7a8274] font-medium">
+                {formatINR(regularUnitPaise)}
+              </del>
+              <span className="text-xs bg-[#eaf3e9] text-[#2e683f] font-bold px-1.5 py-0.5 rounded">
+                {savingsPercent}<StorefrontText id="copy_d892cb05720ec3ad" fallback="% OFF" />
+              </span>
+            </div>
+          )}
+          {isWholesaleMode && (
+            <span className="text-[11px] font-semibold text-[#5a6655]"><StorefrontText id="copy_94a52947856eeac3" fallback="/ piece" /></span>
+          )}
         </div>
 
         {/* Stock Badge */}
@@ -274,6 +359,78 @@ export function VariantPicker({
           <span>{isSoldOut ? "Sold Out" : "In Stock"}</span>
         </div>
       </div>
+
+      {/* Interactive Wholesale Tier Cards & Freight Notice */}
+      {isWholesaleMode && (
+        <div className="wholesale-tier-container bg-[#f5f7f2] border border-[#bcd2bf] rounded-lg p-3.5 mb-4 mt-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#23483a] flex items-center gap-1.5">
+              <span><StorefrontText id="copy_8b20d91a650659c7" fallback="📊 Volume Pricing Slabs (" />{activeVariant.grams}g)</span>
+            </span>
+            <span className="text-[11px] font-semibold text-[#5a6655]"><StorefrontText id="copy_492f5a49ed026e3f" fallback="MOQ:" /> {effectiveMoq}<StorefrontText id="copy_d7d4f59db48fb4b8" fallback="pcs" />
+            </span>
+          </div>
+
+          {wholesaleSlabs.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+              {wholesaleSlabs.map((slab, sIdx) => {
+                const nextSlab = wholesaleSlabs[sIdx + 1];
+                const qtyLabel = nextSlab ? `${slab.min_qty}–${nextSlab.min_qty - 1} pcs` : `${slab.min_qty}+ pcs`;
+                const isCurrentTier = quantity >= slab.min_qty && (!nextSlab || quantity < nextSlab.min_qty);
+                const discount = regularUnitPaise > 0 ? Math.round(((regularUnitPaise - slab.price_paise) / regularUnitPaise) * 100) : 0;
+
+                return (
+                  <button
+                    key={sIdx}
+                    type="button"
+                    onClick={() => setQuantity(slab.min_qty)}
+                    className={`p-2.5 rounded-md border text-left transition-all ${
+                      isCurrentTier
+                        ? "border-[#1b3022] bg-[#ffffff] ring-2 ring-[#2e683f] shadow-sm"
+                        : "border-[#d0d9cd] bg-[#ffffff] hover:border-[#8da08b]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-[#1b3022]">{qtyLabel}</span>
+                      {discount > 0 && (
+                        <span className="text-[10px] bg-[#eaf3e9] text-[#2e683f] font-bold px-1.5 py-0.2 rounded">
+                          {discount}<StorefrontText id="copy_d892cb05720ec3ad" fallback="% OFF" />
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <del className="text-[11px] text-[#788273]">{formatINR(regularUnitPaise)}</del>
+                      <strong className="text-sm font-bold text-[#1b3022]">{formatINR(slab.price_paise)}</strong>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-white p-3 rounded border border-[#d0d9cd] mb-3 text-xs text-[#525e4f]">
+              <p className="font-semibold text-[#1b3022] mb-1"><StorefrontText id="copy_f0438b18e0884bae" fallback="Direct Wholesale Lot" /></p>
+              <p><StorefrontText id="copy_42e438a7f0bfc6f4" fallback="Wholesale rate applies at" /> {formatINR(currentUnitPaise)}<StorefrontText id="copy_d49bbff900428b77" fallback="/unit for minimum order of" /> {effectiveMoq}<StorefrontText id="copy_47a56c994e81e273" fallback="+ units. Contact our desk for larger container volume rates." /></p>
+            </div>
+          )}
+
+          {/* Live Total Savings Highlight */}
+          {totalSavingsPaise > 0 && (
+            <div className="bg-[#e7f3e8] border border-[#a8cda9] text-[#1c4d28] rounded p-2 text-xs font-semibold flex items-center justify-between mb-2">
+              <span><StorefrontText id="copy_13c52022e8769c2b" fallback="🎉 Wholesale Slab Savings:" /></span>
+              <span><StorefrontText id="copy_5ecc9f79a6f15763" fallback="You save" /> {formatINR(totalSavingsPaise)} ({savingsPercent}<StorefrontText id="copy_32917eeea7da1f45" fallback="% OFF)!" /></span>
+            </div>
+          )}
+
+          {/* Special Transport Notice Banner */}
+          <div className="bg-[#fff9ed] border border-[#eedab2] text-[#7d5615] rounded p-2.5 text-xs flex items-start gap-2">
+            <span className="text-base leading-none">🚛</span>
+            <div>
+              <strong className="block text-[#684407] mb-0.5"><StorefrontText id="copy_2f7584be0f7b1e93" fallback="Commercial Transport Dispatch Notice:" /></strong>
+              <span><StorefrontText id="copy_17424fbc405f07f1" fallback="Wholesale goods are dispatched via commercial surface road transport." /> <strong><StorefrontText id="copy_13ae603252609e2a" fallback="Transport / freight charges are extra" /></strong><StorefrontText id="copy_a8dd6b3c335b9d8d" fallback="and payable directly upon cargo delivery (To-Pay Bilty)." /></span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. Packaging Format Selector */}
       <div
@@ -403,37 +560,82 @@ export function VariantPicker({
         {sizeLabel} <StorefrontText id="copy_93b65c1b11181916" fallback="· Approximately" /> {servings} <StorefrontText id="copy_5fc790d0e5ad6d37" fallback="cups ·" /> {perCupDisplay} <StorefrontText id="copy_fb02ea9db1a972dc" fallback="per cup" /> </p>
 
       {/* 6. Quantity Stepper & Add to Cart Button Row */}
-      <div className="flex items-center flex-wrap sm:flex-nowrap gap-3 mb-6">
+      <div className="flex items-center flex-wrap sm:flex-nowrap gap-3 mb-4">
         {/* Accessible Quantity Selector Stepper */}
-        <div
-          className="quantity-stepper flex items-center border border-[#ded8cb] bg-white rounded-md shrink-0 overflow-hidden"
-          style={{ minHeight: "52px" }}
-        >
-          <button
-            type="button"
-            aria-label="Decrease quantity"
-            disabled={quantity <= 1 || isSoldOut}
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            className="w-11 h-full flex items-center justify-center text-lg font-semibold text-[#1b3022] hover:bg-[#f6f2e9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        {isWholesaleMode ? (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div
+              className="quantity-stepper flex items-center border border-[#bcd2bf] bg-white rounded-md shrink-0 overflow-hidden"
+              style={{ minHeight: "52px" }}
+            >
+              <button
+                type="button"
+                aria-label="Decrease wholesale quantity by 10"
+                disabled={quantity <= effectiveMoq || isSoldOut}
+                onClick={() => setQuantity(Math.max(effectiveMoq, quantity - 10))}
+                className="w-10 h-full flex items-center justify-center text-sm font-bold text-[#1b3022] hover:bg-[#f6f2e9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="-10 units"
+              >
+                −10
+              </button>
+              <input
+                type="number"
+                min={effectiveMoq}
+                max={10000}
+                value={quantity}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (!isNaN(val)) setQuantity(Math.max(1, val));
+                }}
+                onBlur={() => {
+                  if (quantity < effectiveMoq) setQuantity(effectiveMoq);
+                }}
+                className="w-16 text-center font-bold text-sm tabular-nums text-[#1b3022] py-2 border-x border-[#bcd2bf] focus:outline-none"
+                aria-label={`Wholesale quantity: ${quantity} units`}
+              />
+              <button
+                type="button"
+                aria-label="Increase wholesale quantity by 10"
+                disabled={quantity >= 10000 || isSoldOut}
+                onClick={() => setQuantity(Math.min(10000, quantity + 10))}
+                className="w-10 h-full flex items-center justify-center text-sm font-bold text-[#1b3022] hover:bg-[#f6f2e9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="+10 units"
+              >
+                +10
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="quantity-stepper flex items-center border border-[#ded8cb] bg-white rounded-md shrink-0 overflow-hidden"
+            style={{ minHeight: "52px" }}
           >
-            −
-          </button>
-          <span
-            className="w-10 text-center font-bold text-sm tabular-nums text-[#1b3022] select-none"
-            aria-label={`Quantity: ${quantity}`}
-          >
-            {quantity}
-          </span>
-          <button
-            type="button"
-            aria-label="Increase quantity"
-            disabled={quantity >= 20 || isSoldOut}
-            onClick={() => setQuantity(Math.min(20, quantity + 1))}
-            className="w-11 h-full flex items-center justify-center text-lg font-semibold text-[#1b3022] hover:bg-[#f6f2e9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            +
-          </button>
-        </div>
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              disabled={quantity <= 1 || isSoldOut}
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              className="w-11 h-full flex items-center justify-center text-lg font-semibold text-[#1b3022] hover:bg-[#f6f2e9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              −
+            </button>
+            <span
+              className="w-10 text-center font-bold text-sm tabular-nums text-[#1b3022] select-none"
+              aria-label={`Quantity: ${quantity}`}
+            >
+              {quantity}
+            </span>
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              disabled={quantity >= 20 || isSoldOut}
+              onClick={() => setQuantity(Math.min(20, quantity + 1))}
+              className="w-11 h-full flex items-center justify-center text-lg font-semibold text-[#1b3022] hover:bg-[#f6f2e9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            >
+              +
+            </button>
+          </div>
+        )}
 
         {/* Primary Add to Cart Button */}
         <button
@@ -458,13 +660,33 @@ export function VariantPicker({
           ) : (
             <>
               <ShoppingCart size={17} aria-hidden="true" />
-              <span>{`Add to Bag — ${formatINR(activeVariant.price_paise * quantity)}`}</span>
+              <span>{isWholesaleMode ? `Add to Bag (Wholesale) — ${formatINR(totalPricePaise)}` : `Add to Bag — ${formatINR(totalPricePaise)}`}</span>
             </>
           )}
         </button>
       </div>
 
-      {!isSoldOut && <SubscribeLink variantId={activeVariant.id} quantity={quantity} />}
+      {isWholesaleMode && (
+        <div className="flex items-center gap-2 mb-4 text-xs text-[#525e4f]">
+          <span className="font-semibold text-[#1b3022]"><StorefrontText id="copy_b38da506e5346f1b" fallback="Quick Units:" /></span>
+          {[effectiveMoq, 100, 250, 500].filter((q) => q >= effectiveMoq).map((q) => (
+            <button
+              key={q}
+              type="button"
+              onClick={() => setQuantity(q)}
+              className={`px-2 py-1 rounded border text-xs font-semibold ${
+                quantity === q
+                  ? "bg-[#1b3022] text-white border-[#1b3022]"
+                  : "bg-white text-[#2a3828] border-[#c4d2c2] hover:border-[#879984]"
+              }`}
+            >
+              {q}<StorefrontText id="copy_d7d4f59db48fb4b8" fallback="pcs" />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!isSoldOut && !isWholesaleMode && <SubscribeLink variantId={activeVariant.id} quantity={quantity} />}
       <p className="pdp-add-status sr-only" role="status">
         {added ? "Added to your bag." : ""}
       </p>

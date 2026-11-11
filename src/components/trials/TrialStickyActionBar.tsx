@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState } from "react";
 import type { TrialPublicDto } from "@/lib/trials/types";
 import { formatINR } from "@/lib/trials/storefront-helpers";
@@ -46,7 +47,7 @@ export function TrialStickyActionBar({ trial }: TrialStickyActionBarProps) {
           <strong className="text-[20px] font-serif font-bold text-[#e5b869]">
             {priceRupees}
           </strong>
-          <small className="text-[10px] text-[#a89a8e]">+ delivery</small>
+          <small className="text-[10px] text-[#a89a8e]"><StorefrontText id="copy_379772f4bc0dfd07" fallback="+ delivery" /></small>
         </div>
       </div>
 
@@ -64,11 +65,11 @@ export function TrialStickyActionBar({ trial }: TrialStickyActionBarProps) {
         }`}
       >
         {added ? (
-          <span>Added to Cart ✓</span>
+          <span><StorefrontText id="copy_2a1082a97808ed6d" fallback="Added to Cart ✓" /></span>
         ) : trial.in_stock ? (
-          <span>Order Kit ↗</span>
+          <span><StorefrontText id="copy_c67a07dce1662c20" fallback="Order Kit ↗" /></span>
         ) : (
-          <span>Sold Out</span>
+          <span><StorefrontText id="copy_5b92d3d791c59ae1" fallback="Sold Out" /></span>
         )}
       </button>
     </aside>

@@ -69,6 +69,13 @@ function mockSettings(overrides: Partial<PaymentSettings> = {}): PaymentSettings
 
     min_order_for_discount_rupees: 0,
     payment_discount_badge_text: "⚡ Instant 2% Off with UPI · 1% Off on Cards",
+    wholesale_advance_percent: 0,
+    wholesale_bank_beneficiary: "Nirva",
+    wholesale_bank_name: "HDFC Bank",
+    wholesale_bank_account_number: "",
+    wholesale_bank_ifsc: "",
+    wholesale_bank_branch: "Siliguri",
+    wholesale_bank_upi_id: "",
     ...overrides,
   };
 }

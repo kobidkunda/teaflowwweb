@@ -14,6 +14,22 @@ export function ProductCard({ product }: { product: Product }) {
   const variant = product.variants[0];
   if (!variant) return null;
   const colorClass = product.category.toLowerCase().replace(/[^a-z]/g, "");
+
+  const variantPrices = product.variants.map((v) => v.price_paise).filter((p) => typeof p === "number" && p > 0);
+  const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : variant.price_paise;
+  const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : variant.price_paise;
+  const hasMultiplePrices = minPrice !== maxPrice;
+  const priceDisplay = hasMultiplePrices ? `${formatINR(minPrice)} – ${formatINR(maxPrice)}` : formatINR(variant.price_paise);
+
+  const allWholesaleSlabs = product.variants.flatMap((v) =>
+    (v.wholesale_slabs || []).map((s) => ({
+      ...s,
+      regularPricePaise: v.price_paise,
+    }))
+  );
+  const bestWholesaleSlab = allWholesaleSlabs.length > 0
+    ? [...allWholesaleSlabs].sort((a, b) => a.price_paise - b.price_paise)[0]
+    : null;
   return <article className="product-card">
     <ProductImpression item={catalogItem(product, variant)} />
     <Link href={"/tea/" + product.slug} className={"product-art art-" + colorClass}>
@@ -50,9 +66,9 @@ export function ProductCard({ product }: { product: Product }) {
       <p className="eyebrow">{product.origin} · {product.category}</p>
       <Link href={"/tea/" + product.slug} className="product-title">{product.name}</Link>
       <p className="tasting-notes">{product.tasting_notes}</p>
-      <div className="product-price-row">
-        <strong>{formatINR(variant.price_paise)}</strong>
-        {variant.compare_at_price_paise && variant.compare_at_price_paise > variant.price_paise ? (
+      <div className="product-price-row" style={{ flexWrap: "wrap", gap: "6px" }}>
+        <strong>{priceDisplay}</strong>
+        {variant.compare_at_price_paise && variant.compare_at_price_paise > variant.price_paise && !hasMultiplePrices ? (
           <>
             <del
               className="product-original-price"
@@ -68,6 +84,33 @@ export function ProductCard({ product }: { product: Product }) {
           </>
         ) : null}
         <span>{variant.grams} <StorefrontText id="copy_6b8e375784466001" fallback="g · ~" /> {cupsFromGrams(variant.grams)} <StorefrontText id="copy_43b69e82bee632b3" fallback="cups" /> </span>
+        {bestWholesaleSlab && (
+          <div
+            style={{
+              width: "100%",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              fontSize: "11px",
+              fontWeight: 600,
+              color: "#23483a",
+              background: "#eaf3e9",
+              border: "1px solid #b7d6be",
+              borderRadius: "4px",
+              padding: "2px 6px",
+              marginTop: "2px",
+            }}
+          >
+            <span><StorefrontText id="copy_46cf537d6f511463" fallback="🌿 Wholesale from:" /></span>
+            {bestWholesaleSlab.regularPricePaise > bestWholesaleSlab.price_paise && (
+              <del style={{ color: "#7a8274", fontWeight: 500 }}>
+                {formatINR(bestWholesaleSlab.regularPricePaise)}
+              </del>
+            )}
+            <strong style={{ color: "#1b3022" }}>{formatINR(bestWholesaleSlab.price_paise)}</strong>
+            <span style={{ color: "#465244", fontSize: "10px" }}><StorefrontText id="copy_2e4cf228d2da709a" fallback="· Min" /> {bestWholesaleSlab.min_qty}<StorefrontText id="copy_d7d4f59db48fb4b8" fallback="pcs" /></span>
+          </div>
+        )}
       </div>
       <AddToCart product={product} variant={variant}/>
     </div>

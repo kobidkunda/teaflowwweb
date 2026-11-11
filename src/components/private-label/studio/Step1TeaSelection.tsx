@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState } from "react";
 import type { PublicTeaOptionDto } from "@/lib/private-label/public-dto";
 
@@ -66,12 +67,9 @@ export function Step1TeaSelection({
             fontFamily: 'Georgia, "Times New Roman", serif',
             color: "#143C31",
           }}
-        >
-          Step 1: Select Your Tea
+        ><StorefrontText id="copy_531850db0ec0be0f" fallback="Step 1: Select Your Tea" />
         </h2>
-        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}>
-          Choose from verified high-altitude Himalayan estates in Darjeeling, Assam, and Kangra.
-          All teas are fresh harvest with direct origin provenance.
+        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_c64d362d25fcb234" fallback="Choose from verified high-altitude Himalayan estates in Darjeeling, Assam, and Kangra. All teas are fresh harvest with direct origin provenance." />
         </p>
       </div>
 
@@ -182,8 +180,7 @@ export function Step1TeaSelection({
                 </h3>
 
                 {tea.estate && (
-                  <div style={{ fontSize: "0.8125rem", color: "#65746D" }}>
-                    Estate: <strong>{tea.estate}</strong>
+                  <div style={{ fontSize: "0.8125rem", color: "#65746D" }}><StorefrontText id="copy_85d15f3089612170" fallback="Estate:" /> <strong>{tea.estate}</strong>
                   </div>
                 )}
 
@@ -217,7 +214,7 @@ export function Step1TeaSelection({
                   fontSize: "0.8125rem",
                 }}
               >
-                <span style={{ color: "#65746D" }}>Base Rate:</span>
+                <span style={{ color: "#65746D" }}><StorefrontText id="copy_67bf59a09f27f123" fallback="Base Rate:" /></span>
                 <span style={{ fontWeight: 700, color: "#143C31" }}>{priceFormatted}</span>
               </div>
             </div>
@@ -243,8 +240,7 @@ export function Step1TeaSelection({
             color: "#143C31",
             marginBottom: "8px",
           }}
-        >
-          Pack Net Fill Weight (grams per pouch/tin):
+        ><StorefrontText id="copy_e48499139cff5af3" fallback="Pack Net Fill Weight (grams per pouch/tin):" />
         </label>
 
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "12px" }}>
@@ -287,7 +283,7 @@ export function Step1TeaSelection({
               fontSize: "0.9375rem",
             }}
           />
-          <span style={{ fontSize: "0.875rem", color: "#65746D" }}>grams per unit</span>
+          <span style={{ fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_2fdc684b405f3d48" fallback="grams per unit" /></span>
         </div>
 
         {selectedTea && minPacksNeeded > 0 && (
@@ -300,9 +296,8 @@ export function Step1TeaSelection({
               padding: "8px 12px",
               borderRadius: "6px",
             }}
-          >
-            Tea blend minimum batch: <strong>{minBatchKg} kg</strong> &bull; Requires at least{" "}
-            <strong>{minPacksNeeded.toLocaleString("en-IN")} packs</strong> at {fillWeightGrams}g/pack.
+          ><StorefrontText id="copy_a15c9332d6b0e38c" fallback="Tea blend minimum batch:" /> <strong>{minBatchKg} kg</strong> &bull; Requires at least{" "}
+            <strong>{minPacksNeeded.toLocaleString("en-IN")}<StorefrontText id="copy_dbd1afe9efa12c30" fallback="packs" /></strong> at {fillWeightGrams}<StorefrontText id="copy_65047b0bea26121f" fallback="g/pack." />
           </div>
         )}
       </div>

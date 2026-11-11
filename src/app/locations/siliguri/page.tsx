@@ -73,15 +73,15 @@ export default function SiliguriLocationPage() {
             Origin Works &amp; Packaging Facility
           </h2>
           <address className="not-italic text-sm text-[#52594e] space-y-1 leading-relaxed">
-            <p className="font-semibold text-[#18231c]">{siteConfig.brand || "TeaFloww"} (Nirva)</p>
-            <p>00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri</p>
-            <p>Dist Jalpaiguri, Siliguri, West Bengal — 734015</p>
-            <p>India</p>
+            <p className="font-semibold text-[#18231c]">{siteConfig.brand || "TeaFloww"}<StorefrontText id="copy_584e599c32a75e9e" fallback="(Nirva)" /></p>
+            <p><StorefrontText id="copy_fc5669c38341c743" fallback="00, Fulbari Ghoshpukur Bypass, Fulbari, Binnaguri" /></p>
+            <p><StorefrontText id="copy_801bd7aba94dd0cc" fallback="Dist Jalpaiguri, Siliguri, West Bengal — 734015" /></p>
+            <p><StorefrontText id="copy_abd149214539d9f2" fallback="India" /></p>
           </address>
           <div className="mt-4 pt-4 border-t border-[#f0ede6] text-xs text-[#6e746a] space-y-1">
-            <p><strong>Registered Office:</strong> Shiv Shakti Kali Bari Rd, Sukantapally East, Siliguri 734005</p>
-            <p><strong>GPS Coordinates:</strong> 26.7271° N, 88.3953° E</p>
-            <p><strong>Nearest Airport:</strong> Bagdogra International Airport (IXB) — 14 km</p>
+            <p><strong><StorefrontText id="copy_1f550fe79090f911" fallback="Registered Office:" /></strong><StorefrontText id="copy_64c5d256ede3ece6" fallback="Shiv Shakti Kali Bari Rd, Sukantapally East, Siliguri 734005" /></p>
+            <p><strong><StorefrontText id="copy_fcb59c0dc63f2e97" fallback="GPS Coordinates:" /></strong><StorefrontText id="copy_1dc2f98f4d60e6bf" fallback="26.7271° N, 88.3953° E" /></p>
+            <p><strong><StorefrontText id="copy_c3abf0d9547806ea" fallback="Nearest Airport:" /></strong><StorefrontText id="copy_4d3ffe42ddbd1906" fallback="Bagdogra International Airport (IXB) — 14 km" /></p>
           </div>
         </div>
 

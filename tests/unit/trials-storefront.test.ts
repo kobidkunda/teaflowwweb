@@ -482,6 +482,53 @@ describe("TeaFloww Trials v3 — Storefront Experience (Milestone 5)", () => {
       expect(html).toContain('alt="TeaFloww Four-Tea Discovery Kit Outer Packaging"');
       expect(html).toContain("/images/trials/discovery-packaging.jpg");
     });
+
+    it("3.11: TrialOpticalStudio accepts initialStage='packaging' and initially renders packaging image", () => {
+      const html = renderToStaticMarkup(
+        React.createElement(TrialOpticalStudio, {
+          components: mockTrial.components,
+          activePouchIndex: 0,
+          initialStage: "packaging",
+        })
+      );
+      expect(html).toContain('data-testid="optical-stage-image"');
+      expect(html).toContain('alt="Strong Milk Chai Sachet Packaging"');
+      expect(html).toContain("STAGE · PACKAGING");
+    });
+
+    it("3.12: TrialPDPInteractiveView for /trials/4-x-25-gm initially displays packaging photo always", () => {
+      const trial4x25 = createMockPublicTrialDto({
+        slug: "4-x-25-gm",
+        components: [
+          {
+            ...mockTrial.components[0],
+            name: "Rozana Kadak — Daily Stall Tea",
+            assets: [
+              { stage: "packaging", url: "/uploads/rozana-kadak-packaging.webp", alt_text: "Rozana Kadak Packaging Front" },
+            ],
+          },
+          {
+            ...mockTrial.components[1],
+            name: "Elaichi Tea — Cardamom Chai",
+            assets: [
+              { stage: "packaging", url: "/uploads/elaichi-packaging.webp", alt_text: "Elaichi Tea Packaging Front" },
+            ],
+          },
+        ],
+      });
+
+      const html = renderToStaticMarkup(
+        React.createElement(TrialPDPInteractiveView, { trial: trial4x25 })
+      );
+
+      // Packaging photo must be shown initially, NOT the missing photo fallback
+      expect(html).toContain('data-testid="optical-stage-image"');
+      expect(html).toContain('src="/uploads/rozana-kadak-packaging.webp"');
+      expect(html).toContain('alt="Rozana Kadak Packaging Front"');
+      expect(html).toContain("STAGE · PACKAGING");
+      expect(html).not.toContain('data-testid="missing-photo-fallback"');
+      expect(html).not.toContain("Photo pending verification");
+    });
   });
 
   // =========================================================================

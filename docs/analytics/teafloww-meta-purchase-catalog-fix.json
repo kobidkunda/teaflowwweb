@@ -1,0 +1,306 @@
+{
+  "exportFormatVersion": 2,
+  "exportTime": "2026-11-11T15:53:46.978Z",
+  "containerVersion": {
+    "accountId": "6382131376",
+    "containerId": "266900144",
+    "container": {
+      "path": "accounts/6382131376/containers/266900144",
+      "accountId": "6382131376",
+      "containerId": "266900144",
+      "name": "teafloww.com",
+      "publicId": "GTM-M5G27HSQ",
+      "usageContext": [
+        "WEB"
+      ],
+      "fingerprint": "1791831197842",
+      "tagManagerUrl": "https://tagmanager.google.com/#/container/accounts/6382131376/containers/266900144/workspaces?apiLink=container",
+      "features": {
+        "supportUserPermissions": true,
+        "supportEnvironments": true,
+        "supportWorkspaces": true,
+        "supportGtagConfigs": false,
+        "supportBuiltInVariables": true,
+        "supportClients": false,
+        "supportFolders": true,
+        "supportTags": true,
+        "supportTemplates": true,
+        "supportTriggers": true,
+        "supportVariables": true,
+        "supportVersions": true,
+        "supportZones": true,
+        "supportTransformations": false
+      },
+      "tagIds": [
+        "GTM-M5G27HSQ"
+      ]
+    },
+    "tag": [
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "tagId": "12",
+        "name": "Meta Pixel - Purchase - Teafloww",
+        "type": "html",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "html",
+            "value": "<script>\nvar tfPurchaseProperties = {{TF Meta - Event properties}};\nif (typeof fbq === 'function' && tfPurchaseProperties.content_ids && tfPurchaseProperties.content_ids.length) {\n  tfPurchaseProperties.value = {{DLV - TF Purchase Value}};\n  tfPurchaseProperties.currency = '{{DLV - TF Purchase Currency}}';\n  tfPurchaseProperties.order_id = '{{DLV - TF Purchase Order ID}}';\n  fbq('trackSingle', '29619022431117471', 'Purchase', tfPurchaseProperties, {\n    eventID: '{{DLV - TF Purchase Event ID}}'\n  });\n}\n</script>"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "supportDocumentWrite",
+            "value": "false"
+          }
+        ],
+        "fingerprint": "1794351718187",
+        "firingTriggerId": [
+          "11"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "monitoringMetadata": {
+          "type": "MAP"
+        },
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_personalization"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "trigger": [
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "triggerId": "11",
+        "name": "Teafloww - Purchase",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "teafloww_purchase"
+              }
+            ]
+          }
+        ],
+        "fingerprint": "1794351669432"
+      }
+    ],
+    "variable": [
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "7",
+        "name": "DLV - TF Purchase Value",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tf_purchase_value"
+          }
+        ],
+        "fingerprint": "1794351497196",
+        "formatValue": {}
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "8",
+        "name": "DLV - TF Purchase Currency",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tf_purchase_currency"
+          }
+        ],
+        "fingerprint": "1794351519215",
+        "formatValue": {}
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9",
+        "name": "DLV - TF Purchase Order ID",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tf_purchase_order_id"
+          }
+        ],
+        "fingerprint": "1794351593580",
+        "formatValue": {}
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "10",
+        "name": "DLV - TF Purchase Event ID",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "BOOLEAN",
+            "key": "setDefaultValue",
+            "value": "false"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tf_purchase_event_id"
+          }
+        ],
+        "fingerprint": "1794351619688",
+        "formatValue": {}
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9510",
+        "name": "TF Meta - ecommerce",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ecommerce"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9512",
+        "name": "TF Meta - search_term",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "search_term"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9513",
+        "name": "TF Meta - Event properties",
+        "type": "cvt_266900144_9500",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "ecommerce",
+            "value": "{{TF Meta - ecommerce}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "event",
+            "value": "{{Event}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "searchTerm",
+            "value": "{{TF Meta - search_term}}"
+          }
+        ]
+      }
+    ],
+    "builtInVariable": [
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "type": "EVENT",
+        "name": "Event"
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "type": "PAGE_HOSTNAME",
+        "name": "Page Hostname"
+      }
+    ],
+    "customTemplate": [
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "templateId": "9500",
+        "name": "TF Meta - Event properties",
+        "templateData": "___TERMS_OF_SERVICE___\nBy creating or modifying this file you agree to Google Tag Manager's Community Template Gallery Developer Terms of Service available at https://developers.google.com/tag-manager/gallery-tos (or such other URL as Google may provide), as modified from time to time.\n\n___INFO___\n{\n  \"displayName\": \"TF Meta - Event properties\",\n  \"description\": \"Allowlisted GA4 ecommerce fields converted to Meta catalog properties. No customer data or eval.\",\n  \"id\": \"cvt_temp_public_id\",\n  \"version\": 1,\n  \"type\": \"MACRO\",\n  \"containerContexts\": [\n    \"WEB\"\n  ]\n}\n\n___TEMPLATE_PARAMETERS___\n[\n  {\n    \"type\": \"TEXT\",\n    \"name\": \"ecommerce\",\n    \"displayName\": \"ecommerce\",\n    \"simpleValueType\": true\n  },\n  {\n    \"type\": \"TEXT\",\n    \"name\": \"event\",\n    \"displayName\": \"event\",\n    \"simpleValueType\": true\n  },\n  {\n    \"type\": \"TEXT\",\n    \"name\": \"searchTerm\",\n    \"displayName\": \"searchTerm\",\n    \"simpleValueType\": true\n  }\n]\n\n___SANDBOXED_JS_FOR_WEB_TEMPLATE___\nconst getType = require('getType');\nconst makeNumber = require('makeNumber');\nconst ecommerce = data.ecommerce || {};\nconst items = getType(ecommerce.items) === 'array' ? ecommerce.items : [];\nconst props = {};\nconst contents = [];\nconst ids = [];\nlet total = 0;\nlet count = 0;\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  if (!item || !item.item_id) continue;\n  const id = '' + item.item_id;\n  const quantity = item.quantity === undefined ? 1 : makeNumber(item.quantity);\n  const price = makeNumber(item.price);\n  if (!(quantity > 0) || !(price >= 0)) continue;\n  contents.push({id: id, quantity: quantity, item_price: price});\n  if (ids.indexOf(id) === -1) ids.push(id);\n  total += price * quantity;\n  count += quantity;\n}\nif (contents.length) {\n  props.content_type = 'product';\n  props.content_ids = ids;\n  props.contents = contents;\n  props.num_items = count;\n  const value = makeNumber(ecommerce.value);\n  props.value = ecommerce.value !== undefined && value >= 0 ? value : total;\n  if (ecommerce.currency) props.currency = ecommerce.currency;\n}\nif (data.event === 'search' && data.searchTerm) props.search_string = data.searchTerm;\nreturn props;\n\n___WEB_PERMISSIONS___\n[]\n\n___TESTS___\nscenarios: []\n"
+      }
+    ]
+  }
+}

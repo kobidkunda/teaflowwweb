@@ -1,9 +1,10 @@
 "use client";
 import { refreshCartPrices } from "@/lib/cartPricing";
 import { cartImageKey } from "@/lib/cartImageHelper";
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { trackCartDelta } from "@/lib/seo/tracking";
 import { getOrCreateSessionId, getClientFingerprint } from "@/lib/fingerprint";
+import type { Product, Variant } from "@/lib/productModels";
 
 export type CartLine = {
   variantId: number;
@@ -15,12 +16,31 @@ export type CartLine = {
   pricePaise: number;
   quantity: number;
   imageUrl?: string | null;
+  isWholesale?: boolean;
+  wholesaleSlabPrice?: number;
+  wholesaleMoq?: number;
+};
+
+export type AddedNotification = {
+  id: string;
+  item: CartLine;
+  quantityAdded: number;
+  timestamp: number;
+};
+
+export type QuickModalState = {
+  product: Product;
+  initialVariant: Variant;
 };
 
 type CartContextValue = {
   items: CartLine[];
-  add: (line: Omit<CartLine, "quantity">, track?: boolean) => void;
-  changeQuantity: (id: number | string, quantity: number) => void;
+  add: (
+    line: Omit<CartLine, "quantity"> & { quantity?: number },
+    track?: boolean,
+    notify?: boolean
+  ) => void;
+  changeQuantity: (id: number | string, quantity: number, priceOverride?: number) => void;
   remove: (id: number | string) => void;
   clear: () => void;
   count: number;
@@ -28,6 +48,15 @@ type CartContextValue = {
   sessionId: string;
   recoveryToken: string | null;
   isSyncing: boolean;
+  lastAddedItem?: AddedNotification | null;
+  dismissLastAdded?: () => void;
+  quickModalState: QuickModalState | null;
+  openQuickModal: (product: Product, initialVariant?: Variant) => void;
+  closeQuickModal: () => void;
+  replaceCartItem: (
+    oldVariantId: number,
+    newLine: Omit<CartLine, "quantity"> & { quantity?: number }
+  ) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -38,6 +67,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [sessionId, setSessionId] = useState<string>("");
   const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastAddedItem, setLastAddedItem] = useState<AddedNotification | null>(null);
+
+  const dismissLastAdded = useCallback(() => {
+    setLastAddedItem(null);
+  }, []);
+
+  const [quickModalState, setQuickModalState] = useState<QuickModalState | null>(null);
+
+  const openQuickModal = useCallback((product: Product, initialVariant?: Variant) => {
+    const lowestVariant =
+      initialVariant ||
+      [...product.variants].sort((a, b) => a.price_paise - b.price_paise)[0] ||
+      product.variants[0];
+    if (!lowestVariant) return;
+    setQuickModalState({ product, initialVariant: lowestVariant });
+  }, []);
+
+  const closeQuickModal = useCallback(() => {
+    setQuickModalState(null);
+  }, []);
 
   const [catalogSkus, setCatalogSkus] = useState<Record<string, string>>({});
   const [catalogImages, setCatalogImages] = useState<Record<string, string | null>>({});
@@ -80,7 +129,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
               (Number.isInteger(x.variantId) || typeof x.trialId === "string") &&
               Number.isInteger(x.quantity) &&
               x.quantity > 0 &&
-              x.quantity <= 20 &&
+              x.quantity <= 10000 &&
               typeof x.name === "string" &&
               Number.isFinite(x.pricePaise)
           )
@@ -173,10 +222,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, [items, hydrated, sessionId]);
 
-  const add = (line: Omit<CartLine, "quantity">, track = true) => {
+  const add = (
+    line: Omit<CartLine, "quantity"> & { quantity?: number },
+    track = true,
+    notify = track
+  ) => {
+    const qtyToAdd = Math.max(1, line.quantity || 1);
+    const maxQty = line.isWholesale ? 10000 : 20;
     const existing = items.find(x => line.trialId ? x.trialId === line.trialId : !x.trialId && x.variantId === line.variantId);
-    if (existing && existing.quantity >= 20) return;
-    if (track) void trackCartDelta(line, 1, "add");
+    if (existing && existing.quantity >= (existing.isWholesale ? 10000 : 20)) return;
+    if (track) void trackCartDelta(line, qtyToAdd, "add");
+
+    if (notify) {
+      const resolvedImg = line.imageUrl || catalogImages[cartImageKey(line)] || null;
+      setLastAddedItem({
+        id: `${line.trialId || line.variantId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        item: {
+          ...line,
+          quantity: qtyToAdd,
+          imageUrl: resolvedImg,
+        },
+        quantityAdded: qtyToAdd,
+        timestamp: Date.now(),
+      });
+    }
+
     setItems((current) => {
       const matchIndex = current.findIndex((x) =>
         line.trialId ? x.trialId === line.trialId : x.variantId === line.variantId
@@ -184,24 +254,35 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (matchIndex >= 0) {
         return current.map((x, idx) =>
           idx === matchIndex
-            ? { ...x, quantity: Math.min(20, x.quantity + 1) }
+            ? {
+                ...x,
+                ...line,
+                quantity: Math.min(maxQty, x.quantity + qtyToAdd),
+                pricePaise: line.pricePaise ?? x.pricePaise,
+              }
             : x
         );
       }
-      return [...current, { ...line, quantity: 1 }];
+      return [...current, { ...line, quantity: Math.min(maxQty, qtyToAdd) }];
     });
   };
 
   const matchesLine = (x: CartLine, id: number | string) =>
     typeof id === "string" ? x.trialId === id : !x.trialId && x.variantId === id;
 
-  const changeQuantity = (id: number | string, quantity: number) => {
+  const changeQuantity = (id: number | string, quantity: number, priceOverride?: number) => {
     if (!Number.isFinite(quantity)) return;
-    const next = Math.max(1, Math.min(20, Math.trunc(quantity)));
     const line = displayItems.find(x => matchesLine(x, id));
-    if (!line || line.quantity === next) return;
+    if (!line) return;
+    const maxQty = line.isWholesale ? 10000 : 20;
+    const next = Math.max(1, Math.min(maxQty, Math.trunc(quantity)));
+    if (line.quantity === next && priceOverride === undefined) return;
     void trackCartDelta(line, Math.abs(next - line.quantity), next > line.quantity ? "add" : "remove");
-    setItems(current => current.map(x => matchesLine(x, id) ? { ...x, quantity: next } : x));
+    setItems(current => current.map(x => matchesLine(x, id) ? {
+      ...x,
+      quantity: next,
+      ...(priceOverride !== undefined && priceOverride >= 0 ? { pricePaise: priceOverride } : {}),
+    } : x));
   };
 
   const remove = (id: number | string) => {
@@ -211,6 +292,60 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     setItems((current) => current.filter((x) => !matchesLine(x, id)));
   };
+
+  const replaceCartItem = useCallback((
+    oldVariantId: number,
+    newLine: Omit<CartLine, "quantity"> & { quantity?: number }
+  ) => {
+    const newQty = Math.max(1, newLine.quantity || 1);
+    const maxQty = newLine.isWholesale ? 10000 : 20;
+    const clampedQty = Math.min(maxQty, newQty);
+
+    setItems((current) => {
+      const isSameVariant = oldVariantId === newLine.variantId;
+      if (isSameVariant) {
+        return current.map((x) =>
+          x.variantId === oldVariantId
+            ? {
+                ...x,
+                ...newLine,
+                quantity: clampedQty,
+              }
+            : x
+        );
+      }
+
+      // Different variant: remove oldVariantId and add/update newLine
+      const filtered = current.filter((x) => x.variantId !== oldVariantId);
+      const existingIndex = filtered.findIndex((x) => x.variantId === newLine.variantId);
+
+      if (existingIndex >= 0) {
+        return filtered.map((x, idx) =>
+          idx === existingIndex
+            ? {
+                ...x,
+                ...newLine,
+                quantity: clampedQty,
+              }
+            : x
+        );
+      }
+
+      return [
+        ...filtered,
+        {
+          ...newLine,
+          quantity: clampedQty,
+        },
+      ];
+    });
+
+    const oldItem = displayItems.find((x) => x.variantId === oldVariantId);
+    if (oldItem && oldVariantId !== newLine.variantId) {
+      void trackCartDelta(oldItem, oldItem.quantity, "remove");
+    }
+    void trackCartDelta(newLine, clampedQty, "add");
+  }, [displayItems]);
 
   const clear = () => setItems([]);
   const count = items.reduce((sum, x) => sum + x.quantity, 0);
@@ -229,6 +364,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         sessionId,
         recoveryToken,
         isSyncing,
+        lastAddedItem,
+        dismissLastAdded,
+        quickModalState,
+        openQuickModal,
+        closeQuickModal,
+        replaceCartItem,
       }}
     >
       {children}

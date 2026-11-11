@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import type { QuoteEstimateResult } from "../hooks/useQuoteEstimate";
 
@@ -101,8 +102,7 @@ export function Step5QuantityQuote({
               color: "#143C31",
               marginBottom: "8px",
             }}
-          >
-            Requested Production Run (Units):
+          ><StorefrontText id="copy_271aa39c92ba6d7f" fallback="Requested Production Run (Units):" />
           </label>
 
           {/* Quick Quantity Chips */}
@@ -124,7 +124,7 @@ export function Step5QuantityQuote({
                   cursor: "pointer",
                 }}
               >
-                {q.toLocaleString("en-IN")} packs
+                {q.toLocaleString("en-IN")}<StorefrontText id="copy_dbd1afe9efa12c30" fallback="packs" />
               </button>
             ))}
           </div>
@@ -152,11 +152,11 @@ export function Step5QuantityQuote({
                 color: "#143C31",
               }}
             />
-            <span style={{ fontSize: "0.875rem", color: "#65746D" }}>finished tea units</span>
+            <span style={{ fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_542e976cafeef6ec" fallback="finished tea units" /></span>
           </div>
         </div>
 
-        {(!Number.isSafeInteger(quantityUnits) || quantityUnits < 1 || quantityUnits > 10000000) && <p role="alert">Enter a whole number of units between 1 and 10,000,000.</p>}
+        {(!Number.isSafeInteger(quantityUnits) || quantityUnits < 1 || quantityUnits > 10000000) && <p role="alert"><StorefrontText id="copy_d661cad4ba791c06" fallback="Enter a whole number of units between 1 and 10,000,000." /></p>}
 
         {/* Destination Logistics Zone */}
         <div>
@@ -169,8 +169,7 @@ export function Step5QuantityQuote({
               color: "#143C31",
               marginBottom: "8px",
             }}
-          >
-            Delivery Destination (Freight Zone):
+          ><StorefrontText id="copy_407619b1ce43cad8" fallback="Delivery Destination (Freight Zone):" />
           </label>
           <select
             id="destination-zone-select"
@@ -217,8 +216,7 @@ export function Step5QuantityQuote({
             style={{ width: "18px", height: "18px", accentColor: "#143C31" }}
           />
           <span>
-            <strong>Nitrogen Flush &amp; Modified Atmosphere Sealing</strong> (+₹0.75/unit): Displaces
-            residual oxygen in headspace with pure food-grade nitrogen to preserve green tea catechins and Darjeeling floral aromatics.
+            <strong>Nitrogen Flush &amp; Modified Atmosphere Sealing</strong><StorefrontText id="copy_c0c888b2f77fae4e" fallback="(+₹0.75/unit): Displaces residual oxygen in headspace with pure food-grade nitrogen to preserve green tea catechins and Darjeeling floral aromatics." />
           </span>
         </label>
       </div>
@@ -236,38 +234,29 @@ export function Step5QuantityQuote({
         }}
       >
         <div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D", textTransform: "uppercase", fontWeight: 700 }}>
-            Quotation Validity
+          <div style={{ fontSize: "0.75rem", color: "#65746D", textTransform: "uppercase", fontWeight: 700 }}><StorefrontText id="copy_d818f5b278fdffed" fallback="Quotation Validity" />
           </div>
-          <div style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#143C31", marginTop: "2px" }}>
-            See Your Issued Quote
+          <div style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#143C31", marginTop: "2px" }}><StorefrontText id="copy_ea365b17f475afc4" fallback="See Your Issued Quote" />
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D" }}>
-            Estimates are subject to review and current rates.
+          <div style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_e1bfdc1a30a3261e" fallback="Estimates are subject to review and current rates." />
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D", textTransform: "uppercase", fontWeight: 700 }}>
-            Estimated Lead Time
+          <div style={{ fontSize: "0.75rem", color: "#65746D", textTransform: "uppercase", fontWeight: 700 }}><StorefrontText id="copy_10d080cab950ab7e" fallback="Estimated Lead Time" />
           </div>
-          <div style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#143C31", marginTop: "2px" }}>
-            Confirmed Per Project
+          <div style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#143C31", marginTop: "2px" }}><StorefrontText id="copy_134a3b19314a1022" fallback="Confirmed Per Project" />
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D" }}>
-            Our team confirms timing after reviewing materials and artwork.
+          <div style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_cff0f5415cc5a0c0" fallback="Our team confirms timing after reviewing materials and artwork." />
           </div>
         </div>
 
         <div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D", textTransform: "uppercase", fontWeight: 700 }}>
-            Payment Milestones
+          <div style={{ fontSize: "0.75rem", color: "#65746D", textTransform: "uppercase", fontWeight: 700 }}><StorefrontText id="copy_f298346f06d21fa1" fallback="Payment Milestones" />
           </div>
-          <div style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#143C31", marginTop: "2px" }}>
-            50% Advance / 50% Dispatch
+          <div style={{ fontSize: "0.9375rem", fontWeight: 600, color: "#143C31", marginTop: "2px" }}><StorefrontText id="copy_eed614e7b247c9f3" fallback="50% Advance / 50% Dispatch" />
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D" }}>
-            Prepress tooling on advance; balance on QC release.
+          <div style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_3d7f5056a475afb8" fallback="Prepress tooling on advance; balance on QC release." />
           </div>
         </div>
       </div>
@@ -283,8 +272,7 @@ export function Step5QuantityQuote({
             color: "#143C31",
             marginBottom: "6px",
           }}
-        >
-          Special Order Instructions / Private Label Specifications (Optional):
+        ><StorefrontText id="copy_d62aa7b66d521c14" fallback="Special Order Instructions / Private Label Specifications (Optional):" />
         </label>
         <textarea
           id="step5-notes"

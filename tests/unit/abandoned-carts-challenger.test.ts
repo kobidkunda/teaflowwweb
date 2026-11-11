@@ -511,7 +511,7 @@ describe("Adversarial Stress Suite 2: Malformed Payloads & Boundary Defense", ()
     expect(res5.status).toBe(400);
   });
 
-  it("enforces item count limits (max 30 items) and single item quantity limit (max 20)", async () => {
+  it("enforces item count limits (max 30 items) and single item quantity limit (max 10000)", async () => {
     // 31 items in array (max is 30)
     const items31 = Array.from({ length: 31 }, () => ({
       variantId: testVariant1Id,
@@ -528,27 +528,27 @@ describe("Adversarial Stress Suite 2: Malformed Payloads & Boundary Defense", ()
     }));
     expect(resItems31.status).toBe(400);
 
-    // Single item quantity > 20
-    const resQty21 = await syncRoutePOST(new Request("http://localhost/api/cart/sync", {
+    // Single item quantity > 10000
+    const resQty10001 = await syncRoutePOST(new Request("http://localhost/api/cart/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         sessionId: "session-overflow-qty",
-        items: [{ variantId: testVariant1Id, quantity: 21 }],
+        items: [{ variantId: testVariant1Id, quantity: 10001 }],
       }),
     }));
-    expect(resQty21.status).toBe(400);
+    expect(resQty10001.status).toBe(400);
 
-    // Quantity = 100
-    const resQty100 = await syncRoutePOST(new Request("http://localhost/api/cart/sync", {
+    // Quantity = 50000
+    const resQty50000 = await syncRoutePOST(new Request("http://localhost/api/cart/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        sessionId: "session-overflow-qty-100",
-        items: [{ variantId: testVariant1Id, quantity: 100 }],
+        sessionId: "session-overflow-qty-50000",
+        items: [{ variantId: testVariant1Id, quantity: 50000 }],
       }),
     }));
-    expect(resQty100.status).toBe(400);
+    expect(resQty50000.status).toBe(400);
   });
 });
 
@@ -802,11 +802,11 @@ describe("Adversarial Stress Suite 6: Database Constraints & Transaction Atomici
       `).run(cartId, testVariant1Id);
     }).toThrow(/CHECK constraint failed/);
 
-    // Quantity 25 should violate CHECK constraint
+    // Quantity 10001 should violate CHECK constraint
     expect(() => {
       db.prepare(`
         INSERT INTO cart_items (cart_id, variant_id, quantity, unit_price_paise)
-        VALUES (?, ?, 25, 45000)
+        VALUES (?, ?, 10001, 45000)
       `).run(cartId, testVariant1Id);
     }).toThrow(/CHECK constraint failed/);
 

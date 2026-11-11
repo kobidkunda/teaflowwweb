@@ -18,7 +18,7 @@ export const cartSyncFingerprintSchema = z.object({
 
 export const cartSyncItemSchema = z.object({
   variantId: z.number().int().positive(),
-  quantity: z.number().int().positive().max(20),
+  quantity: z.number().int().positive().max(10000),
 });
 
 export const cartSyncSchema = z.object({
@@ -120,9 +120,17 @@ export function syncAbandonedCart(
         | { id: number; price_paise: number; stock: number }
         | undefined;
       if (!variant) continue; // Skip unknown variants
-      subtotalPaise += variant.price_paise * quantity;
+      let unitPrice = variant.price_paise;
+      try {
+        const slabRows = db.prepare("SELECT min_qty, price_paise FROM wholesale_slabs WHERE variant_id=? ORDER BY min_qty DESC").all(variantId) as Array<{ min_qty: number; price_paise: number }>;
+        const activeSlab = slabRows.find((s) => quantity >= s.min_qty);
+        if (activeSlab) {
+          unitPrice = activeSlab.price_paise;
+        }
+      } catch {}
+      subtotalPaise += unitPrice * quantity;
       itemCount += quantity;
-      validatedLines.push({ variantId, quantity, unitPrice: variant.price_paise });
+      validatedLines.push({ variantId, quantity, unitPrice });
     }
 
     // 4. Find or create abandoned_carts record

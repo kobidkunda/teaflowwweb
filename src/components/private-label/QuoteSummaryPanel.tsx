@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState } from "react";
 import type { QuoteEstimateResult } from "./hooks/useQuoteEstimate";
 
@@ -85,22 +86,20 @@ export function QuoteSummaryPanel({
               fontFamily: 'Georgia, "Times New Roman", serif',
               color: "#143C31",
             }}
-          >
-            Live Quotation Estimate
+          ><StorefrontText id="copy_01aa561679452cf4" fallback="Live Quotation Estimate" />
           </h3>
-          <span style={{ fontSize: "0.75rem", color: "#65746D" }}>
-            Server-calculated estimate · Subject to review
+          <span style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_155c87fef40f3aae" fallback="Server-calculated estimate · Subject to review" />
           </span>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#143C31" }}>
             {formattedUnitPrice}
           </div>
-          <div style={{ fontSize: "0.6875rem", color: "#8E9E96" }}>per pack</div>
+          <div style={{ fontSize: "0.6875rem", color: "#8E9E96" }}><StorefrontText id="copy_21bdf68ff5bc65dd" fallback="per pack" /></div>
         </div>
       </div>
 
-      {estimate.isLoadingServerQuote && <p role="status">Updating estimate…</p>}
+      {estimate.isLoadingServerQuote && <p role="status"><StorefrontText id="copy_f445cdf5f3dacce2" fallback="Updating estimate…" /></p>}
       {estimate.serverQuoteError && <p role="alert">{estimate.serverQuoteError}</p>}
       {/* Grand Total Highlight */}
       <div
@@ -114,8 +113,7 @@ export function QuoteSummaryPanel({
         }}
       >
         <div>
-          <div style={{ fontSize: "0.75rem", color: "#65746D", fontWeight: 600 }}>
-            ESTIMATED BATCH TOTAL ({quantityUnits.toLocaleString("en-IN")} units)
+          <div style={{ fontSize: "0.75rem", color: "#65746D", fontWeight: 600 }}><StorefrontText id="copy_e5ea4408f403c576" fallback="ESTIMATED BATCH TOTAL (" />{quantityUnits.toLocaleString("en-IN")} <StorefrontText id="copy_cb20a4486a64f501" fallback="units)" />
           </div>
           <div style={{ fontSize: "0.6875rem", color: "#8E9E96" }}>
             Inclusive of 5% Tea + 18% GST &bull; Ex-works Siliguri
@@ -186,8 +184,7 @@ export function QuoteSummaryPanel({
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
-                >
-                  Adjust to Next Valid Quantity ({moq.nextValidUnits.toLocaleString("en-IN")} units)
+                ><StorefrontText id="copy_b4c1b5d1662fa18d" fallback="Adjust to Next Valid Quantity (" />{moq.nextValidUnits.toLocaleString("en-IN")} <StorefrontText id="copy_cb20a4486a64f501" fallback="units)" />
                 </button>
               )}
             </div>
@@ -229,19 +226,19 @@ export function QuoteSummaryPanel({
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#65746D" }}>1. Base Tea Leaf (3% allowance)</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_8797749eb94b92ff" fallback="1. Base Tea Leaf (3% allowance)" /></span>
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.teaCostPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#65746D" }}>2. Primary Packaging Structure</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_8039cae2275debe4" fallback="2. Primary Packaging Structure" /></span>
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.packagingCostPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#65746D" }}>3. Printing Run Cost</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_b6d971631d992085" fallback="3. Printing Run Cost" /></span>
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.printingCostPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#65746D" }}>4. Tooling / Cylinders Setup</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_64a995378ccd6f43" fallback="4. Tooling / Cylinders Setup" /></span>
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.toolingSetupPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -255,7 +252,7 @@ export function QuoteSummaryPanel({
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#65746D" }}>7. Cleanroom Filling Labor</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_7138081bb6e5ead2" fallback="7. Cleanroom Filling Labor" /></span>
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.laborCostPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -263,7 +260,7 @@ export function QuoteSummaryPanel({
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.qcCostPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#65746D" }}>9. 5-Ply Corrugated Cartons</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_88882436f6c269b7" fallback="9. 5-Ply Corrugated Cartons" /></span>
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.cartonCostPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -271,7 +268,7 @@ export function QuoteSummaryPanel({
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.palletizingCostPaise)}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#65746D" }}>11. Domestic Zoned Freight</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_18f87f10ed033fb8" fallback="11. Domestic Zoned Freight" /></span>
               <span style={{ fontWeight: 600 }}>{formatPaise(breakdown.freightCostPaise)}</span>
             </div>
             <div
@@ -283,7 +280,7 @@ export function QuoteSummaryPanel({
                 marginTop: "4px",
               }}
             >
-              <span style={{ color: "#65746D" }}>12. Dual Indian GST (5% Tea + 18% Non-Tea)</span>
+              <span style={{ color: "#65746D" }}><StorefrontText id="copy_a833dbbbf0ecb01d" fallback="12. Dual Indian GST (5% Tea + 18% Non-Tea)" /></span>
               <span style={{ fontWeight: 600, color: "#143C31" }}>
                 {formatPaise(breakdown.taxPaise)}
               </span>
@@ -396,8 +393,7 @@ export function QuoteSummaryPanel({
                 alignItems: "center",
                 justifyContent: "center",
               }}
-            >
-              Printable Quote
+            ><StorefrontText id="copy_ee2a0ef44ac8cc26" fallback="Printable Quote" />
             </a>
           ) : (
             <button
@@ -415,8 +411,7 @@ export function QuoteSummaryPanel({
                 fontWeight: 600,
                 cursor: "pointer",
               }}
-            >
-              Download PDF
+            ><StorefrontText id="copy_6183be0883d2a89c" fallback="Download PDF" />
             </button>
           )}
         </div>

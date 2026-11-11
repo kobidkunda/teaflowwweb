@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -24,17 +25,16 @@ export default function BlendLabStartPage() {
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#65746d] hover:text-[#143c31] transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Back to Blend Lab Overview</span>
+              <span><StorefrontText id="copy_83c85b2e0d652265" fallback="Back to Blend Lab Overview" /></span>
             </Link>
 
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#b8753d]">
                   <FlaskConical className="w-3.5 h-3.5" />
-                  <span>5-STEP SERVICE REGISTRATION</span>
+                  <span><StorefrontText id="copy_ceb91308d7637d9c" fallback="5-STEP SERVICE REGISTRATION" /></span>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-serif text-[#092b23] mt-1">
-                  Blend Lab Project Intake
+                <h1 className="text-3xl sm:text-4xl font-serif text-[#092b23] mt-1"><StorefrontText id="copy_bc2ce946d0c3941d" fallback="Blend Lab Project Intake" />
                 </h1>
               </div>
 
@@ -49,8 +49,7 @@ export default function BlendLabStartPage() {
             fallback={
               <div className="min-h-[400px] flex flex-col items-center justify-center space-y-4">
                 <Loader2 className="w-8 h-8 text-[#143c31] animate-spin" />
-                <span className="text-xs text-[#65746d]">
-                  Initializing Blend Lab Intake Wizard...
+                <span className="text-xs text-[#65746d]"><StorefrontText id="copy_158864aaea51d413" fallback="Initializing Blend Lab Intake Wizard..." />
                 </span>
               </div>
             }

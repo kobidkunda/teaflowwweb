@@ -12,11 +12,13 @@ export function PurchaseStatus({
   token,
   initial,
   analytics,
+  isWholesale = false,
 }: {
   id: string;
   token: string;
   initial: string;
   analytics: ReturnType<typeof quoteAnalytics>;
+  isWholesale?: boolean;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(initial);
@@ -28,7 +30,7 @@ export function PurchaseStatus({
 
   useEffect(() => {
     const record = () => {
-      if (status === "paid" || status === "cod_due" || status === "cod_remitted") {
+      if (["paid", "cod_due", "cod_remitted", "advance_paid", "pending_bank_transfer"].includes(status)) {
         trackPurchase(
           id,
           analytics.value,
@@ -55,7 +57,7 @@ export function PurchaseStatus({
         if (active) {
           setStatus(result.paymentStatus);
           setTracking(result.tracking);
-          if (["paid", "cod_due", "cod_remitted"].includes(result.paymentStatus)) {
+          if (["paid", "cod_due", "cod_remitted", "advance_paid", "pending_bank_transfer"].includes(result.paymentStatus)) {
             setActionError("");
           }
         }
@@ -69,10 +71,10 @@ export function PurchaseStatus({
   }, [id, token, message]);
 
   useEffect(() => {
-    if (["paid", "cod_due", "cod_remitted"].includes(status)) clear();
+    if (["paid", "cod_due", "cod_remitted", "advance_paid", "pending_bank_transfer"].includes(status)) clear();
   }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const isConfirmed = ["paid", "cod_due", "cod_remitted"].includes(status);
+  const isConfirmed = ["paid", "cod_due", "cod_remitted", "advance_paid", "pending_bank_transfer"].includes(status);
   const isFailedOrPending = ["payment_failed", "payment_pending", "creation_uncertain", "creating"].includes(status);
 
   async function handleSwitchToCod() {
@@ -118,7 +120,9 @@ export function PurchaseStatus({
           order_id: data.gatewayOrderId,
           name: "TeaFloww",
           handler: () => {
-            setStatus("paid");
+            // A browser callback is not payment confirmation. Poll the server,
+            // whose paid status is established by the verified gateway webhook.
+            setMessage("Payment submitted. Waiting for verification.");
             router.refresh();
           },
           modal: { ondismiss: () => setBusyAction(null) },
@@ -141,6 +145,8 @@ export function PurchaseStatus({
     creating: "Preparing your payment.",
     creation_uncertain: "Your payment request needs verification. Please retry or change to Cash on Delivery.",
     paid: "Payment confirmed. Your order is awaiting preparation.",
+    pending_bank_transfer: "Wholesale order confirmed. Awaiting direct A/C transfer prior to transport dispatch.",
+    advance_paid: "Wholesale advance payment received. Balance due via direct A/C transfer prior to transport dispatch.",
     paid_exception: "Payment received. Our team is reviewing fulfillment and will arrange delivery or a refund.",
     cod_due: "Cash on delivery order received. Payment is due on delivery.",
     cod_remitted: "Cash on delivery remittance confirmed.",
@@ -220,17 +226,19 @@ export function PurchaseStatus({
       {/* Prominent recovery options when payment failed or pending */}
       {isFailedOrPending && (
         <div className="mt-5 pt-4 border-t border-[#f0ede6] flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <button
-            type="button"
-            disabled={busyAction !== null}
-            onClick={handleSwitchToCod}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
-          >
-            <Truck size={16} aria-hidden="true" />
-            <span>
-              {busyAction === "cod" ? "Switching to COD…" : "Change to Cash on Delivery (COD) →"}
-            </span>
-          </button>
+          {!isWholesale && (
+            <button
+              type="button"
+              disabled={busyAction !== null}
+              onClick={handleSwitchToCod}
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+            >
+              <Truck size={16} aria-hidden="true" />
+              <span>
+                {busyAction === "cod" ? "Switching to COD…" : "Change to Cash on Delivery (COD) →"}
+              </span>
+            </button>
+          )}
 
           <button
             type="button"

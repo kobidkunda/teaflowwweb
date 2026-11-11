@@ -14,6 +14,7 @@ import {
 import { BrandLogo } from "@/components/BrandLogo";
 import { ObfuscatedEmail } from "@/components/ObfuscatedEmail";
 import { MarketSelector } from "@/components/international/MarketSelector";
+import { CookiePreferencesButton } from "@/components/analytics/CookiePreferencesButton";
 import type { HomepageContent } from "@/lib/homepageSchema";
 import type { SiteNavigation } from "@/lib/contentBlocks";
 
@@ -216,6 +217,9 @@ export function Footer({
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <CookiePreferencesButton className="tf-footer-nav-link" />
+                </li>
               </ul>
             </nav>
 
@@ -315,6 +319,7 @@ export function Footer({
             <nav aria-label="Legal navigation" className="tf-footer-bottom-links">
               <Link href="/privacy" className="tf-footer-bottom-link"> <StorefrontText id="copy_506ff394621596dd" fallback="Privacy Policy" /> </Link>
               <Link href="/terms" className="tf-footer-bottom-link"> <StorefrontText id="copy_4afa55bf7aec7ddc" fallback="Terms of Service" /> </Link>
+              <CookiePreferencesButton className="tf-footer-bottom-link" />
               <Link href="/shipping" className="tf-footer-bottom-link"> <StorefrontText id="copy_5bee6d60d809c03b" fallback="Shipping Policy" /> </Link>
               <Link href="/returns" className="tf-footer-bottom-link"> <StorefrontText id="copy_eea252e1ebc0e893" fallback="Returns Guarantee" /> </Link>
               <Link href="/feeds" className="tf-footer-bottom-link"> <StorefrontText id="copy_e98f3fd41a4da40e" fallback="Product Feeds" /> </Link>

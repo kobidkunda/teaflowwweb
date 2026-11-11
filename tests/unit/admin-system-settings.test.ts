@@ -203,6 +203,36 @@ describe("Milestone 5: System, MCP, Settings & Staff Modules", () => {
         .get() as { value: string };
       expect(Number(shippingRow.value)).toBe(12000);
     });
+
+    it("updates store operational settings when shipping fields are omitted in the form submission", async () => {
+      const formPayload = {
+        store_name: "Teafloww",
+        currency: "INR",
+        tax_rate_percent: 5,
+        contact_email: "support@teafloww.com",
+        whatsapp_number: "+91 7001304853",
+        wholesale_moq: 50,
+      };
+
+      const req = new Request("http://localhost/api/admin/settings", {
+        method: "PUT",
+        headers: { Cookie: rootCookie, "Content-Type": "application/json" },
+        body: JSON.stringify(formPayload),
+      });
+
+      const res = await settingsPUT(req);
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.ok).toBe(true);
+      expect(data.settings.store_name).toBe("Teafloww");
+      expect(data.settings.contact_email).toBe("support@teafloww.com");
+      expect(data.settings.whatsapp_number).toBe("+91 7001304853");
+      expect(data.settings.wholesale_moq).toBe(50);
+      // Existing shipping settings should be preserved without NaN errors
+      expect(data.settings.shipping_flat_fee_paise).toBeDefined();
+      expect(Number.isNaN(data.settings.shipping_flat_fee_paise)).toBe(false);
+    });
   });
 
   describe("Coupons Full CRUD & Boundary Enforcement", () => {

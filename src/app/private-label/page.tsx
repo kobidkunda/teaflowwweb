@@ -125,7 +125,7 @@ export default async function PrivateLabelLandingPage({ searchParams }: { search
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
       />
 
-      <PrivateLabelHero whatsappNumber={whatsappNumber} />
+      <PrivateLabelHero />
       <ProofOfProcessStepper />
       <TrustBadgesStrip />
       <StudioTeaserPreview />

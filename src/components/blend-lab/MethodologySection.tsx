@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Image from "next/image";
 
@@ -11,14 +12,14 @@ const steps = [
 export function MethodologySection() {
   return (
     <section id="method" className="bl-process" aria-labelledby="methodology-heading">
-      <div className="bl-wrap bl-section-heading"><div><p className="bl-eyebrow">THE PROCESS</p><h2 id="methodology-heading">See your tea in a new light.</h2></div><p>A hands-on, sensory-led journey from leaf to cup. We evaluate, discuss and recommend — so you can make confident decisions for your tea or blend.</p></div>
+      <div className="bl-wrap bl-section-heading"><div><p className="bl-eyebrow"><StorefrontText id="copy_5d1d433d98601998" fallback="THE PROCESS" /></p><h2 id="methodology-heading"><StorefrontText id="copy_12dcfe4ae598cb75" fallback="See your tea in a new light." /></h2></div><p><StorefrontText id="copy_fba52263ba8fa587" fallback="A hands-on, sensory-led journey from leaf to cup. We evaluate, discuss and recommend — so you can make confident decisions for your tea or blend." /></p></div>
       <ol className="bl-step-grid">
         {steps.map((step, index) => <li key={step.image}>
           <div className="bl-step-image"><Image src={`/images/blend-lab/${step.image}.webp`} alt={step.alt} fill sizes="(max-width: 560px) 100vw, (max-width: 900px) 50vw, 25vw" /><span aria-hidden="true">0{index + 1}</span></div>
           <div className="bl-step-copy"><h3>{step.title}</h3><p>{step.description}</p></div>
         </li>)}
       </ol>
-      <p className="bl-image-note bl-wrap">AI-generated illustrative imagery. Sensory evaluation is distinct from accredited chemical or food-safety testing.</p>
+      <p className="bl-image-note bl-wrap"><StorefrontText id="copy_2bfa7987cc6287cc" fallback="AI-generated illustrative imagery. Sensory evaluation is distinct from accredited chemical or food-safety testing." /></p>
     </section>
   );
 }

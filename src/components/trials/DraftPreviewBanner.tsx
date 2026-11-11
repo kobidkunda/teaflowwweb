@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 
 export interface DraftPreviewBannerProps {
@@ -14,13 +15,12 @@ export function DraftPreviewBanner({ status = "draft", revision }: DraftPreviewB
     >
       <div className="flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-[#d97706] animate-pulse" aria-hidden="true" />
-        <span>DRAFT PREVIEW · NOT PUBLISHED</span>
+        <span><StorefrontText id="copy_16f574261ffd6eac" fallback="DRAFT PREVIEW · NOT PUBLISHED" /></span>
       </div>
       <div className="flex items-center gap-3 text-[11px] font-mono uppercase tracking-wider">
-        <span>STATUS: {status}</span>
-        {typeof revision === "number" && <span>REV: {revision}</span>}
-        <span className="bg-[#f0dfaa] text-[#634807] px-2 py-0.5 rounded text-[10px] font-bold">
-          ADMIN ACCESS ONLY
+        <span><StorefrontText id="copy_0e32bcaec55452c2" fallback="STATUS:" /> {status}</span>
+        {typeof revision === "number" && <span><StorefrontText id="copy_b9320a522a0a3129" fallback="REV:" /> {revision}</span>}
+        <span className="bg-[#f0dfaa] text-[#634807] px-2 py-0.5 rounded text-[10px] font-bold"><StorefrontText id="copy_cbc13af0c4d30743" fallback="ADMIN ACCESS ONLY" />
         </span>
       </div>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { setStudioPreview } from "../studio/previewHandoff";
 import React, { useState } from "react";
 import Link from "next/link";
@@ -37,8 +38,7 @@ export function StudioTeaserPreview() {
                   color: "#171713",
                   marginBottom: "8px",
                 }}
-              >
-                Your Brand Name
+              ><StorefrontText id="copy_04f86e77a6f29436" fallback="Your Brand Name" />
               </label>
               <input
                 id="brand-name-input"
@@ -69,8 +69,7 @@ export function StudioTeaserPreview() {
                   color: "#171713",
                   marginBottom: "8px",
                 }}
-              >
-                Packaging Structure
+              ><StorefrontText id="copy_18853d65a2e5764d" fallback="Packaging Structure" />
               </span>
               <div style={{ display: "flex", gap: "10px" }}>
                 <button
@@ -87,8 +86,7 @@ export function StudioTeaserPreview() {
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
-                >
-                  Matte Stand-Up Pouch
+                ><StorefrontText id="copy_c0e7ead884b87921" fallback="Matte Stand-Up Pouch" />
                 </button>
                 <button
                   type="button"
@@ -104,8 +102,7 @@ export function StudioTeaserPreview() {
                     fontWeight: 600,
                     cursor: "pointer",
                   }}
-                >
-                  Artisanal Metal Tin
+                ><StorefrontText id="copy_a4a735e2c2a60afd" fallback="Artisanal Metal Tin" />
                 </button>
               </div>
             </div>
@@ -120,8 +117,7 @@ export function StudioTeaserPreview() {
                   color: "#171713",
                   marginBottom: "8px",
                 }}
-              >
-                Single-Estate Tea Grade
+              ><StorefrontText id="copy_9048d3b8e8cdeb07" fallback="Single-Estate Tea Grade" />
               </label>
               <select
                 id="tea-type-select"
@@ -144,7 +140,7 @@ export function StudioTeaserPreview() {
               </select>
             </div>
 
-            <p style={{ color: "#65746D", fontSize: "0.875rem" }}>Illustrative preview. Select available tea, packaging and print options in the studio for a server-calculated estimate.</p>
+            <p style={{ color: "#65746D", fontSize: "0.875rem" }}><StorefrontText id="copy_4de6ed7fe63ae7d7" fallback="Illustrative preview. Select available tea, packaging and print options in the studio for a server-calculated estimate." /></p>
 
             <Link
               href="/private-label/studio"
@@ -179,8 +175,7 @@ export function StudioTeaserPreview() {
                   color: view === "front" ? "#FFFCF7" : "#143C31",
                   cursor: "pointer",
                 }}
-              >
-                Front View
+              ><StorefrontText id="copy_82432cdbb8a97127" fallback="Front View" />
               </button>
               <button
                 type="button"
@@ -195,8 +190,7 @@ export function StudioTeaserPreview() {
                   color: view === "back" ? "#FFFCF7" : "#143C31",
                   cursor: "pointer",
                 }}
-              >
-                Back View
+              ><StorefrontText id="copy_51336c9c14828149" fallback="Back View" />
               </button>
             </div>
 
@@ -293,12 +287,11 @@ export function StudioTeaserPreview() {
                       </>
                     ) : (
                       <div style={{ fontSize: "0.6875rem", color: "#A3B8B0", textAlign: "left", width: "100%" }}>
-                        <p style={{ margin: "0 0 4px", fontWeight: "bold", color: "#FFFCF7" }}>
-                          FSSAI LIC: 19CTHPK8646J2ZY
+                        <p style={{ margin: "0 0 4px", fontWeight: "bold", color: "#FFFCF7" }}><StorefrontText id="copy_20e203c6e6b5c4b6" fallback="FSSAI LIC: 19CTHPK8646J2ZY" />
                         </p>
-                        <p style={{ margin: "0 0 2px" }}>Packed by: Nirva / TeaFloww Works</p>
-                        <p style={{ margin: "0 0 2px" }}>Origin: Single Estate, Siliguri hub</p>
-                        <p style={{ margin: "0" }}>Best Before: 24 Months from Packaging</p>
+                        <p style={{ margin: "0 0 2px" }}><StorefrontText id="copy_bceb4c603bf956c8" fallback="Packed by: Nirva / TeaFloww Works" /></p>
+                        <p style={{ margin: "0 0 2px" }}><StorefrontText id="copy_79126aaa128f45c4" fallback="Origin: Single Estate, Siliguri hub" /></p>
+                        <p style={{ margin: "0" }}><StorefrontText id="copy_09a645054a6c297c" fallback="Best Before: 24 Months from Packaging" /></p>
                       </div>
                     )}
                   </div>

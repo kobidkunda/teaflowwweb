@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -162,27 +163,22 @@ export default function AddressesPage() {
     <div className="container page-shell py-10 max-w-5xl mx-auto px-4 sm:px-6">
       {/* Breadcrumb */}
       <nav className="breadcrumbs mb-4 text-xs text-[#737067]" aria-label="Breadcrumb">
-        <Link href="/" className="hover:text-[#171713]">
-          Teafloww
+        <Link href="/" className="hover:text-[#171713]"><StorefrontText id="copy_9b6432cc6a0e89e7" fallback="Teafloww" />
         </Link>{" "}
         /{" "}
-        <Link href="/account" className="hover:text-[#171713]">
-          Account
+        <Link href="/account" className="hover:text-[#171713]"><StorefrontText id="copy_7e1b0d5641f2640c" fallback="Account" />
         </Link>{" "}
-        / <span className="text-[#171713] font-bold" aria-current="page">Saved Addresses</span>
+        / <span className="text-[#171713] font-bold" aria-current="page"><StorefrontText id="copy_919b4b003f2a4701" fallback="Saved Addresses" /></span>
       </nav>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-[#ded7cb]">
         <div>
-          <p className="eyebrow text-xs font-bold uppercase tracking-wider text-[#b39156]">
-            Delivery Destinations
+          <p className="eyebrow text-xs font-bold uppercase tracking-wider text-[#b39156]"><StorefrontText id="copy_766bccd840988c51" fallback="Delivery Destinations" />
           </p>
-          <h1 className="text-2xl sm:text-3xl font-serif text-[#171713] font-normal">
-            Address Book
+          <h1 className="text-2xl sm:text-3xl font-serif text-[#171713] font-normal"><StorefrontText id="copy_27db4020e357c76e" fallback="Address Book" />
           </h1>
-          <p className="text-xs sm:text-sm text-[#5c6659] mt-1">
-            Manage your home, office, and gifting addresses for fast 1-click checkout across India.
+          <p className="text-xs sm:text-sm text-[#5c6659] mt-1"><StorefrontText id="copy_9a033d48a0621b00" fallback="Manage your home, office, and gifting addresses for fast 1-click checkout across India." />
           </p>
         </div>
 
@@ -192,25 +188,23 @@ export default function AddressesPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#23483a] text-white text-xs font-bold hover:bg-[#1a362b] transition-colors self-start sm:self-center shadow-sm"
         >
           <Plus size={16} />
-          <span>Add New Address</span>
+          <span><StorefrontText id="copy_b469da394da18ea2" fallback="Add New Address" /></span>
         </button>
       </div>
 
       {/* Address Grid */}
       {loading ? (
         <div className="py-16 text-center text-xs text-[#5c6659]">
-          <p>Loading your saved addresses…</p>
+          <p><StorefrontText id="copy_052a821a46afc587" fallback="Loading your saved addresses…" /></p>
         </div>
       ) : addresses.length === 0 ? (
         <div className="p-12 text-center rounded-2xl border border-[#ded7cb] bg-[#fffefa] my-6">
           <div className="w-14 h-14 rounded-full bg-[#f4f7f2] border border-[#dce5da] text-[#23483a] flex items-center justify-center mx-auto mb-3">
             <MapPin size={26} />
           </div>
-          <h2 className="text-lg font-serif font-bold text-[#171713]">
-            No saved addresses yet
+          <h2 className="text-lg font-serif font-bold text-[#171713]"><StorefrontText id="copy_7e588a44d69a5ea1" fallback="No saved addresses yet" />
           </h2>
-          <p className="text-xs text-[#5c6659] mt-1 max-w-sm mx-auto">
-            Add your primary shipping destination to enjoy one-click checkout and accurate delivery quotes from our Siliguri hub.
+          <p className="text-xs text-[#5c6659] mt-1 max-w-sm mx-auto"><StorefrontText id="copy_b75b84098f470e7f" fallback="Add your primary shipping destination to enjoy one-click checkout and accurate delivery quotes from our Siliguri hub." />
           </p>
           <div className="mt-5">
             <button
@@ -219,7 +213,7 @@ export default function AddressesPage() {
               className="px-5 py-2.5 rounded-lg bg-[#23483a] text-white text-xs font-bold hover:bg-[#1a362b] transition-colors inline-flex items-center gap-2"
             >
               <Plus size={16} />
-              <span>Add Your First Address</span>
+              <span><StorefrontText id="copy_45d25f9e6d7e8713" fallback="Add Your First Address" /></span>
             </button>
           </div>
         </div>
@@ -245,7 +239,7 @@ export default function AddressesPage() {
                     </span>
                     {isDefault && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#f4f7f2] text-[#23483a] text-[10px] font-bold uppercase tracking-wider border border-[#c4d6c4]">
-                        <CheckCircle2 size={11} /> Default
+                        <CheckCircle2 size={11} /><StorefrontText id="copy_21b111cbfe6e8fca" fallback="Default" />
                       </span>
                     )}
                   </div>
@@ -275,15 +269,13 @@ export default function AddressesPage() {
                   <p>{addr.address_line1}</p>
                   {addr.address_line2 && <p>{addr.address_line2}</p>}
                   {addr.landmark && (
-                    <p className="text-[11px] text-[#737067]">
-                      Landmark: {addr.landmark}
+                    <p className="text-[11px] text-[#737067]"><StorefrontText id="copy_44d30f6696ecfb63" fallback="Landmark:" /> {addr.landmark}
                     </p>
                   )}
                   <p className="font-semibold text-[#171713]">
                     {addr.city}, {addr.state} — {addr.postal_code}
                   </p>
-                  <p className="text-[#5c6659] pt-1">
-                    Contact: <span className="font-medium">{addr.phone}</span>
+                  <p className="text-[#5c6659] pt-1"><StorefrontText id="copy_5705a643af6ad35d" fallback="Contact:" /> <span className="font-medium">{addr.phone}</span>
                   </p>
                 </div>
 
@@ -295,7 +287,7 @@ export default function AddressesPage() {
                       onClick={() => handleSetDefault(addr.id)}
                       className="text-xs font-semibold text-[#23483a] hover:underline inline-flex items-center gap-1"
                     >
-                      <Star size={13} /> Set as default delivery address
+                      <Star size={13} /><StorefrontText id="copy_a3b21470bb6bed78" fallback="Set as default delivery address" />
                     </button>
                   </div>
                 )}
@@ -317,8 +309,7 @@ export default function AddressesPage() {
             <h2 id="address-modal-title" className="text-xl font-serif font-bold text-[#171713]">
               {editingId ? "Edit Delivery Address" : "Add New Delivery Address"}
             </h2>
-            <p className="text-xs text-[#5c6659] mt-1">
-              Enter your complete shipping destination details below.
+            <p className="text-xs text-[#5c6659] mt-1"><StorefrontText id="copy_4d0aaee32b90b7e2" fallback="Enter your complete shipping destination details below." />
             </p>
 
             {error && (
@@ -330,8 +321,7 @@ export default function AddressesPage() {
             <form onSubmit={handleSave} className="space-y-4 mt-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="modal-name" className="block text-xs font-semibold text-[#171713] mb-1">
-                    Recipient Full Name *
+                  <label htmlFor="modal-name" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_c6629835e5f7bb7b" fallback="Recipient Full Name *" />
                   </label>
                   <input
                     id="modal-name"
@@ -348,8 +338,7 @@ export default function AddressesPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="modal-phone" className="block text-xs font-semibold text-[#171713] mb-1">
-                    Contact Phone Number *
+                  <label htmlFor="modal-phone" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_6aad49a3220162fc" fallback="Contact Phone Number *" />
                   </label>
                   <input
                     id="modal-phone"
@@ -368,8 +357,7 @@ export default function AddressesPage() {
               </div>
 
               <div>
-                <label htmlFor="modal-line1" className="block text-xs font-semibold text-[#171713] mb-1">
-                  Flat / House No., Building Name, Street *
+                <label htmlFor="modal-line1" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_906a02b59c1c535a" fallback="Flat / House No., Building Name, Street *" />
                 </label>
                 <input
                   id="modal-line1"
@@ -387,8 +375,7 @@ export default function AddressesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="modal-line2" className="block text-xs font-semibold text-[#171713] mb-1">
-                    Area / Colony / Sector
+                  <label htmlFor="modal-line2" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_ea342732d6b4e2af" fallback="Area / Colony / Sector" />
                   </label>
                   <input
                     id="modal-line2"
@@ -404,8 +391,7 @@ export default function AddressesPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="modal-landmark" className="block text-xs font-semibold text-[#171713] mb-1">
-                    Landmark (Optional)
+                  <label htmlFor="modal-landmark" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_f2ebc42d586a65e6" fallback="Landmark (Optional)" />
                   </label>
                   <input
                     id="modal-landmark"
@@ -423,8 +409,7 @@ export default function AddressesPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label htmlFor="modal-city" className="block text-xs font-semibold text-[#171713] mb-1">
-                    City *
+                  <label htmlFor="modal-city" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_4b592363361d535f" fallback="City *" />
                   </label>
                   <input
                     id="modal-city"
@@ -441,8 +426,7 @@ export default function AddressesPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="modal-state" className="block text-xs font-semibold text-[#171713] mb-1">
-                    State *
+                  <label htmlFor="modal-state" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_0553992d31b72bce" fallback="State *" />
                   </label>
                   <input
                     id="modal-state"
@@ -459,8 +443,7 @@ export default function AddressesPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="modal-pincode" className="block text-xs font-semibold text-[#171713] mb-1">
-                    6-Digit PIN Code *
+                  <label htmlFor="modal-pincode" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_2cff822667986cd6" fallback="6-Digit PIN Code *" />
                   </label>
                   <input
                     id="modal-pincode"
@@ -487,7 +470,7 @@ export default function AddressesPage() {
                     onChange={(e) => setFormData({ ...formData, is_default: e.target.checked })}
                     className="w-4 h-4 rounded text-[#23483a] accent-[#23483a]"
                   />
-                  <span>Set as my default shipping address</span>
+                  <span><StorefrontText id="copy_018273a0967b25dd" fallback="Set as my default shipping address" /></span>
                 </label>
               </div>
 
@@ -497,8 +480,7 @@ export default function AddressesPage() {
                   onClick={() => setModalOpen(false)}
                   disabled={saving}
                   className="px-4 py-2 rounded-lg border border-[#c2bcae] text-xs font-semibold text-[#171713] hover:bg-[#f5f1e8] transition-colors"
-                >
-                  Cancel
+                ><StorefrontText id="copy_19766ed6ccb2f4a3" fallback="Cancel" />
                 </button>
                 <button
                   type="submit"

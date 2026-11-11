@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -66,8 +67,7 @@ export function PackagingCard({ variant }: PackagingCardProps) {
           </Link>
         </h3>
 
-        <p className={styles.cardSpecs}>
-          Capacity: {displayCapacity} &bull; Closure: {variant.closure_type || "Heat Seal"}
+        <p className={styles.cardSpecs}><StorefrontText id="copy_54a399cddc5e79b2" fallback="Capacity:" /> {displayCapacity} &bull; Closure: {variant.closure_type || "Heat Seal"}
         </p>
 
         {variant.image_illustrative && (
@@ -87,8 +87,7 @@ export function PackagingCard({ variant }: PackagingCardProps) {
                 color: "#143C31",
                 borderColor: "#DDE4DC",
               }}
-            >
-              Specs
+            ><StorefrontText id="copy_e1f44367527cdf10" fallback="Specs" />
             </Link>
             <Link
               href={`/private-label/studio?pack=${variant.slug}`}

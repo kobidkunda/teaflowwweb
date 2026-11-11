@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useEffect, useMemo, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import styles from "../styles/PrivateLabel.module.css";
@@ -346,8 +347,7 @@ export function PackagingCatalogueExplorer({
             marginBottom: "20px",
           }}
         >
-          <span style={{ fontSize: "0.875rem", color: "#65746D", fontWeight: 500 }}>
-            Showing {filteredVariants.length} packaging {filteredVariants.length === 1 ? "format" : "formats"}
+          <span style={{ fontSize: "0.875rem", color: "#65746D", fontWeight: 500 }}><StorefrontText id="copy_d604310a789a1848" fallback="Showing" /> {filteredVariants.length}<StorefrontText id="copy_71669691cb0b0f1b" fallback="packaging" /> {filteredVariants.length === 1 ? "format" : "formats"}
           </span>
           {(category !== "all" || capacity !== "all" || material !== "all" || moq !== "all" || search.trim()) && (
             <button
@@ -362,8 +362,7 @@ export function PackagingCatalogueExplorer({
                 cursor: "pointer",
                 padding: "4px 8px",
               }}
-            >
-              Reset Filters
+            ><StorefrontText id="copy_660f3d76f4f2802d" fallback="Reset Filters" />
             </button>
           )}
         </div>

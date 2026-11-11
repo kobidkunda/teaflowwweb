@@ -68,9 +68,34 @@ const tag = mapped.map(([,meta],i)=>({...scope,tagId:String(9530+i),name:`TF Met
 // Keep all existing Meta routes on the same destination, including the paused duplicate.
 const destinationTags = existing.tag.filter(t => t.name.includes("Meta Pixel")).map(t => {
   const updated = JSON.parse(JSON.stringify(t).replaceAll(oldPixelId, targetPixelId));
+  if (updated.name === "Meta Pixel - Purchase - Teafloww") {
+    updated.parameter.find(param => param.key === "html").value = `<script>
+var tfPurchaseProperties = {{TF Meta - Event properties}};
+if (typeof fbq === 'function' && tfPurchaseProperties.content_ids && tfPurchaseProperties.content_ids.length) {
+  tfPurchaseProperties.value = {{DLV - TF Purchase Value}};
+  tfPurchaseProperties.currency = '{{DLV - TF Purchase Currency}}';
+  tfPurchaseProperties.order_id = '{{DLV - TF Purchase Order ID}}';
+  fbq('trackSingle', '${targetPixelId}', 'Purchase', tfPurchaseProperties, {
+    eventID: '{{DLV - TF Purchase Event ID}}'
+  });
+}
+</script>`;
+  }
   if (updated.name === "mm Meta Pixel - Purchase - Teafloww") updated.paused = true;
   return updated;
 });
 const output = {exportFormatVersion:2,exportTime:new Date().toISOString(),containerVersion:{...scope,container:existing.container,tag:[...destinationTags,...tag],trigger:[...existing.trigger.filter(t => ["11","9400"].includes(t.triggerId)),...trigger],variable:[...existing.variable.filter(v => ["7","8","9","10","9401"].includes(v.variableId)),...dlvs,{...scope,variableId:"9513",name:variableName,type:templateId,parameter:[p("ecommerce","{{TF Meta - ecommerce}}"),p("event","{{Event}}"),p("searchTerm","{{TF Meta - search_term}}")]}],builtInVariable:[{...scope,type:"EVENT",name:"Event"},{...scope,type:"PAGE_HOSTNAME",name:"Page Hostname"}],customTemplate:[...existing.customTemplate,{...scope,templateId:customTemplateId,name:variableName,templateData}]}};
+if (process.argv.includes("--purchase-only")) {
+  const version = output.containerVersion;
+  version.tag = version.tag.filter(t => t.name === "Meta Pixel - Purchase - Teafloww");
+  version.trigger = version.trigger.filter(t => t.triggerId === "11");
+  version.variable = version.variable.filter(v => v.variableId !== "9401" && v.variableId !== "9511");
+  version.customTemplate = version.customTemplate.filter(t => t.templateId === customTemplateId);
+}
 if (process.argv.includes("--stdout")) console.log(JSON.stringify(output));
+else if (process.argv.includes("--purchase-only")) {
+  const path = "docs/analytics/teafloww-meta-purchase-catalog-fix.json";
+  fs.writeFileSync(path, JSON.stringify(output, null, 2) + "\n");
+  console.log(`Prepared ${path}: Purchase tag and its dependencies only. Back up and review current workspace before merging. Not published.`);
+}
 else {const path="docs/analytics/teafloww-meta-correct-dataset-29619022431117471-v3.json";fs.writeFileSync(path,JSON.stringify(output,null,2)+"\n");console.log(`Prepared ${path}. Corrected Meta destination plus six additional events; GA4 unchanged. Not published.`);}

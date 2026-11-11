@@ -34,6 +34,22 @@ type QuoteView = {
   analytics?: ReturnType<typeof quoteAnalytics>;
   method?: string;
   paymentDiscountPaise?: number;
+  wholesale?: {
+    isWholesale: boolean;
+    advancePercent: number;
+    advancePaise: number;
+    balancePaise: number;
+    advanceMinor: number;
+    balanceMinor: number;
+    bankDetails: {
+      beneficiary: string;
+      bankName: string;
+      accountNumber: string;
+      ifsc: string;
+      branch: string;
+      upiId: string;
+    };
+  };
 };
 
 type Payment = {
@@ -78,6 +94,17 @@ type PaymentMethodsConfig = {
     freeShippingEnabled: boolean;
     dispatchCommitment: string;
   };
+  wholesale?: {
+    advancePercent: number;
+    bankDetails: {
+      beneficiary: string;
+      bankName: string;
+      accountNumber: string;
+      ifsc: string;
+      branch: string;
+      upiId: string;
+    };
+  };
 };
 
 import { loadCheckout } from "@/components/checkout/razorpay";
@@ -96,16 +123,26 @@ export function LiveCheckout() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [paymentCurrency, setPaymentCurrency] = useState(ctx?.currency || "INR");
-  const [method, setMethod] = useState<"upi" | "card" | "netbanking" | "cod" | "prepaid">("upi");
+  const [method, setMethod] = useState<"upi" | "card" | "netbanking" | "cod" | "prepaid" | "bank_transfer">("upi");
   const [inrAccepted, setInrAccepted] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState<PaymentMethodsConfig | null>(null);
   const onlinePaymentEnabled = paymentConfig?.onlinePaymentEnabled ?? true;
 
+  const hasWholesaleInCart = cart.items.some((i) => i.isWholesale || (typeof i.quantity === "number" && i.quantity > 20));
+  const isWholesale = Boolean(quoteResult?.view?.wholesale?.isWholesale || hasWholesaleInCart);
+  const wholesaleAdvancePercent = quoteResult?.view?.wholesale?.advancePercent ?? paymentConfig?.wholesale?.advancePercent ?? 0;
+
   useEffect(() => {
-    if (paymentConfig && paymentConfig.onlinePaymentEnabled === false && method !== "cod") {
+    if (isWholesale) {
+      if (wholesaleAdvancePercent === 0 && method !== "bank_transfer") {
+        setMethod("bank_transfer");
+      } else if (wholesaleAdvancePercent > 0 && (method === "cod" || method === "bank_transfer")) {
+        setMethod("upi");
+      }
+    } else if (paymentConfig && paymentConfig.onlinePaymentEnabled === false && method !== "cod") {
       setMethod("cod");
     }
-  }, [paymentConfig, method]);
+  }, [isWholesale, wholesaleAdvancePercent, paymentConfig, method]);
 
   const key = useRef("");
   const quotedItems = useRef("");
@@ -396,7 +433,7 @@ export function LiveCheckout() {
     computeQuote(method, formData, country, false);
   }
 
-  function handleMethodChange(newMethod: "upi" | "card" | "netbanking" | "cod" | "prepaid") {
+  function handleMethodChange(newMethod: "upi" | "card" | "netbanking" | "cod" | "prepaid" | "bank_transfer") {
     if (!onlinePaymentEnabled && newMethod !== "cod") return;
     setMethod(newMethod);
     key.current = generateUUID();
@@ -934,9 +971,61 @@ export function LiveCheckout() {
               </div>
             )}
 
-            <div className={`grid ${onlinePaymentEnabled ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"} gap-3`}>
+            {isWholesale && wholesaleAdvancePercent > 0 && (
+              <div className="p-3.5 rounded-xl border border-[#cbe0d3] bg-[#f4f7f2] text-xs text-[#23483a]">
+                <strong className="block font-semibold mb-1 text-sm">🌿 Wholesale Order · Advance PG Payment</strong>
+                <p className="leading-relaxed">
+                  A <strong>{wholesaleAdvancePercent}% advance payment</strong> is required via online payment gateway (UPI, Cards, or NetBanking) to confirm production and inventory reservation. The remaining <strong>{100 - wholesaleAdvancePercent}% balance</strong> is payable via Direct Account Transfer before surface transport dispatch.
+                </p>
+              </div>
+            )}
+
+            {isWholesale && wholesaleAdvancePercent === 0 && (
+              <div className="p-3.5 rounded-xl border border-[#cbe0d3] bg-[#f4f7f2] text-xs text-[#23483a]">
+                <strong className="block font-semibold mb-1 text-sm">🌿 Wholesale Order · Direct Account Transfer</strong>
+                <p className="leading-relaxed">
+                  Online payment is skipped. Complete order placement now; bank transfer details for NEFT/RTGS/IMPS/UPI will be provided on the order confirmation screen for settlement prior to transport dispatch.
+                </p>
+              </div>
+            )}
+
+            <div className={`grid ${onlinePaymentEnabled && (!isWholesale || wholesaleAdvancePercent > 0) ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"} gap-3`}>
+              {/* Wholesale 0% Advance Option: Direct Bank / Account Transfer */}
+              {isWholesale && wholesaleAdvancePercent === 0 && (
+                <label
+                  className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    method === "bank_transfer"
+                      ? "border-[#23483a] bg-[#f4f7f2] shadow-sm"
+                      : "border-[#d7d5c7] bg-white hover:border-[#b8b5a8]"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="payment_choice"
+                    value="bank_transfer"
+                    checked={method === "bank_transfer"}
+                    onChange={() => handleMethodChange("bank_transfer")}
+                    className="mt-1 accent-[#23483a] w-4 h-4 cursor-pointer"
+                  />
+                  <div className="flex-1 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-[#171713] text-sm flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-[#23483a]" />
+                        Direct Bank / Account Transfer
+                      </span>
+                      <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
+                        Pay Before Dispatch
+                      </span>
+                    </div>
+                    <p className="text-[#526359] leading-tight">
+                      Zero gateway transaction surcharge. Place order immediately to lock inventory; transfer via NEFT, RTGS, IMPS, or corporate UPI before transport dispatch.
+                    </p>
+                  </div>
+                </label>
+              )}
+
               {/* Option 1: UPI / QR Code */}
-              {onlinePaymentEnabled && (
+              {onlinePaymentEnabled && (!isWholesale || wholesaleAdvancePercent > 0) && (
                 <label
                   className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                     method === "upi"
@@ -958,9 +1047,11 @@ export function LiveCheckout() {
                         <Zap className="w-4 h-4 text-[#23483a]" />
                         UPI &amp; QR Code
                       </span>
-                      <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
-                        ⚡ Save {upiValue}%
-                      </span>
+                      {!isWholesale && (
+                        <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
+                          ⚡ Save {upiValue}%
+                        </span>
+                      )}
                     </div>
                     <p className="text-[#526359] leading-tight">
                       Instant scan with Google Pay, PhonePe, Paytm, or BHIM. Zero processing fee.
@@ -970,7 +1061,7 @@ export function LiveCheckout() {
               )}
 
               {/* Option 2: Cards */}
-              {onlinePaymentEnabled && (
+              {onlinePaymentEnabled && (!isWholesale || wholesaleAdvancePercent > 0) && (
                 <label
                   className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                     method === "card"
@@ -992,9 +1083,11 @@ export function LiveCheckout() {
                         <CreditCard className="w-4 h-4 text-[#b39156]" />
                         Credit &amp; Debit Cards
                       </span>
-                      <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
-                        💳 Save {cardValue}%
-                      </span>
+                      {!isWholesale && (
+                        <span className="text-[11px] font-bold text-[#166534] bg-[#e2edd9] px-2 py-0.5 rounded-full">
+                          💳 Save {cardValue}%
+                        </span>
+                      )}
                     </div>
                     <p className="text-[#526359] leading-tight">
                       Visa, MasterCard, RuPay, Amex. 256-bit AES encrypted via Razorpay.
@@ -1004,7 +1097,7 @@ export function LiveCheckout() {
               )}
 
               {/* Option 3: Net Banking */}
-              {onlinePaymentEnabled && (
+              {onlinePaymentEnabled && (!isWholesale || wholesaleAdvancePercent > 0) && (
                 <label
                   className={`relative flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                     method === "netbanking"
@@ -1037,8 +1130,19 @@ export function LiveCheckout() {
                 </label>
               )}
 
-              {/* Option 4: COD (Only for India) */}
-              {country === "IN" && codEnabled && (
+              {/* Wholesale COD Unavailable Notice */}
+              {isWholesale && (
+                <div className="sm:col-span-2 p-3.5 rounded-xl border border-[#eedab2] bg-[#fff9ed] text-xs text-[#7d5615] flex items-start gap-2.5">
+                  <Truck className="w-4 h-4 text-[#b39156] flex-shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block text-[#684407] font-semibold mb-0.5">Cash on Delivery Unavailable for Wholesale</strong>
+                    Wholesale cargo is dispatched via commercial surface road transport with freight payable on delivery (To-Pay Bilty). Cash on Delivery is strictly unavailable for wholesale orders.
+                  </div>
+                </div>
+              )}
+
+              {/* Option 4: COD (Only for Retail Orders in India) */}
+              {!isWholesale && country === "IN" && codEnabled && (
                 <label
                   className={`relative flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${
                     !isCodSubtotalValid
@@ -1219,11 +1323,38 @@ export function LiveCheckout() {
 
                 {/* Final Total Row */}
                 <div className="flex justify-between items-baseline pt-4 border-t-2 border-[#171713] text-[#171713]">
-                  <span className="text-base font-bold">{t("total")}</span>
+                  <span className="text-base font-bold">
+                    {isWholesale ? "Total Order Value" : t("total")}
+                  </span>
                   <strong className="text-2xl font-serif font-bold">
                     {formatMoney(quote.totalMinor, quote.currency, ctx?.locale)}
                   </strong>
                 </div>
+
+                {/* Wholesale Advance & Balance Due Breakout */}
+                {quote.wholesale?.isWholesale && (
+                  <div className="mt-3 pt-3 border-t border-dashed border-[#d7d5c7] space-y-2">
+                    {quote.wholesale.advancePercent > 0 ? (
+                      <>
+                        <div className="flex justify-between items-center text-xs font-semibold text-[#23483a] bg-[#f4f7f2] p-2.5 rounded-lg border border-[#cbe0d3]">
+                          <span>Advance Payable Now ({quote.wholesale.advancePercent}% via PG):</span>
+                          <strong className="text-sm">{formatMoney(quote.wholesale.advanceMinor, quote.currency, ctx?.locale)}</strong>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-[#526359] px-2 py-1">
+                          <span>Balance Due Before Dispatch (via A/C Transfer):</span>
+                          <strong className="text-[#171713]">{formatMoney(quote.wholesale.balanceMinor, quote.currency, ctx?.locale)}</strong>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-2.5 rounded-lg bg-[#f4f7f2] border border-[#cbe0d3] text-xs text-[#23483a]">
+                        <strong className="block font-semibold">100% Direct A/C Transfer Before Dispatch</strong>
+                        <span className="text-[11px] text-[#526359]">
+                          Online payment skipped. Complete account transfer before surface transport dispatch.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Savings Highlight */}
@@ -1248,20 +1379,24 @@ export function LiveCheckout() {
                   onClick={pay}
                   disabled={
                     busy ||
-                    isBelowMinDeliveryOrder ||
+                    (!isWholesale && isBelowMinDeliveryOrder) ||
                     (country !== "IN" && quote.currency === "INR" && !inrAccepted) ||
-                    (!onlinePaymentEnabled && (country !== "IN" || !codEnabled || !isCodSubtotalValid))
+                    (!isWholesale && !onlinePaymentEnabled && (country !== "IN" || !codEnabled || !isCodSubtotalValid))
                   }
                   className="w-full min-h-[50px] rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white font-bold text-sm transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {busy ? (
                     "Processing…"
-                  ) : isBelowMinDeliveryOrder ? (
+                  ) : !isWholesale && isBelowMinDeliveryOrder ? (
                     `Minimum Order ₹${minDeliveryOrder} Required`
-                  ) : !onlinePaymentEnabled && country !== "IN" ? (
+                  ) : !isWholesale && !onlinePaymentEnabled && country !== "IN" ? (
                     "Domestic COD Only Available"
-                  ) : !onlinePaymentEnabled && !codEnabled ? (
+                  ) : !isWholesale && !onlinePaymentEnabled && !codEnabled ? (
                     "No Payment Method Available"
+                  ) : isWholesale && (quote.wholesale?.advancePercent === 0 || method === "bank_transfer") ? (
+                    `Place Wholesale Order · Pay via A/C Transfer (${formatMoney(quote.totalMinor, quote.currency, ctx?.locale)}) →`
+                  ) : isWholesale && (quote.wholesale?.advancePercent || 0) > 0 ? (
+                    `Pay ${quote.wholesale?.advancePercent}% Advance (${formatMoney(quote.wholesale?.advanceMinor || quote.totalMinor, quote.currency, ctx?.locale)}) via ${method === "upi" ? "UPI" : method === "card" ? "Card" : "NetBanking"} →`
                   ) : method === "cod" ? (
                     !isCodSubtotalValid ? (
                       `COD Available ₹${codMin}–₹${codMax}`

@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { User, Package, MapPin, LogOut, ChevronDown, Sparkles } from "lucide-react";
@@ -117,7 +118,7 @@ export function CustomerNavButton() {
           {/* Header Info */}
           <div className="px-3 py-2.5 border-b border-[#eee8dc]">
             <p className="text-[11px] font-semibold tracking-wider uppercase text-[#b39156] flex items-center gap-1">
-              <Sparkles size={11} /> Tea Connoisseur
+              <Sparkles size={11} /><StorefrontText id="copy_9c6f1ef2cbc44926" fallback="Tea Connoisseur" />
             </p>
             <p className="text-sm font-serif font-bold text-[#171713] truncate">
               {customer.name || "Member"}
@@ -134,7 +135,7 @@ export function CustomerNavButton() {
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#171713] hover:bg-[#f5f1e8] rounded-lg transition-colors"
             >
               <Package size={15} className="text-[#23483a]" />
-              <span>My Orders</span>
+              <span><StorefrontText id="copy_00db793f2b8cff97" fallback="My Orders" /></span>
             </Link>
 
             <Link
@@ -144,7 +145,7 @@ export function CustomerNavButton() {
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#171713] hover:bg-[#f5f1e8] rounded-lg transition-colors"
             >
               <MapPin size={15} className="text-[#23483a]" />
-              <span>Saved Addresses</span>
+              <span><StorefrontText id="copy_919b4b003f2a4701" fallback="Saved Addresses" /></span>
             </Link>
 
             <Link
@@ -154,7 +155,7 @@ export function CustomerNavButton() {
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#171713] hover:bg-[#f5f1e8] rounded-lg transition-colors"
             >
               <User size={15} className="text-[#23483a]" />
-              <span>Account Overview</span>
+              <span><StorefrontText id="copy_a32e6e81a0339c77" fallback="Account Overview" /></span>
             </Link>
           </div>
 
@@ -167,7 +168,7 @@ export function CustomerNavButton() {
               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-[#992222] hover:bg-[#fee2e2] rounded-lg transition-colors text-left"
             >
               <LogOut size={15} />
-              <span>Sign Out</span>
+              <span><StorefrontText id="copy_0b184bc5d5341998" fallback="Sign Out" /></span>
             </button>
           </div>
         </div>

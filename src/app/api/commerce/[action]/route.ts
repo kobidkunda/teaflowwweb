@@ -63,6 +63,17 @@ export async function GET(request: Request, { params }: { params: Promise<{ acti
           freeShippingEnabled: s.free_shipping_enabled,
           dispatchCommitment: s.dispatch_commitment,
         },
+        wholesale: {
+          advancePercent: p.wholesale_advance_percent,
+          bankDetails: {
+            beneficiary: p.wholesale_bank_beneficiary,
+            bankName: p.wholesale_bank_name,
+            accountNumber: p.wholesale_bank_account_number,
+            ifsc: p.wholesale_bank_ifsc,
+            branch: p.wholesale_bank_branch,
+            upiId: p.wholesale_bank_upi_id,
+          },
+        },
       });
     }
     if (action === "order") {

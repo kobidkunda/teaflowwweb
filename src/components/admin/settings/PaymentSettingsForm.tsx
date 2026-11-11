@@ -108,6 +108,15 @@ export function PaymentSettingsForm() {
   const [testingYoupi, setTestingYoupi] = useState(false);
   const [youpiTestResult, setYoupiTestResult] = useState<{ ok: boolean; message: string } | null>(null);
 
+  // Wholesale Payment & Bank Details
+  const [wholesaleAdvancePercent, setWholesaleAdvancePercent] = useState<number>(0);
+  const [wholesaleBankBeneficiary, setWholesaleBankBeneficiary] = useState("Nirva");
+  const [wholesaleBankName, setWholesaleBankName] = useState("HDFC Bank");
+  const [wholesaleBankAccountNumber, setWholesaleBankAccountNumber] = useState("");
+  const [wholesaleBankIfsc, setWholesaleBankIfsc] = useState("");
+  const [wholesaleBankBranch, setWholesaleBankBranch] = useState("");
+  const [wholesaleBankUpiId, setWholesaleBankUpiId] = useState("");
+
   const fetchSettings = async () => {
     setLoading(true);
     setStatusMessage(null);
@@ -182,6 +191,15 @@ export function PaymentSettingsForm() {
         setYoupiApiTokenConfigured(Boolean(data.settings.youpi_api_token_configured));
         setYoupiWebhookConfigured(Boolean(data.settings.youpi_webhook_configured));
         if (data.settings.youpi_webhook_url) setYoupiWebhookUrl(data.settings.youpi_webhook_url);
+
+        // Wholesale settings
+        setWholesaleAdvancePercent(data.settings.wholesale_advance_percent ?? 0);
+        setWholesaleBankBeneficiary(data.settings.wholesale_bank_beneficiary || "Nirva");
+        setWholesaleBankName(data.settings.wholesale_bank_name || "HDFC Bank");
+        setWholesaleBankAccountNumber(data.settings.wholesale_bank_account_number || "");
+        setWholesaleBankIfsc(data.settings.wholesale_bank_ifsc || "");
+        setWholesaleBankBranch(data.settings.wholesale_bank_branch || "");
+        setWholesaleBankUpiId(data.settings.wholesale_bank_upi_id || "");
       }
     } catch {
       setStatusMessage({ type: "error", text: "Unable to load payment settings from database." });
@@ -294,6 +312,14 @@ export function PaymentSettingsForm() {
         prepaid_discount_max_rupees: Number(upiDiscountMaxRupees),
         min_order_for_discount_rupees: Number(minOrderForDiscountRupees),
         payment_discount_badge_text: paymentDiscountBadgeText.trim(),
+        // Wholesale Payment & Bank Settings
+        wholesale_advance_percent: Math.min(100, Math.max(0, Number(wholesaleAdvancePercent) || 0)),
+        wholesale_bank_beneficiary: wholesaleBankBeneficiary.trim(),
+        wholesale_bank_name: wholesaleBankName.trim(),
+        wholesale_bank_account_number: wholesaleBankAccountNumber.trim(),
+        wholesale_bank_ifsc: wholesaleBankIfsc.trim().toUpperCase(),
+        wholesale_bank_branch: wholesaleBankBranch.trim(),
+        wholesale_bank_upi_id: wholesaleBankUpiId.trim(),
       };
 
       const res = await fetch("/api/admin/settings/payment", {
@@ -1463,6 +1489,149 @@ export function PaymentSettingsForm() {
                   <div>• <strong>Card:</strong> Saves ₹{cardDiscountEnabled ? (cardDiscountType === "percentage" ? Math.min(1000 * cardDiscountValue / 100, cardDiscountMaxRupees || Infinity) : Math.min(cardDiscountValue, cardDiscountMaxRupees || Infinity)) : 0} (Customer pays ₹{1000 - (cardDiscountEnabled ? (cardDiscountType === "percentage" ? Math.min(1000 * cardDiscountValue / 100, cardDiscountMaxRupees || Infinity) : Math.min(cardDiscountValue, cardDiscountMaxRupees || Infinity)) : 0)})</div>
                   <div>• <strong>Cash on Delivery:</strong> No discount + ₹{codFeeRupees} fee (Customer pays ₹{1000 + codFeeRupees})</div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CARD: Wholesale Orders: Direct Bank Transfer & Advance PG Configuration */}
+        <div
+          className="tf-ops-card"
+          style={{
+            background: "#fff",
+            border: "1px solid #e5e2d9",
+            borderRadius: "10px",
+            padding: "24px",
+            marginBottom: "24px",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div style={{ background: "rgba(35, 72, 58, 0.1)", padding: "8px", borderRadius: "8px", color: "#23483a" }}>
+                <Banknote size={20} />
+              </div>
+              <div>
+                <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 600 }}>Wholesale Order Payment &amp; Advance PG Rules</h2>
+                <p style={{ margin: "2px 0 0", fontSize: "13px", color: "#666" }}>
+                  Wholesale orders are dispatched via commercial transport (To-Pay Bilty). COD is strictly disabled. Set the advance % payable via PG at checkout, and company bank details for direct A/C transfers.
+                </p>
+              </div>
+            </div>
+
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "6px 12px",
+                borderRadius: "20px",
+                fontSize: "12px",
+                fontWeight: 600,
+                background: wholesaleAdvancePercent === 0 ? "#eff6ff" : "#eef6f0",
+                color: wholesaleAdvancePercent === 0 ? "#1d4ed8" : "#1e5e34",
+                border: `1px solid ${wholesaleAdvancePercent === 0 ? "#bfdbfe" : "#c7e6d0"}`,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {wholesaleAdvancePercent === 0 ? "100% Direct Bank Transfer (0% PG)" : `${wholesaleAdvancePercent}% Advance via PG`}
+            </span>
+          </div>
+
+          <div style={{ background: "#faf8f4", border: "1px solid #d9d4c8", borderRadius: "8px", padding: "18px", marginBottom: "20px" }}>
+            <div style={{ maxWidth: "340px", marginBottom: "14px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "4px", color: "#1d2a24" }}>
+                Wholesale Advance Percent (0–100%)
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={wholesaleAdvancePercent}
+                  onChange={(e) => setWholesaleAdvancePercent(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+                  style={{ width: "120px", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "14px", fontWeight: 600 }}
+                />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "#23483a" }}>%</span>
+              </div>
+              <p style={{ margin: "6px 0 0", fontSize: "12px", color: "#63665e", lineHeight: 1.4 }}>
+                {wholesaleAdvancePercent === 0
+                  ? "At 0%, customers bypass online payment at checkout; order is created immediately as 'Awaiting Bank Transfer' with surface transport to-pay."
+                  : `Customers pay ${wholesaleAdvancePercent}% online via PG at checkout. The remaining ${100 - wholesaleAdvancePercent}% balance is settled via direct bank transfer before dispatch.`}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ border: "1px solid #e5e2d9", borderRadius: "8px", padding: "18px", background: "#fbfbfb" }}>
+            <h3 style={{ margin: "0 0 14px", fontSize: "14px", fontWeight: 700, color: "#1d2a24", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Company Bank Account Details (Presented on Checkout &amp; Order Confirmation)
+            </h3>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>Beneficiary Account Name</label>
+                <input
+                  type="text"
+                  value={wholesaleBankBeneficiary}
+                  onChange={(e) => setWholesaleBankBeneficiary(e.target.value)}
+                  placeholder="e.g. Nirva"
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "13px" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>Bank Name</label>
+                <input
+                  type="text"
+                  value={wholesaleBankName}
+                  onChange={(e) => setWholesaleBankName(e.target.value)}
+                  placeholder="e.g. HDFC Bank"
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "13px" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>Account Number</label>
+                <input
+                  type="text"
+                  value={wholesaleBankAccountNumber}
+                  onChange={(e) => setWholesaleBankAccountNumber(e.target.value)}
+                  placeholder="e.g. 50200012345678"
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "13px", fontFamily: "monospace" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>IFSC Code</label>
+                <input
+                  type="text"
+                  value={wholesaleBankIfsc}
+                  onChange={(e) => setWholesaleBankIfsc(e.target.value.toUpperCase())}
+                  placeholder="e.g. HDFC0000123"
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "13px", fontFamily: "monospace" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>Branch Name</label>
+                <input
+                  type="text"
+                  value={wholesaleBankBranch}
+                  onChange={(e) => setWholesaleBankBranch(e.target.value)}
+                  placeholder="e.g. Siliguri"
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "13px" }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, marginBottom: "4px" }}>UPI ID (Optional)</label>
+                <input
+                  type="text"
+                  value={wholesaleBankUpiId}
+                  onChange={(e) => setWholesaleBankUpiId(e.target.value)}
+                  placeholder="e.g. nirva@okhdfcbank"
+                  style={{ width: "100%", padding: "8px 10px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "13px", fontFamily: "monospace" }}
+                />
               </div>
             </div>
           </div>

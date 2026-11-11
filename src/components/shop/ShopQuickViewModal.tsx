@@ -278,7 +278,7 @@ export function ShopQuickViewModal({
                       {activeVariant.grams} <StorefrontText id="copy_6b8e375784466001" fallback="g · ~" /> {cupsFromGrams(activeVariant.grams)} <StorefrontText id="copy_43b69e82bee632b3" fallback="cups" /> </span>
                   </div>
                   <div className="shop-modal-cta-group">
-                    <AddToCart product={product} variant={activeVariant} />
+                    <AddToCart product={product} variant={activeVariant} disableModal={true} />
                     <Link
                       href={`/tea/${product.slug}`}
                       className="button button-cream"

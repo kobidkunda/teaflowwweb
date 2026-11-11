@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { Package, Plus, Sparkles, RefreshCw, ArrowRight } from "lucide-react";
@@ -72,23 +73,21 @@ export default function CustomerPrivateLabelHubPage() {
         {/* Hub Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between pb-6 border-b border-[#E8E4DC] gap-4">
           <div>
-            <h1 className="text-3xl font-serif font-bold text-[#143C31]">Private Label Atelier Hub</h1>
-            <p className="text-sm text-[#65746D] mt-1">
-              Manage custom bespoke tea packaging runs, trial sample kits, and Siliguri manufacturing schedules.
+            <h1 className="text-3xl font-serif font-bold text-[#143C31]"><StorefrontText id="copy_648806a364726fd2" fallback="Private Label Atelier Hub" /></h1>
+            <p className="text-sm text-[#65746D] mt-1"><StorefrontText id="copy_a193ab5b7e6e92f5" fallback="Manage custom bespoke tea packaging runs, trial sample kits, and Siliguri manufacturing schedules." />
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/private-label/samples"
               className="px-4 py-2 text-xs font-semibold rounded-lg border border-[#143C31] text-[#143C31] hover:bg-[#F3EFE6] transition-colors"
-            >
-              Order Trial Samples
+            ><StorefrontText id="copy_d1a8d5dcfb34a912" fallback="Order Trial Samples" />
             </Link>
             <Link
               href="/private-label/studio"
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#143C31] text-white hover:bg-[#1E5244] transition-colors shadow-2xs"
             >
-              <Plus size={14} /> New Custom Run
+              <Plus size={14} /><StorefrontText id="copy_7e45749bdb488378" fallback="New Custom Run" />
             </Link>
           </div>
         </div>
@@ -109,7 +108,7 @@ export default function CustomerPrivateLabelHubPage() {
             }
           }}
         >
-          <button type="button" role="tab" id="tab-projects" aria-selected={activeTab === "projects"} aria-controls="panel-projects" tabIndex={activeTab === "projects" ? 0 : -1} onClick={() => setActiveTab("projects")} className="pb-3 font-medium whitespace-nowrap">Saved Projects ({projects.length})</button>
+          <button type="button" role="tab" id="tab-projects" aria-selected={activeTab === "projects"} aria-controls="panel-projects" tabIndex={activeTab === "projects" ? 0 : -1} onClick={() => setActiveTab("projects")} className="pb-3 font-medium whitespace-nowrap"><StorefrontText id="copy_b8ef74cac9cd0e2f" fallback="Saved Projects (" />{projects.length})</button>
           <button
             type="button"
             role="tab"
@@ -123,8 +122,7 @@ export default function CustomerPrivateLabelHubPage() {
                 ? "border-b-2 border-[#143C31] text-[#143C31] font-bold"
                 : "text-[#65746D] hover:text-[#143C31]"
             }`}
-          >
-            Production Orders ({orders.length})
+          ><StorefrontText id="copy_9b5116390ce8ba37" fallback="Production Orders (" />{orders.length})
           </button>
           <button
             type="button"
@@ -139,8 +137,7 @@ export default function CustomerPrivateLabelHubPage() {
                 ? "border-b-2 border-[#143C31] text-[#143C31] font-bold"
                 : "text-[#65746D] hover:text-[#143C31]"
             }`}
-          >
-            Trial Sample Kits ({samples.length})
+          ><StorefrontText id="copy_65d9d22e6193e36d" fallback="Trial Sample Kits (" />{samples.length})
           </button>
         </div>
 
@@ -148,16 +145,16 @@ export default function CustomerPrivateLabelHubPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-[#65746D]">
             <RefreshCw className="w-8 h-8 animate-spin text-[#143C31] mb-3" />
-            <p className="text-sm">Loading Private Label workspace...</p>
+            <p className="text-sm"><StorefrontText id="copy_8ce3eb3e83d062b8" fallback="Loading Private Label workspace..." /></p>
           </div>
         ) : error ? (
-          <div role="alert"><p>{error}</p><button type="button" onClick={() => window.location.reload()}>Retry</button> · <Link href="/login?redirect=%2Faccount%2Fprivate-label">Sign in</Link></div>
+          <div role="alert"><p>{error}</p><button type="button" onClick={() => window.location.reload()}><StorefrontText id="copy_942087cc2d41e013" fallback="Retry" /></button> · <Link href="/login?redirect=%2Faccount%2Fprivate-label"><StorefrontText id="copy_bfd402b2f6f38125" fallback="Sign in" /></Link></div>
         ) : activeTab === "projects" ? (
           <div role="tabpanel" id="panel-projects" aria-labelledby="tab-projects" tabIndex={0} className="space-y-4">
-            {projects.length === 0 ? <p>No saved projects yet. <Link href="/private-label/studio">Start your brand</Link></p> : projects.map(project => (
+            {projects.length === 0 ? <p><StorefrontText id="copy_78e6748a3fcdc2b5" fallback="No saved projects yet." /> <Link href="/private-label/studio"><StorefrontText id="copy_6d5862d19779f888" fallback="Start your brand" /></Link></p> : projects.map(project => (
               <article key={project.id} className="bg-white border border-[#E8E4DC] rounded-xl p-5 flex flex-col md:flex-row justify-between gap-3">
                 <div><h2 className="font-serif text-xl">{project.title}</h2><p className="text-sm">{project.status.replace(/_/g, " ")}</p></div>
-                <Link href={`/private-label/studio?project=${encodeURIComponent(project.id)}`} className="underline">Continue project →</Link>
+                <Link href={`/private-label/studio?project=${encodeURIComponent(project.id)}`} className="underline"><StorefrontText id="copy_88fb9ab9271b1a92" fallback="Continue project →" /></Link>
               </article>
             ))}
           </div>
@@ -174,16 +171,14 @@ export default function CustomerPrivateLabelHubPage() {
               <div className="w-12 h-12 rounded-full bg-[#EBF3EF] text-[#143C31] flex items-center justify-center mx-auto">
                 <Sparkles size={24} />
               </div>
-              <h2 className="text-xl font-serif font-bold text-[#143C31]">No Active Production Orders</h2>
-              <p className="text-xs text-[#65746D] max-w-sm mx-auto">
-                Begin with single-estate harvest curation and custom dieline packaging tailored to your brand identity.
+              <h2 className="text-xl font-serif font-bold text-[#143C31]"><StorefrontText id="copy_77f3022a30817e89" fallback="No Active Production Orders" /></h2>
+              <p className="text-xs text-[#65746D] max-w-sm mx-auto"><StorefrontText id="copy_b82b7de29ae3b9ee" fallback="Begin with single-estate harvest curation and custom dieline packaging tailored to your brand identity." />
               </p>
               <div className="pt-2">
                 <Link
                   href="/private-label/studio"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#143C31] text-white hover:bg-[#1E5244] transition-colors shadow-2xs"
-                >
-                  Start Your Brand <ArrowRight size={14} />
+                ><StorefrontText id="copy_af41ca7b9a8807ee" fallback="Start Your Brand" /> <ArrowRight size={14} />
                 </Link>
               </div>
             </div>
@@ -201,8 +196,7 @@ export default function CustomerPrivateLabelHubPage() {
                         {o.status.replace(/_/g, " ")}
                       </span>
                     </div>
-                    <p className="text-xs text-[#65746D]">
-                      Contract Total: <span className="font-medium text-[#143C31]">{formatPaise(o.total_paise)}</span> | Deposit: {formatPaise(o.deposit_paise)}
+                    <p className="text-xs text-[#65746D]"><StorefrontText id="copy_9e69596d0233b710" fallback="Contract Total:" /> <span className="font-medium text-[#143C31]">{formatPaise(o.total_paise)}</span><StorefrontText id="copy_c5dae3cd06b0e94b" fallback="| Deposit:" /> {formatPaise(o.deposit_paise)}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -231,16 +225,14 @@ export default function CustomerPrivateLabelHubPage() {
               <div className="w-12 h-12 rounded-full bg-[#EBF3EF] text-[#143C31] flex items-center justify-center mx-auto">
                 <Package size={24} />
               </div>
-              <h2 className="text-xl font-serif font-bold text-[#143C31]">No Sample Requests Recorded</h2>
-              <p className="text-xs text-[#65746D] max-w-sm mx-auto">
-                Request tea tasting kits, packaging material swatches, or printed dieline proofs delivered to your door.
+              <h2 className="text-xl font-serif font-bold text-[#143C31]"><StorefrontText id="copy_3497bbd07a0c58e6" fallback="No Sample Requests Recorded" /></h2>
+              <p className="text-xs text-[#65746D] max-w-sm mx-auto"><StorefrontText id="copy_afde1b173815d11b" fallback="Request tea tasting kits, packaging material swatches, or printed dieline proofs delivered to your door." />
               </p>
               <div className="pt-2">
                 <Link
                   href="/private-label/samples"
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-[#143C31] text-white hover:bg-[#1E5244] transition-colors shadow-2xs"
-                >
-                  Order Sample Kit <ArrowRight size={14} />
+                ><StorefrontText id="copy_a953557c91917ee2" fallback="Order Sample Kit" /> <ArrowRight size={14} />
                 </Link>
               </div>
             </div>
@@ -258,8 +250,7 @@ export default function CustomerPrivateLabelHubPage() {
                         {s.status.replace(/_/g, " ")}
                       </span>
                     </div>
-                    <p className="text-xs text-[#65746D]">
-                      Type: <span className="font-medium text-[#143C31] capitalize">{s.sample_type.replace(/_/g, " ")}</span> | Quantity: {s.quantity}
+                    <p className="text-xs text-[#65746D]"><StorefrontText id="copy_6cc5ad2e47e3be35" fallback="Type:" /> <span className="font-medium text-[#143C31] capitalize">{s.sample_type.replace(/_/g, " ")}</span><StorefrontText id="copy_f3b2763b3aab5a3c" fallback="| Quantity:" /> {s.quantity}
                     </p>
                   </div>
                   <div className="text-xs text-[#65746D]">

@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -189,7 +190,7 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
       <div className="min-h-screen bg-[#FBF9F4] py-16 px-4">
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 text-[#65746D]">
           <RefreshCw className="w-8 h-8 animate-spin text-[#143C31] mb-3" />
-          <p className="text-sm">Calculating quotation breakdown...</p>
+          <p className="text-sm"><StorefrontText id="copy_d9509889d1223b41" fallback="Calculating quotation breakdown..." /></p>
         </div>
       </div>
     );
@@ -200,13 +201,13 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
       <div className="min-h-screen bg-[#FBF9F4] py-16 px-4">
         <div className="max-w-xl mx-auto bg-white border border-[#E8E4DC] rounded-2xl p-8 text-center shadow-xs">
           <FileText className="w-12 h-12 text-[#65746D] mx-auto mb-4" />
-          <h1 className="text-xl font-serif font-bold text-[#143C31] mb-2">Quote Notice</h1>
+          <h1 className="text-xl font-serif font-bold text-[#143C31] mb-2"><StorefrontText id="copy_d61d2e3ba3b14ce6" fallback="Quote Notice" /></h1>
           <p className="text-xs text-[#65746D] mb-6">{error || "Quotation could not be located."}</p>
           <Link
             href="/account/private-label"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold bg-[#143C31] text-white"
           >
-            <ArrowLeft size={14} /> Back to Hub
+            <ArrowLeft size={14} /><StorefrontText id="copy_b724d4d2c2327a93" fallback="Back to Hub" />
           </Link>
         </div>
       </div>
@@ -226,11 +227,10 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
               href="/account/private-label"
               className="inline-flex items-center gap-1.5 text-xs text-[#65746D] hover:text-[#143C31] mb-2"
             >
-              <ArrowLeft size={14} /> Back to Private Label Hub
+              <ArrowLeft size={14} /><StorefrontText id="copy_00b22b44a8ffd53a" fallback="Back to Private Label Hub" />
             </Link>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#143C31]">
-                Commercial Quotation {quote.quote_number}
+              <h1 className="text-2xl md:text-3xl font-serif font-bold text-[#143C31]"><StorefrontText id="copy_7cc5a707e5acbc24" fallback="Commercial Quotation" /> {quote.quote_number}
               </h1>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full uppercase bg-[#EBF3EF] text-[#143C31] border border-[#C5D6CC]">
                 {quote.status}
@@ -244,7 +244,7 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
               target="_blank"
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-white border border-[#DDE4DC] text-[#143C31] hover:bg-[#F3EFE6] transition-colors shadow-2xs"
             >
-              <Printer size={14} /> Branded PDF Print
+              <Printer size={14} /><StorefrontText id="copy_812f23676d61e07d" fallback="Branded PDF Print" />
             </Link>
           </div>
         </div>
@@ -254,9 +254,8 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
           <div className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-4 flex items-center gap-3 text-xs">
             <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600" />
             <div>
-              <p className="font-bold">Quotation Expired</p>
-              <p className="text-rose-700">
-                This quote expired on {new Date(quote.valid_until).toLocaleDateString("en-IN")}. Price books update regularly. Please request a refreshed quote from the configurator.
+              <p className="font-bold"><StorefrontText id="copy_c1a3a2b839e1aab7" fallback="Quotation Expired" /></p>
+              <p className="text-rose-700"><StorefrontText id="copy_07f411e3b1044442" fallback="This quote expired on" /> {new Date(quote.valid_until).toLocaleDateString("en-IN")}<StorefrontText id="copy_8106a74f6585e70e" fallback=". Price books update regularly. Please request a refreshed quote from the configurator." />
               </p>
             </div>
           </div>
@@ -275,9 +274,9 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
         )}
 
         <section aria-label="Configured order items" className="bg-white border border-[#E8E4DC] rounded-xl p-5 space-y-3">
-          <h2 className="font-serif text-lg">Your Configuration</h2>
-          {(quote.items || []).map(item => <article key={item.id} className="border-b border-[#E8E4DC] pb-3"><h3 className="font-medium">{item.description}</h3><p className="text-sm text-[#65746D]">{item.quantity.toLocaleString("en-IN")} units · {formatPaise(item.unit_price_paise)} per unit</p></article>)}
-          {quote.status === "estimated" && <p className="text-sm text-[#65746D]">This is an estimate. Our team must confirm specifications, rates and production readiness. No payment has been collected.</p>}
+          <h2 className="font-serif text-lg"><StorefrontText id="copy_d4fc989960db1762" fallback="Your Configuration" /></h2>
+          {(quote.items || []).map(item => <article key={item.id} className="border-b border-[#E8E4DC] pb-3"><h3 className="font-medium">{item.description}</h3><p className="text-sm text-[#65746D]">{item.quantity.toLocaleString("en-IN")}<StorefrontText id="copy_a519f1024cf3fa5c" fallback="units ·" /> {formatPaise(item.unit_price_paise)}<StorefrontText id="copy_7a3f3bea5f9c85db" fallback="per unit" /></p></article>)}
+          {quote.status === "estimated" && <p className="text-sm text-[#65746D]"><StorefrontText id="copy_9554092f83e38180" fallback="This is an estimate. Our team must confirm specifications, rates and production readiness. No payment has been collected." /></p>}
         </section>
         {/* Proof Prerequisite Banner */}
         <div
@@ -322,17 +321,16 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
 
         {/* 12-Component Itemized Price Breakdown */}
         <div className="bg-white border border-[#E8E4DC] rounded-xl p-6 shadow-2xs space-y-4">
-          <h2 className="text-base font-serif font-bold text-[#143C31] pb-2 border-b border-[#E8E4DC]">
-            Itemized Cost Schedule
+          <h2 className="text-base font-serif font-bold text-[#143C31] pb-2 border-b border-[#E8E4DC]"><StorefrontText id="copy_cec8a2141da867a4" fallback="Itemized Cost Schedule" />
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-xs divide-y md:divide-y-0 divide-[#E8E4DC]">
             <div className="flex justify-between py-1.5">
-              <span className="text-[#65746D]">Estate Tea Leaf Batch</span>
+              <span className="text-[#65746D]"><StorefrontText id="copy_2001a0b90012ca13" fallback="Estate Tea Leaf Batch" /></span>
               <span className="font-semibold text-[#143C31]">{formatPaise(quote.tea_subtotal_paise)}</span>
             </div>
             <div className="flex justify-between py-1.5">
-              <span className="text-[#65746D]">Packaging Substrate Units</span>
+              <span className="text-[#65746D]"><StorefrontText id="copy_81b011ee3dff273d" fallback="Packaging Substrate Units" /></span>
               <span className="font-semibold text-[#143C31]">{formatPaise(quote.packaging_subtotal_paise)}</span>
             </div>
             <div className="flex justify-between py-1.5">
@@ -348,7 +346,7 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
               <span className="font-semibold text-[#143C31]">{formatPaise(quote.labor_subtotal_paise)}</span>
             </div>
             <div className="flex justify-between py-1.5">
-              <span className="text-[#65746D]">Quality Review</span>
+              <span className="text-[#65746D]"><StorefrontText id="copy_12c602437b74456a" fallback="Quality Review" /></span>
               <span className="font-semibold text-[#143C31]">{formatPaise(quote.qc_subtotal_paise)}</span>
             </div>
             <div className="flex justify-between py-1.5">
@@ -362,7 +360,7 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
           </div>
 
           <div className="pt-4 border-t border-[#E8E4DC] flex justify-between items-center text-sm font-bold text-[#143C31]">
-            <span>Contract Grand Total</span>
+            <span><StorefrontText id="copy_5d9c0c379eb922b3" fallback="Contract Grand Total" /></span>
             <span className="text-xl font-serif">{formatPaise(quote.grand_total_paise)}</span>
           </div>
         </div>
@@ -370,34 +368,31 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
         {/* 50% Advance Checkout Action */}
         <div className="bg-white border border-[#E8E4DC] rounded-xl p-6 shadow-2xs space-y-4">
           <h2 className="text-base font-serif font-bold text-[#143C31] pb-2 border-b border-[#E8E4DC] flex items-center gap-2">
-            <CreditCard size={18} /> Production Release Authorization
+            <CreditCard size={18} /><StorefrontText id="copy_6b1011ce80cd166a" fallback="Production Release Authorization" />
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="p-4 bg-[#FBF9F4] border border-[#E8E4DC] rounded-lg">
-              <span className="text-[#65746D] block">Proposed Advance Deposit (50%)</span>
+              <span className="text-[#65746D] block"><StorefrontText id="copy_6f8b237c111ff9a3" fallback="Proposed Advance Deposit (50%)" /></span>
               <span className="text-lg font-serif font-bold text-[#143C31] mt-1 block">
                 {formatPaise(depositPaise)}
               </span>
-              <p className="text-[11px] text-[#65746D] mt-1">
-                Payment arrangements and production readiness must be confirmed with our team.
+              <p className="text-[11px] text-[#65746D] mt-1"><StorefrontText id="copy_748852a7efe11fa3" fallback="Payment arrangements and production readiness must be confirmed with our team." />
               </p>
             </div>
 
             <div className="p-4 bg-[#FBF9F4] border border-[#E8E4DC] rounded-lg">
-              <span className="text-[#65746D] block">Payable on Final QC Pass (50% Balance)</span>
+              <span className="text-[#65746D] block"><StorefrontText id="copy_2dcfd70fd0a21a60" fallback="Payable on Final QC Pass (50% Balance)" /></span>
               <span className="text-lg font-serif font-bold text-[#143C31] mt-1 block">
                 {formatPaise(balancePaise)}
               </span>
-              <p className="text-[11px] text-[#65746D] mt-1">
-                Due upon completion of 7/7 QC milestones prior to consignment dispatch.
+              <p className="text-[11px] text-[#65746D] mt-1"><StorefrontText id="copy_3d319ee8cffa9105" fallback="Due upon completion of 7/7 QC milestones prior to consignment dispatch." />
               </p>
             </div>
           </div>
 
           <div className="pt-2 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-[#65746D]">
-              Creating an order request does not collect payment or release production.
+            <p className="text-xs text-[#65746D]"><StorefrontText id="copy_4fff6c8ecf73bba4" fallback="Creating an order request does not collect payment or release production." />
             </p>
 
             <button
@@ -409,11 +404,11 @@ export default function InteractiveQuotePage(props: { params: Promise<{ id: stri
             >
               {checkingOut ? (
                 <>
-                  <RefreshCw size={14} className="animate-spin" /> Creating Order Request...
+                  <RefreshCw size={14} className="animate-spin" /><StorefrontText id="copy_57d317096b1c5019" fallback="Creating Order Request..." />
                 </>
               ) : (
                 <>
-                  <Sparkles size={14} /> Create Order Request
+                  <Sparkles size={14} /><StorefrontText id="copy_e5b925493b0b67c6" fallback="Create Order Request" />
                 </>
               )}
             </button>

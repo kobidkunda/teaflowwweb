@@ -6,9 +6,9 @@ import { idempotent } from "@/lib/adminStore";
 import type { ProductInput, VariantInput } from "@/lib/validation";
 
 export * from "@/lib/productModels";
-import { parseAromaTags, getProductSpecs, type PackagingFormat, type Variant, type Product } from "@/lib/productModels";
+import { parseAromaTags, getProductSpecs, type PackagingFormat, type Variant, type Product, type WholesaleSlab } from "@/lib/productModels";
 
-type RawVariantRow = {
+export type RawVariantRow = {
   id: number;
   product_id: number;
   sku: string;
@@ -25,7 +25,7 @@ type RawVariantRow = {
   product_image_url?: string | null;
 };
 
-type RawProductRow = {
+export type RawProductRow = {
   tea_moments?: string | null;
   id: number;
   slug: string;
@@ -76,6 +76,7 @@ type RawProductRow = {
   is_enabled?: number;
   pdf_url?: string | null;
   pdf_title?: string | null;
+  wholesale_moq?: number | null;
 };
 
 export function mapVariantRow(row: RawVariantRow): Variant {
@@ -164,6 +165,7 @@ export function mapProductRow(
     inventory: variants.length ? variants.reduce((sum, v) => sum + (v.stock || 0), 0) : 0,
     pdf_url: row.pdf_url ?? null,
     pdf_title: row.pdf_title ?? null,
+    wholesale_moq: row.wholesale_moq != null ? Number(row.wholesale_moq) : null,
     primary_image: primaryImage ?? null,
     ...(primaryImage?.url ? { primary_image_url: primaryImage.url } : {}),
     variants,
@@ -183,6 +185,20 @@ function hydrate(rows: RawProductRow[]): Product[] {
     );
     const variantRows = stmt.all(row.id) as RawVariantRow[];
     const variants = variantRows.map(mapVariantRow);
+    try {
+      const slabRows = db.prepare(
+        "SELECT * FROM wholesale_slabs WHERE product_id=? ORDER BY min_qty ASC, price_paise ASC"
+      ).all(row.id) as WholesaleSlab[];
+      const slabsByVariant = new Map<number, WholesaleSlab[]>();
+      for (const s of slabRows) {
+        const list = slabsByVariant.get(s.variant_id) || [];
+        list.push(s);
+        slabsByVariant.set(s.variant_id, list);
+      }
+      for (const v of variants) {
+        v.wholesale_slabs = slabsByVariant.get(v.id) || [];
+      }
+    } catch {}
 
     let primaryImage: { url: string; alt_text: string } | null = null;
     try {
@@ -217,10 +233,24 @@ function hydrate(rows: RawProductRow[]): Product[] {
     )
     .all(...ids) as RawVariantRow[];
 
+  const slabsByVariant = new Map<number, WholesaleSlab[]>();
+  try {
+    const slabRows = db.prepare(
+      `SELECT * FROM wholesale_slabs WHERE product_id IN (${placeholders}) ORDER BY min_qty ASC, price_paise ASC`
+    ).all(...ids) as WholesaleSlab[];
+    for (const slab of slabRows) {
+      const list = slabsByVariant.get(slab.variant_id) || [];
+      list.push(slab);
+      slabsByVariant.set(slab.variant_id, list);
+    }
+  } catch {}
+
   const variantsByProduct = new Map<number, Variant[]>();
   for (const v of variantRows) {
+    const mapped = mapVariantRow(v);
+    mapped.wholesale_slabs = slabsByVariant.get(mapped.id) || [];
     const list = variantsByProduct.get(v.product_id) || [];
-    list.push(mapVariantRow(v));
+    list.push(mapped);
     variantsByProduct.set(v.product_id, list);
   }
 
@@ -526,6 +556,12 @@ export function upsertProduct(input: ProductInput): {
       db.prepare("UPDATE products SET pdf_url=?, pdf_title=? WHERE id=?").run(finalPdfUrl, finalPdfTitle, productId);
     }
 
+    const hasWholesaleMoq = cols.includes("wholesale_moq");
+    if (hasWholesaleMoq && input.wholesale_moq !== undefined) {
+      const wMoq = input.wholesale_moq === null || Number(input.wholesale_moq) <= 0 ? null : Math.round(Number(input.wholesale_moq));
+      db.prepare("UPDATE products SET wholesale_moq=? WHERE id=?").run(wMoq, productId);
+    }
+
     // Handle price / variants on existing or new product
     let activePaise = targetPaise;
     const existingVars = db.prepare("SELECT id, price_paise, stock FROM variants WHERE product_id=? ORDER BY grams ASC, id ASC").all(productId) as { id: number; price_paise: number; stock: number }[];
@@ -604,6 +640,7 @@ export function upsertProduct(input: ProductInput): {
               stock: vStock,
               packaging_format: pkg,
               servings: srv,
+              wholesale_slabs: Array.isArray(varObj.wholesale_slabs) ? (varObj.wholesale_slabs as Array<{ min_qty: number; price_paise: number }>) : undefined,
             });
             if (activePaise === undefined) activePaise = pPaise;
           }
@@ -619,7 +656,7 @@ export function upsertProduct(input: ProductInput): {
   return { ...body, deduped };
 }
 
-export function upsertVariant(input: VariantInput): { id: number; sku: string; deduped: boolean } {
+export function upsertVariant(input: VariantInput & { wholesale_slabs?: Array<{ id?: number; min_qty: number; price_paise: number }> }): { id: number; sku: string; deduped: boolean } {
   const { body, deduped } = idempotent("variant", input.idempotencyKey, () => {
     const db = getDb();
     const prod = db.prepare("SELECT id FROM products WHERE id=?").get(input.product_id) as { id: number } | undefined;
@@ -629,7 +666,9 @@ export function upsertVariant(input: VariantInput): { id: number; sku: string; d
     const hasComparePrice = cols.includes("compare_at_price_paise");
 
     const existing = db.prepare("SELECT id, product_id FROM variants WHERE sku=?").get(input.sku) as { id: number; product_id: number } | undefined;
+    let variantId: number;
     if (existing) {
+      variantId = existing.id;
       if (hasPackaging && hasComparePrice) {
         db.prepare("UPDATE variants SET product_id=?, grams=?, price_paise=?, compare_at_price_paise=?, stock=?, packaging_format=?, servings=? WHERE id=?")
           .run(input.product_id, input.grams, input.price_paise, input.compare_at_price_paise ?? null, input.stock, input.packaging_format ?? "loose_leaf_pouch", input.servings ?? 50, existing.id);
@@ -640,26 +679,84 @@ export function upsertVariant(input: VariantInput): { id: number; sku: string; d
         db.prepare("UPDATE variants SET product_id=?, grams=?, price_paise=?, stock=? WHERE id=?")
           .run(input.product_id, input.grams, input.price_paise, input.stock, existing.id);
       }
-      return { id: existing.id, sku: input.sku, price_paise: input.price_paise, stock: input.stock };
-    }
-
-    if (hasPackaging && hasComparePrice) {
+    } else if (hasPackaging && hasComparePrice) {
       const info = db.prepare("INSERT INTO variants (product_id, sku, grams, price_paise, compare_at_price_paise, stock, packaging_format, servings) VALUES (?,?,?,?,?,?,?,?)")
         .run(input.product_id, input.sku, input.grams, input.price_paise, input.compare_at_price_paise ?? null, input.stock, input.packaging_format ?? "loose_leaf_pouch", input.servings ?? 50);
-      return { id: Number(info.lastInsertRowid), sku: input.sku, price_paise: input.price_paise, stock: input.stock };
-    }
-
-    if (hasPackaging) {
+      variantId = Number(info.lastInsertRowid);
+    } else if (hasPackaging) {
       const info = db.prepare("INSERT INTO variants (product_id, sku, grams, price_paise, stock, packaging_format, servings) VALUES (?,?,?,?,?,?,?)")
         .run(input.product_id, input.sku, input.grams, input.price_paise, input.stock, input.packaging_format ?? "loose_leaf_pouch", input.servings ?? 50);
-      return { id: Number(info.lastInsertRowid), sku: input.sku, price_paise: input.price_paise, stock: input.stock };
+      variantId = Number(info.lastInsertRowid);
+    } else {
+      const info = db.prepare("INSERT INTO variants (product_id, sku, grams, price_paise, stock) VALUES (?,?,?,?,?)")
+        .run(input.product_id, input.sku, input.grams, input.price_paise, input.stock);
+      variantId = Number(info.lastInsertRowid);
     }
 
-    const info = db.prepare("INSERT INTO variants (product_id, sku, grams, price_paise, stock) VALUES (?,?,?,?,?)")
-      .run(input.product_id, input.sku, input.grams, input.price_paise, input.stock);
-    return { id: Number(info.lastInsertRowid), sku: input.sku, price_paise: input.price_paise, stock: input.stock };
+    if (input.wholesale_slabs !== undefined) {
+      try {
+        db.prepare("DELETE FROM wholesale_slabs WHERE variant_id=?").run(variantId);
+        if (Array.isArray(input.wholesale_slabs) && input.wholesale_slabs.length > 0) {
+          const insertSlab = db.prepare(
+            "INSERT INTO wholesale_slabs (product_id, variant_id, min_qty, price_paise) VALUES (?, ?, ?, ?)"
+          );
+          for (const s of input.wholesale_slabs) {
+            const mq = Number(s.min_qty);
+            const pp = Number(s.price_paise);
+            if (mq > 0 && pp >= 0) {
+              insertSlab.run(input.product_id, variantId, Math.round(mq), Math.round(pp));
+            }
+          }
+        }
+      } catch {}
+    }
+
+    return { id: variantId, sku: input.sku, price_paise: input.price_paise, stock: input.stock };
   });
   return { ...body, deduped };
+}
+
+export function resolveWholesalePrice(
+  variant: Variant,
+  quantity: number
+): {
+  unitPricePaise: number;
+  slab?: WholesaleSlab;
+  savingsPaise: number;
+  percentDiscount: number;
+} {
+  const regularPrice = variant.price_paise;
+  if (!variant.wholesale_slabs || variant.wholesale_slabs.length === 0) {
+    return {
+      unitPricePaise: regularPrice,
+      savingsPaise: 0,
+      percentDiscount: 0,
+    };
+  }
+
+  const matchingSlabs = variant.wholesale_slabs
+    .filter((s) => quantity >= s.min_qty)
+    .sort((a, b) => b.min_qty - a.min_qty);
+
+  if (matchingSlabs.length === 0) {
+    return {
+      unitPricePaise: regularPrice,
+      savingsPaise: 0,
+      percentDiscount: 0,
+    };
+  }
+
+  const activeSlab = matchingSlabs[0];
+  const unitPrice = activeSlab.price_paise;
+  const savingsPerUnit = Math.max(0, regularPrice - unitPrice);
+  const percent = regularPrice > 0 ? Math.round((savingsPerUnit / regularPrice) * 100) : 0;
+
+  return {
+    unitPricePaise: unitPrice,
+    slab: activeSlab,
+    savingsPaise: savingsPerUnit * quantity,
+    percentDiscount: percent,
+  };
 }
 
 export function archiveProduct(idOrSlug: number | string): boolean {
@@ -713,6 +810,9 @@ export function deleteProduct(id: number, options?: { archiveIfReferenced?: bool
   }
 
   return db.transaction(() => {
+    try {
+      db.prepare("DELETE FROM wholesale_slabs WHERE product_id=?").run(id);
+    } catch {}
     db.prepare("DELETE FROM variants WHERE product_id=?").run(id);
     db.prepare("DELETE FROM product_images WHERE product_id=?").run(id);
     return db.prepare("DELETE FROM products WHERE id=?").run(id).changes > 0;
@@ -726,6 +826,9 @@ export function deleteProductBySlug(slug: string, options?: { archiveIfReference
 }
 
 export function deleteVariant(id: number): boolean {
+  try {
+    getDb().prepare("DELETE FROM wholesale_slabs WHERE variant_id=?").run(id);
+  } catch {}
   return getDb().prepare("DELETE FROM variants WHERE id=?").run(id).changes > 0;
 }
 
@@ -741,7 +844,24 @@ export function listAllVariants(productId?: number): Variant[] {
     ? "SELECT * FROM variants WHERE product_id = ? ORDER BY grams ASC, id ASC"
     : "SELECT * FROM variants ORDER BY product_id ASC, grams ASC, id ASC LIMIT 500";
   const rows = (productId != null ? db.prepare(query).all(productId) : db.prepare(query).all()) as RawVariantRow[];
-  return rows.map(mapVariantRow);
+  const variants = rows.map(mapVariantRow);
+  if (variants.length > 0) {
+    try {
+      const vIds = variants.map((v) => v.id);
+      const placeholders = vIds.map(() => "?").join(",");
+      const slabs = db.prepare(`SELECT * FROM wholesale_slabs WHERE variant_id IN (${placeholders}) ORDER BY min_qty ASC, price_paise ASC`).all(...vIds) as WholesaleSlab[];
+      const map = new Map<number, WholesaleSlab[]>();
+      for (const s of slabs) {
+        const list = map.get(s.variant_id) || [];
+        list.push(s);
+        map.set(s.variant_id, list);
+      }
+      for (const v of variants) {
+        v.wholesale_slabs = map.get(v.id) || [];
+      }
+    } catch {}
+  }
+  return variants;
 }
 
 export function getVariant(id: number): Variant | null {
@@ -752,7 +872,14 @@ export function getVariant(id: number): Variant | null {
     LEFT JOIN products p ON v.product_id = p.id
     WHERE v.id=?
   `).get(id) as RawVariantRow | undefined;
-  return row ? mapVariantRow(row) : null;
+  if (!row) return null;
+  const variant = mapVariantRow(row);
+  try {
+    variant.wholesale_slabs = getDb().prepare("SELECT * FROM wholesale_slabs WHERE variant_id=? ORDER BY min_qty ASC, price_paise ASC").all(id) as WholesaleSlab[];
+  } catch {
+    variant.wholesale_slabs = [];
+  }
+  return variant;
 }
 
 export function updateVariant(id: number, patch: Partial<VariantInput>): Variant | null {

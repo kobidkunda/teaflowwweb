@@ -20,6 +20,7 @@ function CartPageContent() {
   const formatINR = useDisplayMoney();
 
   const { items, subtotal, changeQuantity, remove, add, clear } = useCart();
+  const hasWholesale = items.some((x) => x.isWholesale || x.quantity > 20);
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
@@ -49,16 +50,16 @@ function CartPageContent() {
         if (data.success && Array.isArray(data.items) && data.items.length > 0) {
           clear();
           for (const item of data.items) {
+            const isWholesale = Boolean(item.isWholesale || (typeof item.quantity === "number" && item.quantity > 20));
             add({
               variantId: item.variantId,
               slug: item.slug,
               name: item.name,
               grams: item.grams,
               pricePaise: item.pricePaise,
+              quantity: item.quantity,
+              isWholesale,
             }, false);
-            if (item.quantity > 1) {
-              changeQuantity(item.variantId, item.quantity);
-            }
           }
 
           // Apply saved coupon code if provisioned
@@ -190,6 +191,10 @@ function CartPageContent() {
                       {line.name}
                     </Link>
                     <p className="cart-line-meta">
+                      {line.isWholesale ? (
+                        <span className="wholesale-badge" style={{ background: "#eaf3e9", color: "#2e683f", padding: "2px 6px", borderRadius: 4, fontWeight: 700, fontSize: 11, marginRight: 6 }}><StorefrontText id="copy_f007423ca322fd6d" fallback="🌿 Wholesale Slab" />
+                        </span>
+                      ) : null}
                       <span>{line.grams} <StorefrontText id="copy_f6d17905794e3132" fallback="g tin" /> </span>
                       <span className="bullet">·</span>
                       <span>{formatINR(line.pricePaise)} <StorefrontText id="copy_bec1687971e36be5" fallback="each" /> </span>
@@ -209,10 +214,13 @@ function CartPageContent() {
                     <button
                       type="button"
                       aria-label={"Decrease quantity of " + line.name}
-                      onClick={() => changeQuantity(line.trialId || line.variantId, line.quantity - 1)}
-                      disabled={line.quantity <= 1}
+                      onClick={() => {
+                        const min = line.isWholesale ? (line.wholesaleMoq || 50) : 1;
+                        changeQuantity(line.trialId || line.variantId, Math.max(min, line.quantity - (line.isWholesale ? 10 : 1)));
+                      }}
+                      disabled={line.isWholesale ? line.quantity <= (line.wholesaleMoq || 50) : line.quantity <= 1}
                     >
-                      −
+                      {line.isWholesale ? "−10" : "−"}
                     </button>
                     <span aria-live="polite" aria-label={"Quantity: " + line.quantity}>
                       {line.quantity}
@@ -220,10 +228,10 @@ function CartPageContent() {
                     <button
                       type="button"
                       aria-label={"Increase quantity of " + line.name}
-                      onClick={() => changeQuantity(line.trialId || line.variantId, line.quantity + 1)}
-                      disabled={line.quantity >= 20}
+                      onClick={() => changeQuantity(line.trialId || line.variantId, line.isWholesale ? Math.min(10000, line.quantity + 10) : line.quantity + 1)}
+                      disabled={line.quantity >= (line.isWholesale ? 10000 : 20)}
                     >
-                      +
+                      {line.isWholesale ? "+10" : "+"}
                     </button>
                   </div>
 
@@ -258,7 +266,9 @@ function CartPageContent() {
 
               <div className="summary-row">
                 <span> <StorefrontText id="copy_20b84eb74315a1f7" fallback="Estimated Shipping" /> </span>
-                <strong> <StorefrontText id="copy_626d4180aa68fc5a" fallback="Calculated at checkout" /> </strong>
+                <strong>
+                  {hasWholesale ? "Transport Charges Extra (To-Pay)" : <StorefrontText id="copy_626d4180aa68fc5a" fallback="Calculated at checkout" />}
+                </strong>
               </div>
 
               <div className="summary-row total-row">
@@ -273,6 +283,16 @@ function CartPageContent() {
                 </strong>
               </div>
             </div>
+
+            {hasWholesale && (
+              <div style={{ background: "#fff9ed", border: "1px solid #eedab2", borderRadius: 6, padding: "10px 12px", margin: "14px 0", fontSize: 12, color: "#7d5615", display: "flex", gap: 8, alignItems: "start" }}>
+                <span style={{ fontSize: 16 }}>🚛</span>
+                <div>
+                  <strong style={{ display: "block", color: "#684407", marginBottom: 2 }}><StorefrontText id="copy_cc3aa6a6436eec99" fallback="Commercial Transport Notice:" /></strong>
+                  <span><StorefrontText id="copy_dd0177d8b304cf26" fallback="Your bag contains bulk wholesale items. Dispatch is arranged via commercial surface road transport." /> <strong><StorefrontText id="copy_11d3d58caeef6691" fallback="Transport charges are extra" /></strong><StorefrontText id="copy_dcffd679c362f8fc" fallback="and payable directly to the transporter upon delivery (To-Pay Bilty)." /></span>
+                </div>
+              </div>
+            )}
 
             <div className="cart-coupon-wrapper">
               <CouponField

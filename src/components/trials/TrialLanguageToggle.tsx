@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import type { TrialLocale } from "@/lib/trials/i18n";
 import { Languages } from "lucide-react";
@@ -32,8 +33,7 @@ export function TrialLanguageToggle({
             ? "bg-[#ba8745] text-[#171311] shadow-xs"
             : "text-[#d0ba9f] hover:text-white"
         }`}
-      >
-        English
+      ><StorefrontText id="copy_ba118bf7fc9c1aed" fallback="English" />
       </button>
       <button
         type="button"

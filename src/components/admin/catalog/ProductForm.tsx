@@ -22,6 +22,12 @@ import {
   Package,
 } from "lucide-react";
 
+export interface WholesaleSlabFormData {
+  id?: number;
+  min_qty: number;
+  price_paise: number;
+}
+
 export interface VariantFormData {
   id?: number;
   sku: string;
@@ -31,6 +37,7 @@ export interface VariantFormData {
   compare_at_price_paise?: number | null;
   stock: number;
   servings?: number;
+  wholesale_slabs?: WholesaleSlabFormData[];
 }
 
 export interface ProductFormData {
@@ -45,6 +52,7 @@ export interface ProductFormData {
   verified_origin: string;
   ingredients: string;
   status: "draft" | "published" | "archived";
+  wholesale_moq?: number | null;
   estate: string;
   flush: string;
   harvest_date: string;
@@ -150,6 +158,7 @@ const DEFAULT_FORM_DATA: ProductFormData = {
   noindex: 0,
   pdf_url: null,
   pdf_title: null,
+  wholesale_moq: null,
   variants: [
     {
       sku: "TEA-100G",
@@ -612,6 +621,22 @@ export function ProductForm({ initialData, isEdit = false, productId }: ProductF
                 placeholder="e.g. 100% Pure Whole-Leaf Black Tea (Camellia Sinensis)"
                 style={{ padding: "8px 12px", border: "1px solid #c9c2b6", borderRadius: 4, fontSize: 14 }}
               />
+            </label>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13, fontWeight: 600 }}>
+              <span>Wholesale MOQ Override (Optional)</span>
+              <input
+                type="number"
+                min={1}
+                placeholder="Inherit store default (50)"
+                value={formData.wholesale_moq ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value ? Math.max(1, parseInt(e.target.value)) : null;
+                  handleChange("wholesale_moq", val);
+                }}
+                style={{ padding: "8px 12px", border: "1px solid #c9c2b6", borderRadius: 4, fontSize: 14 }}
+              />
+              <span style={{ fontSize: 11, color: "#63665e", fontWeight: 400 }}>Minimum wholesale units for this tea. Leave empty to use store default.</span>
             </label>
 
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 24 }}>
@@ -1084,9 +1109,10 @@ export function ProductForm({ initialData, isEdit = false, productId }: ProductF
               </thead>
               <tbody>
                 {formData.variants.map((v, idx) => (
-                  <tr key={v.sku + idx}>
-                    <td>
-                      <input
+                  <React.Fragment key={v.sku || idx}>
+                    <tr>
+                      <td>
+                        <input
                         type="text"
                         required
                         value={v.sku}
@@ -1163,7 +1189,118 @@ export function ProductForm({ initialData, isEdit = false, productId }: ProductF
                       </button>
                     </td>
                   </tr>
-                ))}
+                  <tr key={v.sku + idx + "-slabs"} style={{ background: "#fcfbf7" }}>
+                    <td colSpan={7} style={{ padding: "8px 12px 14px 12px", borderBottom: "2px solid #e2ddd3" }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <strong style={{ fontSize: 12, color: "#1b3022" }}>📦 Wholesale Quantity Slabs for {v.sku}:</strong>
+                          {(!v.wholesale_slabs || v.wholesale_slabs.length === 0) && (
+                            <span style={{ fontSize: 11, color: "#8a9484", fontStyle: "italic" }}>No wholesale slabs configured yet.</span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 11, color: "#5a6655" }}>Retail Unit: ₹{Math.round(v.price_paise / 100)}</span>
+                      </div>
+
+                      {v.wholesale_slabs && v.wholesale_slabs.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+                          {v.wholesale_slabs.map((slab, sIdx) => {
+                            const discountPct = v.price_paise > 0 ? Math.round(((v.price_paise - slab.price_paise) / v.price_paise) * 100) : 0;
+                            return (
+                              <div
+                                key={sIdx}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                  background: "#ffffff",
+                                  border: "1px solid #c9c2b6",
+                                  borderRadius: 4,
+                                  padding: "4px 8px",
+                                  fontSize: 12,
+                                }}
+                              >
+                                <span><strong>{slab.min_qty}+ pcs:</strong> ₹{Math.round(slab.price_paise / 100)}/pc</span>
+                                {discountPct > 0 && (
+                                  <span style={{ color: "#2e683f", fontWeight: 700, fontSize: 11 }}>({discountPct}% OFF)</span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = (v.wholesale_slabs || []).filter((_, i) => i !== sIdx);
+                                    handleUpdateVariant(idx, { wholesale_slabs: updated });
+                                  }}
+                                  style={{ background: "none", border: "none", color: "#8f2f2a", cursor: "pointer", padding: "0 2px", fontWeight: "bold" }}
+                                  title="Remove slab"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <input
+                          type="number"
+                          min={1}
+                          placeholder="Min Qty (e.g. 50)"
+                          id={`slab-qty-${idx}`}
+                          style={{ width: 130, padding: "4px 8px", fontSize: 12, border: "1px solid #c9c2b6", borderRadius: 4, background: "#ffffff" }}
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="Slab Price ₹ (e.g. 80)"
+                          id={`slab-price-${idx}`}
+                          style={{ width: 140, padding: "4px 8px", fontSize: 12, border: "1px solid #c9c2b6", borderRadius: 4, background: "#ffffff" }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const qtyInput = document.getElementById(`slab-qty-${idx}`) as HTMLInputElement | null;
+                            const priceInput = document.getElementById(`slab-price-${idx}`) as HTMLInputElement | null;
+                            const minQty = parseInt(qtyInput?.value || "0");
+                            const priceRupees = parseFloat(priceInput?.value || "0");
+                            if (!minQty || minQty < 1) {
+                              alert("Please enter a valid minimum quantity (at least 1).");
+                              return;
+                            }
+                            if (isNaN(priceRupees) || priceRupees < 0) {
+                              alert("Please enter a valid wholesale price.");
+                              return;
+                            }
+                            const pricePaise = Math.round(priceRupees * 100);
+                            const currentSlabs = [...(v.wholesale_slabs || [])];
+                            const existingIdx = currentSlabs.findIndex((s) => s.min_qty === minQty);
+                            if (existingIdx >= 0) {
+                              currentSlabs[existingIdx].price_paise = pricePaise;
+                            } else {
+                              currentSlabs.push({ min_qty: minQty, price_paise: pricePaise });
+                            }
+                            currentSlabs.sort((a, b) => a.min_qty - b.min_qty);
+                            handleUpdateVariant(idx, { wholesale_slabs: currentSlabs });
+                            if (qtyInput) qtyInput.value = "";
+                            if (priceInput) priceInput.value = "";
+                          }}
+                          style={{
+                            background: "#1b3022",
+                            color: "#ffffff",
+                            border: "none",
+                            borderRadius: 4,
+                            padding: "5px 12px",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          + Add Price Slab
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))}
               </tbody>
             </table>
           </div>

@@ -1,4 +1,5 @@
 "use client";
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { trackLead } from "@/lib/seo/tracking";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -339,7 +340,7 @@ export function StudioConfigurator({
     }
   }
 
-  if (!initialized && searchParams.get("project")) return <div style={{ padding: 32 }}><p role={storageError ? "alert" : "status"}>{storageError || "Loading your studio draft…"}</p>{storageError && <Link href="/account/private-label">Return to your workspace</Link>}</div>;
+  if (!initialized && searchParams.get("project")) return <div style={{ padding: 32 }}><p role={storageError ? "alert" : "status"}>{storageError || "Loading your studio draft…"}</p>{storageError && <Link href="/account/private-label"><StorefrontText id="copy_47d32925dd1fc80f" fallback="Return to your workspace" /></Link>}</div>;
 
   return (
     <div
@@ -383,12 +384,12 @@ export function StudioConfigurator({
       >
         {(actionError || storageError) && <div role="alert" style={{ padding: 16, marginBottom: 16, background: "#FFF4E5", color: "#713F12" }}>
           {actionError || storageError}
-          {needsLogin && <p><Link href="/login?redirect=%2Fprivate-label%2Fstudio">Sign in and return to your project</Link></p>}
+          {needsLogin && <p><Link href="/login?redirect=%2Fprivate-label%2Fstudio"><StorefrontText id="copy_3d8b2d9d56294f76" fallback="Sign in and return to your project" /></Link></p>}
         </div>}
         {(!teas.length || !packagingVariants.length || !printMethods.length) && <div role="status" style={{ padding: 20, marginBottom: 24, border: "1px solid #DDE4DC" }}>
-          <h2>Studio catalogue is being prepared</h2>
-          <p>Some tea, packaging or print options are not currently available. Our team can help you plan your project.</p>
-          <Link href="/private-label#sample-kit">Request a consultation</Link>
+          <h2><StorefrontText id="copy_6efa1162f4b325f8" fallback="Studio catalogue is being prepared" /></h2>
+          <p><StorefrontText id="copy_53b66f15063eabb1" fallback="Some tea, packaging or print options are not currently available. Our team can help you plan your project." /></p>
+          <Link href="/private-label#sample-kit"><StorefrontText id="copy_a2e571a10d9171fa" fallback="Request a consultation" /></Link>
         </div>}
         {/* Header Badges: Offline & Stale Status */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
@@ -402,8 +403,7 @@ export function StudioConfigurator({
                 letterSpacing: "0.12em",
                 textTransform: "uppercase",
               }}
-            >
-              TeaFloww Private Label Atelier
+            ><StorefrontText id="copy_e36edc955cf4fbd3" fallback="TeaFloww Private Label Atelier" />
             </span>
             <h1
               style={{
@@ -435,8 +435,7 @@ export function StudioConfigurator({
               </span>
             )}
             {isSaving && (
-              <span style={{ fontSize: "0.75rem", color: "#65746D" }}>
-                Auto-saving...
+              <span style={{ fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_a3364c2d8ebdea13" fallback="Auto-saving..." />
               </span>
             )}
           </div>
@@ -459,8 +458,7 @@ export function StudioConfigurator({
             }}
           >
             <span>
-              <strong>Notice:</strong> Your draft is older than 30 days. Current commodity tea rates
-              and packaging price book tiers have been refreshed.
+              <strong><StorefrontText id="copy_c77db0ab2c5d60f6" fallback="Notice:" /></strong><StorefrontText id="copy_a5d5bcd3bfe089dd" fallback="Your draft is older than 30 days. Current commodity tea rates and packaging price book tiers have been refreshed." />
             </span>
             <button
               type="button"
@@ -473,8 +471,7 @@ export function StudioConfigurator({
                 cursor: "pointer",
                 padding: "4px 8px",
               }}
-            >
-              Dismiss
+            ><StorefrontText id="copy_48845bff334a50a5" fallback="Dismiss" />
             </button>
           </div>
         )}
@@ -496,9 +493,8 @@ export function StudioConfigurator({
             }}
           >
             <span>
-              <strong>Draft Conflict:</strong> This project draft was modified in another tab or device.
-              Reload the saved version to continue. This replaces unsaved edits on this device.
-              {projectId && <p><Link href={`/private-label/studio?project=${encodeURIComponent(projectId)}`}>Reload saved version</Link></p>}
+              <strong><StorefrontText id="copy_e7d0323dea041f67" fallback="Draft Conflict:" /></strong><StorefrontText id="copy_ebeb8f0015550bea" fallback="This project draft was modified in another tab or device. Reload the saved version to continue. This replaces unsaved edits on this device." />
+              {projectId && <p><Link href={`/private-label/studio?project=${encodeURIComponent(projectId)}`}><StorefrontText id="copy_3c845b4917765b94" fallback="Reload saved version" /></Link></p>}
             </span>
             <button
               type="button"
@@ -510,8 +506,7 @@ export function StudioConfigurator({
                 fontWeight: 600,
                 cursor: "pointer",
               }}
-            >
-              Dismiss
+            ><StorefrontText id="copy_48845bff334a50a5" fallback="Dismiss" />
             </button>
           </div>
         )}

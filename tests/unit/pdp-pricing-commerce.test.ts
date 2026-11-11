@@ -417,10 +417,10 @@ describe("Suite 6: Server Cart Validation (cartItemSchema)", () => {
     expect(cartItemSchema.safeParse({ variantId: 1, quantity: -10 }).success).toBe(false);
   });
 
-  it("rejects quantities exceeding the maximum per-item limit of 10", () => {
-    expect(cartItemSchema.safeParse({ variantId: 1, quantity: 11 }).success).toBe(false);
-    expect(cartItemSchema.safeParse({ variantId: 1, quantity: 20 }).success).toBe(false);
-    expect(cartItemSchema.safeParse({ variantId: 1, quantity: 999 }).success).toBe(false);
+  it("rejects quantities exceeding the maximum per-item limit", () => {
+    expect(cartItemSchema.safeParse({ variantId: 1, quantity: 10001 }).success).toBe(false);
+    expect(cartItemSchema.safeParse({ variantId: 1, quantity: 20000 }).success).toBe(false);
+    expect(cartItemSchema.safeParse({ variantId: 1, quantity: 99999 }).success).toBe(false);
   });
 
   it("rejects non-integer quantities", () => {

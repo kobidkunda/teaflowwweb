@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,20 +28,20 @@ export function TrialCard({ trial }: TrialCardProps) {
             alt={illustrated ? "Illustrative presentation of a box and four tea pouches" : (trial.hero_image?.alt_text || trial.title)}
             fill sizes="(max-width: 600px) calc(100vw - 40px), (max-width: 760px) 46vw, (max-width: 1440px) 38vw, 520px" />
         ) : (
-          <span className={styles.missingImage}><ImageOff size={26} /><span>Kit image coming soon</span></span>
+          <span className={styles.missingImage}><ImageOff size={26} /><span><StorefrontText id="copy_c5b5f70429edcbb6" fallback="Kit image coming soon" /></span></span>
         )}
-        {illustrated && <span className={styles.imageDisclosure}>Illustrative packaging</span>}
+        {illustrated && <span className={styles.imageDisclosure}><StorefrontText id="copy_3dff9a48fc155528" fallback="Illustrative packaging" /></span>}
       </Link>
       <div className={styles.cardHeading}>
-        <p className={styles.kitLabel}>TeaFloww trials</p>
+        <p className={styles.kitLabel}><StorefrontText id="copy_079f21866289cb32" fallback="TeaFloww trials" /></p>
         <h3><Link href={href}>{trial.title}</Link></h3>
         <p className={styles.packDetails}>
           <span>{components.length} × {components[0]?.weight_g ?? 50}g</span>
-          <span>{trial.net_weight_g}g total</span>
+          <span>{trial.net_weight_g}<StorefrontText id="copy_bc19b7e323b34df6" fallback="g total" /></span>
         </p>
       </div>
       <div className={styles.contents}>
-        <p className={styles.contentsLabel}>Inside this kit</p>
+        <p className={styles.contentsLabel}><StorefrontText id="copy_2f2f70dceedcbdcd" fallback="Inside this kit" /></p>
         <ul aria-label={`Inside ${trial.title}`}>
           {components.map((component) => (
             <li key={component.slot_index}>
@@ -52,7 +53,7 @@ export function TrialCard({ trial }: TrialCardProps) {
       <div className={styles.cardBottom}>
         <div>
           <p className={styles.price}>{formatINR(trial.price_paise, true)}</p>
-          <p className={styles.delivery}>+ delivery at checkout</p>
+          <p className={styles.delivery}><StorefrontText id="copy_d8cd83725ce103e5" fallback="+ delivery at checkout" /></p>
         </div>
         <Link href={href} className={styles.kitButton} aria-label={`Explore ${trial.title}`}>
           {trial.in_stock ? "View kit" : "View details"}<ArrowRight size={17} aria-hidden="true" />

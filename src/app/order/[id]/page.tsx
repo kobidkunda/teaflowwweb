@@ -53,6 +53,14 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       {order.discount_paise ? <p> <StorefrontText id="copy_8d06326227308793" fallback="Coupon savings: −" /> {formatINR(order.discount_paise)}</p> : null}
       {order.tax_paise ? <p> <StorefrontText id="copy_5efcbea1ebc2e3f6" fallback="Includes GST:" /> {formatINR(order.tax_paise)}</p> : null}
       <p> <StorefrontText id="copy_321d8f967b7634ba" fallback="Demo total:" /> {formatINR(order.total_paise)} · {order.item_count} {order.item_count === 1 ? "item" : "items"}</p>
+      {order.shipping_method === "wholesale_transport_topay" ? (
+        <div style={{ background: "#f0f7f2", border: "1px solid #c2e0cb", borderRadius: 8, padding: "10px 14px", marginTop: 12 }}>
+          <strong style={{ color: "#1b3022", display: "block", fontSize: "13px", marginBottom: 3 }}><StorefrontText id="copy_e916c808ac54745d" fallback="📦 Commercial Surface Transport (To-Pay Bilty)" />
+          </strong>
+          <p style={{ margin: 0, fontSize: "12px", color: "#2d4a36", lineHeight: 1.5 }}><StorefrontText id="copy_df19a78e2d10b31e" fallback="This wholesale order will be dispatched via commercial transport cargo. Transporter LR/Bilty details will be shared upon dispatch. Transport freight charges are payable directly to the transporter upon delivery." />
+          </p>
+        </div>
+      ) : null}
       <p> <StorefrontText id="copy_22d435a3711855db" fallback="Created:" /> {order.created_at}</p>
     </div>
     {order.dispatch_status ? (
@@ -73,8 +81,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       </section>
     ) : null}
     <div className="button-row">
-      <Link href="/account/orders" className="button button-primary">
-        View in My Orders
+      <Link href="/account/orders" className="button button-primary"><StorefrontText id="copy_43d7e23b968c358e" fallback="View in My Orders" />
       </Link>
       <Link href="/shop" className="button button-outline"> <StorefrontText id="copy_ba12ecefbd575a06" fallback="Continue exploring" /> </Link>
       <Link href={`/track?id=${order.id}`} className="text-link"> <StorefrontText id="copy_496c012c7161db22" fallback="Track order ↗" /> </Link>

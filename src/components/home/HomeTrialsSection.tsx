@@ -1,3 +1,4 @@
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -33,11 +34,11 @@ export function HomeTrialsSection({ config, featuredTrial }: HomeTrialsSectionPr
         {content.image_caption && <figcaption>{content.image_caption}</figcaption>}
       </figure>}
       <div className={styles.action}>
-        <p className={styles.actionEyebrow}>The discovery starts here</p>
+        <p className={styles.actionEyebrow}><StorefrontText id="copy_c1abf2cadafd11db" fallback="The discovery starts here" /></p>
         {/* Explicit top fragment avoids retaining the invitation's deep scroll position. */}
         <Link href="/trials#top" className={styles.cta}>{content.cta.label}<ArrowRight size={23} aria-hidden="true" /></Link>
         {content.supporting_text && <p className={styles.supporting}>{content.supporting_text}</p>}
-        <p className={styles.pack}>{featuredTrial.components.length} × {featuredTrial.components[0]?.weight_g ?? 50}g pouches · {featuredTrial.net_weight_g}g per kit</p>
+        <p className={styles.pack}>{featuredTrial.components.length} × {featuredTrial.components[0]?.weight_g ?? 50}<StorefrontText id="copy_4f0fa1e01ae0f94e" fallback="g pouches ·" /> {featuredTrial.net_weight_g}<StorefrontText id="copy_a9299e652d13216a" fallback="g per kit" /></p>
       </div>
     </section>
   );

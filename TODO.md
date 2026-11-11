@@ -1,5 +1,142 @@
 # Prioritized Development Checklist
 
+## Wholesale Order Payment Flow: Advance PG & Direct Bank Transfer — 2026-11-12
+- [x] Database & Persistence:
+  - Created additive migration `scripts/migrations/054_wholesale_payment_settings.mjs` adding `wholesale_advance_percent`, `wholesale_bank_beneficiary`, `wholesale_bank_name`, `wholesale_bank_account_number`, `wholesale_bank_ifsc`, `wholesale_bank_branch`, and `wholesale_bank_upi_id` to `store_settings`.
+  - Added PostgreSQL migration parity in `scripts/apply-all-pg-migrations.mjs`.
+  - Migrated SQLite database `./data/store.sqlite`.
+- [x] Settings & Admin Management:
+  - Updated `src/lib/storeSettings.ts` and `src/lib/paymentSettings.ts` with getters, setters, and schemas for wholesale advance percent and company bank details.
+  - Added wholesale payment rules card to Store Settings (`src/components/admin/settings/StoreSettingsForm.tsx`).
+  - Added identical wholesale payment rules card to Payment Settings (`src/components/admin/settings/PaymentSettingsForm.tsx`).
+  - Updated API route `/api/commerce/payment-methods` exposing `wholesale` advance percent and bank details.
+- [x] Core Commerce & International Quotes Engine:
+  - Updated `quoteSchema` in `src/lib/international/models.ts` supporting `bank_transfer` payment method and quantities up to 10,000.
+  - Added `WholesaleQuoteMeta` interface capturing `advancePercent`, `advancePaise`, `balancePaise`, `advanceMinor`, `balanceMinor`, and company `bankDetails`.
+  - Updated `createQuote` in `src/lib/international/quotes.ts`: sets `shipping_method = "wholesale_transport_topay"` with ₹0 online freight, blocks Cash on Delivery (COD) with `CommerceError`, computes advance and balance amounts based on configured advance percentage $x\%$, and exports `wholesale` metadata.
+  - Updated `startPayment` in `src/lib/international/orders.ts`: if $x=0\%$ or `method === "bank_transfer"`, skips PG payment and registers order directly as `pending_bank_transfer`; if $x>0\%$, routes advance amount to PG with `payableAmountMinor = q.wholesale.advanceMinor`.
+  - Updated stock reservation logic in `reserve()` supporting wholesale slab prices against variants table without false availability mismatches.
+  - Updated webhook handlers (`applyPaymentEvent` & `applyYoupiPaymentEvent`) and order sync transitions to recognize partial advance captures as `advance_paid`.
+  - Blocked switching wholesale orders to COD in `switchOrderToCod()`.
+  - Created and exported `confirmBankTransferPayment(orderId, actor, utrReference, notes)` transitioning wholesale orders from `pending_bank_transfer` or `advance_paid` to `paid`.
+  - Unified admin order hydration in `src/lib/orders.ts` preserving `wholesale` metadata.
+- [x] Storefront Checkout & Confirmation:
+  - Live Checkout (`src/components/international/LiveCheckout.tsx`): handles automatic selection of Direct Bank Transfer when $x=0\%$, displays advance PG notice when $x>0\%$, disables COD with clear commercial transport reason, and bypasses payment gateway widget on 0% advance orders.
+  - Wholesale Bank Details Card (`src/components/international/WholesaleBankDetailsCard.tsx`): standalone accessible component displaying company bank details with 1-click clipboard copy and WhatsApp transfer confirmation link.
+  - Order Confirmation (`src/app/purchase/[id]/page.tsx`): recognizes `pending_bank_transfer` and `advance_paid` as confirmed orders, shows contextual hero cards, renders `WholesaleBankDetailsCard`, and breaks down Total Order Value, Advance Paid, Balance Due Before Dispatch, and To-Pay Bilty terms in the summary receipt.
+  - Purchase Status Banner (`src/components/international/PurchaseStatus.tsx`): clears cart, tracks purchase, displays wholesale-tailored status notices, and hides COD switch button for wholesale orders.
+- [x] Admin Order Dossier & Confirmation:
+  - Admin Order Dossier (`src/components/admin/sales/OrderDossierView.tsx`): added status badges for `pending_bank_transfer` and `advance_paid`, wholesale settlement card showing advance status and balance due before dispatch, and "Confirm Full A/C Transfer Received" action button.
+  - Admin Bank Transfer Confirmation Modal: prompts staff for optional bank UTR and notes, submitting to `POST /api/admin/orders/[id]/confirm-bank-transfer`.
+  - API endpoint `src/app/api/admin/orders/[id]/confirm-bank-transfer/route.ts` securely recording transitions in `payment_events`.
+- [x] Quality Assurance & Unit Tests:
+  - Created `tests/unit/wholesale-payment-settings.test.ts` (4/4 tests passing).
+  - Created `tests/unit/wholesale-checkout-flow.test.ts` (6/6 tests passing).
+  - Verified `tests/unit/wholesale-mode.test.ts` (14/14 tests passing).
+  - Verified `tests/unit/wholesale-bulk.test.ts` (7/7 tests passing).
+  - Verified `npm run typecheck` passes with zero errors across the entire codebase.
+
+- [x] Production Deployment & Verification — 2026-11-12:
+  - Created pre-deploy backup at `/www/backup/teafloww-deploy-20261112035421-wholesale-payment/` (`teafloww.dump`, `teafloww.sql`, `.next-backup`).
+  - Synced codebase to production server (`43.230.200.121:/www/wwwroot/teafloww.com/`).
+  - Applied PostgreSQL migration `054_wholesale_payment_settings` (`localhost:5433`).
+  - Successfully compiled Next.js 15.5.27 production build (`101/101` pages static/dynamic).
+  - Reloaded PM2 process `13` (`teafloww`) and saved process table.
+  - Verified live HTTPS health checks (`/api/ready`, `/api/health`, `/shop`, `/checkout`, `/wholesale`) — all returning HTTP 200 OK with zero errors.
+
+## Storefront Quick Variant Modal & Lowest-Price Auto-Select on Product Cards — 2026-11-12
+- [x] Cart Provider Architecture (`src/components/CartProvider.tsx`):
+  - Added `quickModalState`, `openQuickModal`, `closeQuickModal`, and `replaceCartItem` to `CartContext`.
+  - Implemented `replaceCartItem(oldVariantId, newLine)` ensuring atomic replacement of the auto-added lowest variant when a customer selects a different size, packaging format, or quantity.
+  - Clamps quantities correctly (max 20 for retail, max 10,000 for wholesale) and tracks GA4/CAPI cart deltas.
+- [x] Interactive Quick Variant Modal (`src/components/cart/QuickVariantModal.tsx`):
+  - Accessible modal dialog conforming to WCAG 2.2 AA (focus trapping, Esc key dismiss, `document.body.style.overflow` scroll locking, `aria-modal="true"`, screen reader announcements).
+  - Automatically pre-selects the lowest price/amount variant ("auto clicked lowest amt ones auto clicked") with an emerald "Default" badge.
+  - Interactive variant selection pills showing net weight, packaging format (Pouch, Tin, Pyramid Bags), unit price, compare-at discounts (% OFF), and active state highlight.
+  - Quantity stepper (`[-]` and `[+]`) with responsive bounds.
+  - Wholesale mode support: if the variant has wholesale slabs, enables toggling Wholesale Mode, showing MOQ, tiered volume discount rates, and surface transport bilty notices.
+  - Real-time subtotal and savings calculations.
+  - Dynamic primary button: adapts from "Proceed to Checkout →" to "Update Bag • {price}" whenever selection changes, with animated "Bag Updated ✓" confirmation.
+  - Secondary actions: "View Bag & Order Summary →" and "Keep Shopping".
+- [x] Product Listing Integrations:
+  - Shop Page (`src/components/shop/ShopProductCard.tsx`): clicking "Add to Cart" immediately adds the lowest variant and opens the Quick Variant Modal with the lowest variant pre-selected.
+  - Universal Quick Add (`src/components/AddToCart.tsx`): updated to automatically add the lowest variant and open the modal, powering Homepage `SignatureBlendsCarousel`, `ProductCard`, `CtcShowcase`, and `TasteTheCraftShowcase`.
+  - Prevented nested modal conflicts by setting `disableModal={true}` in `ShopQuickViewModal` and `ShopDossierView`.
+  - Registered in `src/components/StorefrontShell.tsx` for universal availability across all storefront routes.
+- [x] Styling & Animations (`src/app/globals.css`):
+  - Responsive paper card styling matching TeaFloww design language with backdrop blur, smooth entry animations, and `prefers-reduced-motion` compliance.
+- [x] Quality Assurance & Testing:
+  - Added test suite `tests/unit/quick-variant-modal.test.ts` (7/7 tests passing).
+  - Fixed localization whitespace regressions in `TrialCostCalculator`, `QuoteSummaryPanel`, `StudioMobileBottomBar`, `StudioCanvas2D`, and `Step4ArtworkUpload`.
+  - All 184 test files (2,987 unit/integration tests) passing across the codebase.
+  - Next.js production build (`npm run build`) compiled successfully with all 101 routes.
+
+## Wholesale Mode, Tiered Price Slabs & Floating Cookie Removal — 2026-11-11
+- [x] Database & Persistence:
+  - Created additive migration `052_wholesale_price_slabs.mjs` creating `wholesale_slabs` table, adding `wholesale_moq` to `products`, and seeding `wholesale_moq = '50'` in `store_settings`.
+  - Created additive migration `053_cart_items_wholesale_quantity.mjs` lifting the `cart_items` check constraint from `quantity <= 20` to `quantity <= 10000`.
+  - Updated `scripts/migrate-to-postgres.mjs` and `scripts/apply-all-pg-migrations.mjs` with full PostgreSQL schema parity.
+  - Successfully migrated local SQLite and production PostgreSQL on port `5433`.
+- [x] Product & Commerce Models:
+  - Extended `src/lib/productModels.ts` with `WholesaleSlab` and `WholesaleSlabInput` interfaces.
+  - Updated `src/lib/products.ts` with `getWholesaleSlabsByProductId`, `getWholesaleSlabsByVariantId`, `saveWholesaleSlabs`, and `calculateWholesaleUnitPaise`.
+  - Updated `src/lib/validation.ts` product schema with `wholesale_moq` and `wholesale_slabs` validations.
+  - Updated `src/lib/storeSettings.ts` to manage default store-wide `wholesale_moq`.
+- [x] Admin Management:
+  - Updated `src/components/admin/catalog/ProductForm.tsx` with Wholesale MOQ setting and per-variant tiered pricing slab table with real-time discount % computation.
+  - Updated `src/components/admin/settings/StoreSettingsForm.tsx` with Store-wide Wholesale MOQ field.
+- [x] PDP Interactive Wholesale Experience (`src/components/VariantPicker.tsx`):
+  - Dual-mode segmented switch: "Buy Retail" vs "Buy Wholesale".
+  - Interactive slab cards with minimum quantity threshold, unit price, and discount percentage callout.
+  - Live total savings banner showing total purchase savings compared to base retail price.
+  - Commercial surface transport banner: "Commercial Surface Transport: Wholesale parcels dispatch via transport carriers (V-Trans / Rivigo / Delhivery Freight). Transport freight charges extra (To-Pay bilty at destination delivery)."
+  - Quantity stepper with preset quick increments (+25, +50, +100).
+- [x] Shop & Catalog Pricing (`src/components/shop/ShopProductCard.tsx` and `src/components/ProductCard.tsx`):
+  - Display dual pricing: retail variant range (e.g. ₹100 – ₹8,999) + wholesale badge: "🌿 Wholesale from: ~~₹90~~ ₹80 / pc · Min 50 pcs".
+- [x] Cart & Checkout Flow:
+  - Wholesale slab badge in `/cart` items with quantity stepper allowing wholesale volumes.
+  - Transparent online freight charge: ₹0 online with prominent notice indicating commercial transport bilty freight is payable on delivery.
+  - Abandoned cart sync handles up to 10,000 units per line item.
+- [x] Floating Cookie Removal:
+  - Removed floating cookie settings widget and button from `AnalyticsScripts.tsx` and `globals.css`.
+  - Added clean footer link via `CookiePreferencesButton.tsx` in both Customer Care and bottom legal links.
+- [x] Production Deployment:
+  - Code synchronized to `/www/wwwroot/teafloww.com` on `43.230.200.121`.
+  - Applied migrations `052` and `053` on production PostgreSQL (`localhost:5433`).
+  - Native Next.js build completed with all 101 routes.
+  - PM2 process `13` (`teafloww`) reloaded and saved.
+  - Verified live HTTPS health (`/api/ready`, `/api/health`, `/shop`, `/cart`, PDP).
+
+## Similar Items & Tasting Sample Suggestions on PDP (`/tea/[slug]`) — 2026-11-11
+- [x] Recommendation Engine (`src/lib/recommendations.ts`):
+  - Created `getRecommendationsForProduct(product, options)` with parameterized database queries.
+  - Queries similar full-size orthodox and CTC teas matching category, origin, or tea style (excluding the current product).
+  - Queries published discovery sample kits (`trials` table) via `TrialService.listPublic()`, prioritizing kits matching the tea profile.
+  - For `everyday-strong-milk-chai`: returns similar milk chais (`Elaichi Milk Chai`, `Ginger Milk Chai`, `Balanced Masala Milk Chai`) and published discovery sample packs (`Teafloww Four-Tea Discovery Trial Pack | 4 × 25 g`, `TeaFloww Four-Tea Discovery Kit`).
+  - Prepares authenticated cart payloads for instant 1-click addition using genuine variant IDs (for products) and trial IDs (for sample kits).
+- [x] Storefront Component (`src/components/PDPRecommendations.tsx`):
+  - Completely redesigned into a responsive, accessible client component.
+  - Contextual header with category badge, title ("Similar Milk Chais & Discovery Samples"), and narrative subtitle.
+  - Filter switcher tabs: "All Suggestions", "Similar Teas", and "Tasting Samples" with live counters.
+  - Visual distinction for sample kits: special border highlight, emerald "SAMPLE PACK" badge, net weight callout ("4 × 25g"), and breakdown of individual teas inside.
+  - Functional Quick Add button with "Added ✓" visual confirmation, screen-reader announcement (`aria-live="polite"`), and genuine cart incrementation.
+  - Truthful information: strict adherence to `AGENTS.md` by removing fabricated star ratings/review counts.
+  - Fallback artisanal tea packaging SVG when image photography is missing.
+- [x] PDP Integration (`src/app/tea/[slug]/page.tsx`):
+  - Wired `getRecommendationsForProduct` into server component with non-null assertion.
+  - Rendered `PDPRecommendations` right below the interactive connoisseur tabs section.
+- [x] Testing & Verification:
+  - Added comprehensive test suite `tests/unit/recommendations.test.ts` (5 tests) covering domain service recommendations, component static rendering, filter tabs, cart payload verification, and full `ProductPage` server render for `/tea/everyday-strong-milk-chai`.
+  - Verified `npm run typecheck` passes with zero errors across the entire codebase.
+
+## Meta catalogue matching and product sets — 2026-11-11
+- [x] Fix generated GTM Purchase mapping to include catalogue SKU contents and quantities while preserving totals, consent and event ID; keep duplicate paused.
+- [x] Include explicit ecommerce items on the purchase alias and wait for server payment confirmation after browser payment retry.
+- [x] Create and read-back verify six in-stock Meta sets (retail, bulk and four flavours); retain All Products and campaign assignments.
+- [x] Verify exact equality of all 24 live feed IDs and Meta retailer IDs. Receipts: `docs/analytics/META_CATALOG_MATCHING_2026-11-11.json`.
+- [ ] Export the authenticated current GTM workspace, review/merge the generated Purchase correction, preview and publish; confirm receiving-side events and fresh match rate >=90%.
+- [ ] Explicitly requested website deployment remains separate. Local code and generated imports are not live fixes.
+
 ## Admin Online Payment Master Toggle & COD-Only Storefront Mode — 2026-11-11
 - [x] Database & Persistence:
   - Added additive migration `scripts/migrations/051_online_payment_toggle.mjs` initializing `online_payment_enabled = '1'` in `store_settings`.
@@ -157,6 +294,12 @@
   - Verified `npm run typecheck` passes with zero errors.
   - Verified all 68 Vitest SEO tests pass: `seo-metadata-schema.test.ts`, `international-seo-hreflang.test.ts`, `feeds-verification.test.ts`, `blog-routes.test.ts`.
 
+
+## Trial Optical Studio Initial Packaging Photo Display (/trials/4-x-25-gm) — 2026-11-11
+- [x] Initial Stage Resolution: Updated `src/components/trials/TrialPDPInteractiveView.tsx` to set `initialStage` to `"packaging"` for `/trials/4-x-25-gm` (and any kit lacking `milk_tea` photography on the primary pouch).
+- [x] Component Extensibility: Extended `TrialOpticalStudioProps` in `src/components/trials/TrialOpticalStudio.tsx` with optional `initialStage?: string`, defaulting to `initialStage || "milk_tea"`.
+- [x] Verified Zero Placeholder Regression: Prevents the initial state on `/trials/4-x-25-gm` from defaulting to `milk_tea` (which displayed "Photo pending verification" despite verified pouch packaging artwork being available).
+- [x] Automated Tests: Added tests 3.11 and 3.12 in `tests/unit/trials-storefront.test.ts` verifying `initialStage="packaging"` and initial packaging photo render for `/trials/4-x-25-gm`. All 235 trial unit tests and TypeScript check pass cleanly.
 
 ## Trial Optical Studio Multi-Pouch Imagery & Asset Resolution Fix — 2026-11-09
 - [x] Studio Tab Switching Bug Fixed: Removed rogue `useEffect` auto-resetting `selectedStage` to `packaging` whenever a stage lacked an asset in `src/components/trials/TrialOpticalStudio.tsx`. Preserved user selection across pouch tabs and display truthful "Photo pending verification" fallback without trapping.

@@ -29,6 +29,7 @@ export function guestToken(id: string, expires = Date.now() + 7 * 86400000) {
   return `${expires}.${createHmac("sha256", secret).update(`${id}.${expires}`).digest("hex")}`;
 }
 export function validGuestToken(id: string, token: string) {
+  if (!token || typeof token !== "string") return false;
   const [expires, sig] = token.split(".");
   const secret = process.env.ORDER_ACCESS_SECRET || process.env.SESSION_SECRET || "";
   return /^\d{13}$/.test(expires || "") && Number(expires) > Date.now() && verifySignature(`${id}.${expires}`, sig || "", secret);
@@ -36,7 +37,7 @@ export function validGuestToken(id: string, token: string) {
 export function releaseExpired() {
   const db = getDb();
   db.transaction(() => {
-    const rows = db.prepare("SELECT * FROM commerce_orders WHERE inventory_status='reserved' AND reserved_until < ? AND payment_status NOT IN ('paid','cod_due')").all(Date.now()) as LiveOrder[];
+    const rows = db.prepare("SELECT * FROM commerce_orders WHERE inventory_status='reserved' AND reserved_until < ? AND payment_status NOT IN ('paid','cod_due','pending_bank_transfer','advance_paid')").all(Date.now()) as LiveOrder[];
     for (const row of rows) {
       const claim = db.prepare("UPDATE commerce_orders SET inventory_status='released' WHERE id=? AND inventory_status='reserved'").run(row.id);
       if (!claim.changes) continue;
@@ -64,7 +65,14 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
     const id = randomUUID();
     for (const l of q.lines) {
       if (l.trialId) { reserveTrialLine(l); continue; }
-      const result = db.prepare(`UPDATE variants SET stock=stock-? WHERE id=? AND stock>=? AND price_paise=? AND EXISTS (SELECT 1 FROM products p WHERE p.id=variants.product_id AND ${enabledProductCondition("p")} AND p.status='published')`).run(l.quantity, l.variantId, l.quantity, l.pricePaise);
+      const priceCondition = l.isWholesale
+        ? `(price_paise=? OR EXISTS (SELECT 1 FROM wholesale_slabs ws WHERE ws.variant_id=variants.id AND ws.price_paise=?))`
+        : `price_paise=?`;
+      const params = l.isWholesale
+        ? [l.quantity, l.variantId, l.quantity, l.pricePaise, l.pricePaise]
+        : [l.quantity, l.variantId, l.quantity, l.pricePaise];
+
+      const result = db.prepare(`UPDATE variants SET stock=stock-? WHERE id=? AND stock>=? AND ${priceCondition} AND EXISTS (SELECT 1 FROM products p WHERE p.id=variants.product_id AND ${enabledProductCondition("p")} AND p.status='published')`).run(...params);
       if (result.changes !== 1) throw new CommerceError("A tea's price or availability changed. Please request a new quote.");
     }
     if (q.input.coupon) {
@@ -73,7 +81,8 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
       const held = db.prepare("UPDATE coupons SET used_count=used_count+1 WHERE code=? AND (max_uses IS NULL OR used_count<max_uses)").run(q.input.coupon.toUpperCase());
       if (!held.changes) throw new CommerceError("The offer is no longer available.");
     }
-    const status = q.input.method === "cod" ? "cod_due" : "creating";
+    const isWholesaleBankTransfer = Boolean(q.wholesale?.isWholesale && (q.wholesale.advancePercent === 0 || q.input.method === "bank_transfer"));
+    const status = q.input.method === "cod" ? "cod_due" : isWholesaleBankTransfer ? "pending_bank_transfer" : "creating";
     db.prepare("INSERT INTO commerce_orders (id,owner,idempotency_key,quote_id,document,payment_status,reserved_until,created_ms) VALUES (?,?,?,?,?,?,?,?)").run(id, owner, key, quoteId, JSON.stringify(q), status, q.expires, Date.now());
     for (const l of q.lines) {
       if (l.trialId) {
@@ -82,11 +91,11 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
     }
     if (q.input.coupon) db.prepare("INSERT INTO commerce_coupon_holds (order_id,code) VALUES (?,?)").run(id, q.input.coupon.toUpperCase());
     attachSubscriptionOrder(q, id);
-    if (status === "cod_due") {
+    if (status === "cod_due" || status === "pending_bank_transfer") {
       enqueue("email", { orderId: id, template: "commerce_order_received" }, `email:confirmation:${id}`);
       try {
         const srConfig = getActiveShiprocketCredentials();
-        if (!q.subscription && srConfig.orderCreationMode === "auto") {
+        if (status === "cod_due" && !q.subscription && srConfig.orderCreationMode === "auto") {
           enqueue("auto_dispatch", { orderId: id }, `dispatch:auto:${id}`);
           import("@/lib/shiprocket").then(({ prepareFullShiprocketShipment }) => {
             prepareFullShiprocketShipment(id, "system_auto").catch(() => {});
@@ -119,6 +128,26 @@ export async function startPayment(quoteId: string, owner: string, key: string) 
     };
   }
 
+  // CRITICAL: Wholesale Direct Bank Transfer (0% advance or bank_transfer) skips payment gateways!
+  if (
+    (q.wholesale?.isWholesale && (q.wholesale.advancePercent === 0 || q.input.method === "bank_transfer")) ||
+    row.payment_status === "pending_bank_transfer"
+  ) {
+    return {
+      orderId: row.id,
+      token: guestToken(row.id),
+      paymentStatus: "pending_bank_transfer" as const,
+      gateway: "bank_transfer" as const,
+      gatewayOrderId: null,
+      checkoutUrl: undefined,
+      keyId: "",
+      amount: 0,
+      currency: q.currency,
+      expires: q.expires,
+      preferredMethod: "bank_transfer" as const,
+    };
+  }
+
   const paySettings = getPaymentSettings();
   if (!paySettings.online_payment_enabled) {
     throw new CommerceError("Online payment is currently disabled. Please checkout using Cash on Delivery.");
@@ -132,6 +161,10 @@ export async function startPayment(quoteId: string, owner: string, key: string) 
   }
   const activeGateway = resolveActiveGateway(stream);
 
+  const payableAmountMinor = q.wholesale?.isWholesale && q.wholesale.advancePercent > 0
+    ? q.wholesale.advanceMinor
+    : q.totalMinor;
+
   if (created && row.payment_status === "creating") {
     if (activeGateway === "youpi") {
       try {
@@ -140,7 +173,7 @@ export async function startPayment(quoteId: string, owner: string, key: string) 
         const returnUrl = `${appBase}/purchase/${row.id}?token=${encodeURIComponent(guestToken(row.id))}`;
         const session = await client.createPaymentSession({
           orderId: row.id,
-          amount: (q.totalMinor / 100).toFixed(2),
+          amount: (payableAmountMinor / 100).toFixed(2),
           currency: q.currency,
           returnUrl,
           customer: {
@@ -153,6 +186,8 @@ export async function startPayment(quoteId: string, owner: string, key: string) 
             stream,
             preferred_method: q.input.method,
             discount_paise: String(q.paymentDiscountPaise || 0),
+            is_wholesale: q.wholesale?.isWholesale ? "1" : "0",
+            advance_percent: String(q.wholesale?.advancePercent || 0),
           },
           idempotencyKey: key,
         });
@@ -171,16 +206,18 @@ export async function startPayment(quoteId: string, owner: string, key: string) 
     } else {
       try {
         const remote = z.object({ id: z.string().regex(/^order_[a-zA-Z0-9]+$/), amount: z.number().int(), currency: z.string() }).parse(await razorpay("orders", {
-          amount: q.totalMinor,
+          amount: payableAmountMinor,
           currency: q.currency,
           receipt: row.id,
           notes: {
             teafloww_order: row.id,
             preferred_method: q.input.method,
             discount_paise: String(q.paymentDiscountPaise || 0),
+            is_wholesale: q.wholesale?.isWholesale ? "1" : "0",
+            advance_percent: String(q.wholesale?.advancePercent || 0),
           },
         }));
-        if (remote.amount !== q.totalMinor || remote.currency !== q.currency) throw new CommerceError("Payment amount verification failed.");
+        if (remote.amount !== payableAmountMinor || remote.currency !== q.currency) throw new CommerceError("Payment amount verification failed.");
         const updatedDoc = JSON.stringify({
           ...q,
           gateway: "razorpay",
@@ -221,10 +258,10 @@ export async function startPayment(quoteId: string, owner: string, key: string) 
     gatewayOrderId: current.gateway_order_id,
     checkoutUrl: youpiCheckoutUrl,
     keyId: isYoupi ? "" : (creds.keyId || process.env.RAZORPAY_KEY_ID || ""),
-    amount: q.totalMinor,
+    amount: payableAmountMinor,
     currency: q.currency,
     expires: q.expires,
-    preferredMethod: q.input.method,
+    preferredMethod: q.wholesale?.isWholesale ? "wholesale_advance" : q.input.method,
   };
 }
 export const paymentEventSchema = z.object({ event: z.enum(["payment.captured", "payment.failed", "refund.processed"]), payload: z.object({ payment: z.object({ entity: z.object({ id: z.string(), order_id: z.string(), amount: z.number().int(), currency: z.string(), status: z.string() }) }).optional(), refund: z.object({ entity: z.object({ id: z.string(), payment_id: z.string(), amount: z.number().int().positive(), status: z.literal("processed") }) }).optional() }) });
@@ -254,10 +291,18 @@ export function applyPaymentEvent(id: string, raw: unknown) {
       db.prepare("UPDATE commerce_orders SET refund_minor=refund_minor WHERE id=?").run(row.id);
       const currentRow = liveOrder(row.id);
       const q = JSON.parse(row.document) as Quote;
-      if (q.totalMinor !== p.amount || q.currency !== p.currency) throw new CommerceError("Payment amount does not match.");
+      const expectedAmount = (q.wholesale?.isWholesale && q.wholesale.advancePercent > 0)
+        ? q.wholesale.advanceMinor
+        : q.totalMinor;
+      if (expectedAmount !== p.amount || q.currency !== p.currency) throw new CommerceError("Payment amount does not match.");
       if (event.event === "payment.captured" && p.status === "captured") {
         if (!currentRow.gateway_payment_id) {
-          const status = currentRow.inventory_status === "released" || !currentSubscriptionPayment(q, row.id) ? "paid_exception" : "paid";
+          const isAdvance = Boolean(q.wholesale?.isWholesale && q.wholesale.advancePercent > 0 && q.wholesale.advanceMinor < q.totalMinor);
+          const status = currentRow.inventory_status === "released" || !currentSubscriptionPayment(q, row.id)
+            ? "paid_exception"
+            : isAdvance
+            ? "advance_paid"
+            : "paid";
           const result = db.prepare("UPDATE commerce_orders SET payment_status=?,gateway_payment_id=?,inventory_status=? WHERE id=? AND gateway_payment_id IS NULL").run(status, p.id, currentRow.inventory_status === "released" ? "released" : "allocated", row.id);
           if (result.changes) {
             subscriptionCaptured(q, row.id, status === "paid_exception");
@@ -301,15 +346,21 @@ export function applyYoupiPaymentEvent(deliveryId: string, event: YoupiWebhookEv
     const q = JSON.parse(row.document) as Quote;
 
     if (event.event === "SUCCESS") {
-      if (q.totalMinor !== event.amountPaise || q.currency !== event.currency) {
+      const expectedAmount = (q.wholesale?.isWholesale && q.wholesale.advancePercent > 0)
+        ? q.wholesale.advanceMinor
+        : q.totalMinor;
+      if (expectedAmount !== event.amountPaise || q.currency !== event.currency) {
         throw new CommerceError("Payment amount or currency mismatch.");
       }
 
       if (!currentRow.gateway_payment_id) {
+        const isAdvance = Boolean(q.wholesale?.isWholesale && q.wholesale.advancePercent > 0 && q.wholesale.advanceMinor < q.totalMinor);
         const status =
           currentRow.inventory_status === "released" ||
           !currentSubscriptionPayment(q, row.id)
             ? "paid_exception"
+            : isAdvance
+            ? "advance_paid"
             : "paid";
 
         const result = db
@@ -391,7 +442,7 @@ export function applyYoupiPaymentEvent(deliveryId: string, event: YoupiWebhookEv
 }
 
 export async function syncYoupiOrderStatus(order: LiveOrder): Promise<LiveOrder> {
-  if (["paid", "cod_due", "cod_remitted", "refunded"].includes(order.payment_status)) {
+  if (["paid", "cod_due", "cod_remitted", "refunded", "pending_bank_transfer", "advance_paid"].includes(order.payment_status)) {
     return order;
   }
   let orderDoc: Record<string, unknown> = {};
@@ -407,6 +458,9 @@ export async function syncYoupiOrderStatus(order: LiveOrder): Promise<LiveOrder>
     const session = await client.getPaymentSession(order.gateway_order_id);
     if (session.status === "SUCCESS") {
       const q = JSON.parse(order.document) as Quote;
+      const expectedAmount = (q.wholesale?.isWholesale && q.wholesale.advancePercent > 0)
+        ? q.wholesale.advanceMinor
+        : q.totalMinor;
       const amountPaise = session.amountPaise ? Number(session.amountPaise) : Math.round(Number(session.amount) * 100);
       applyYoupiPaymentEvent(`sync:${session.paymentId}`, {
         event: "SUCCESS",
@@ -415,7 +469,7 @@ export async function syncYoupiOrderStatus(order: LiveOrder): Promise<LiveOrder>
         paymentId: session.paymentId,
         orderId: order.id,
         amount: session.amount,
-        amountPaise: amountPaise || q.totalMinor,
+        amountPaise: amountPaise || expectedAmount,
         currency: session.currency || q.currency,
         method: session.method || "UPI",
       });
@@ -454,6 +508,9 @@ export function switchOrderToCod(id: string, token: string): LiveOrder {
     }
 
     const q = JSON.parse(order.document) as Quote;
+    if (q.wholesale?.isWholesale) {
+      throw new CommerceError("Cash on Delivery is unavailable for wholesale orders.");
+    }
     const country = q.input.address.country;
     if (country !== "IN") {
       throw new CommerceError("Cash on delivery is currently only available for domestic delivery in India.");
@@ -636,4 +693,39 @@ export async function refundOrder(id: string, amount: number, key: string) {
   if (!claim) return;
   const remote = z.object({ id: z.string() }).parse(await razorpay(`payments/${encodeURIComponent(row.gateway_payment_id)}/refund`, { amount, receipt: key, notes: { order_id: id } }));
   db.prepare("UPDATE commerce_events SET document=? WHERE id=?").run(JSON.stringify({ orderId: id, amount, state: "pending", refundId: remote.id }), `refund-request:${key}`);
+}
+
+export function confirmBankTransferPayment(orderId: string, actor = "admin", utrReference?: string, notes?: string): LiveOrder {
+  const db = getDb();
+  return db.transaction(() => {
+    const row = liveOrder(orderId);
+    if (!["pending_bank_transfer", "advance_paid", "payment_pending"].includes(row.payment_status)) {
+      throw new CommerceError(`Order payment cannot be confirmed from status: ${row.payment_status}`);
+    }
+    db.prepare("UPDATE commerce_orders SET payment_status='paid' WHERE id=?").run(orderId);
+    db.prepare("INSERT INTO commerce_events (id, kind, document, created_ms) VALUES (?, ?, ?, ?)").run(
+      `bank_transfer_confirmed:${orderId}:${Date.now()}`,
+      "bank_transfer_confirmed",
+      JSON.stringify({
+        orderId,
+        actor,
+        utrReference: utrReference || null,
+        notes: notes || null,
+        confirmedAt: new Date().toISOString(),
+      }),
+      Date.now()
+    );
+    try {
+      db.prepare("UPDATE orders SET payment_status='paid', status='paid' WHERE id=?").run(orderId);
+      db.prepare("INSERT INTO payment_events (order_id, from_status, to_status, actor) VALUES (?, ?, ?, ?)").run(
+        orderId,
+        row.payment_status,
+        "paid",
+        actor
+      );
+    } catch {}
+
+    enqueue("email", { orderId, template: "commerce_order_received" }, `email:bank_transfer_confirmed:${orderId}`);
+    return liveOrder(orderId);
+  })();
 }

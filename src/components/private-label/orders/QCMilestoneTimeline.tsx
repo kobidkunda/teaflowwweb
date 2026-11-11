@@ -1,4 +1,5 @@
 "use client";
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 import { CheckCircle2, Clock, AlertCircle, XCircle } from "lucide-react";
 
@@ -59,15 +60,13 @@ export function QCMilestoneTimeline({
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 mb-6 border-b border-[#E8E4DC] gap-2">
         <div>
-          <h2 id="qc-timeline-heading" className="text-lg font-serif font-bold text-[#143C31]">
-            Siliguri Cleanroom Quality Assurance (7 Stages)
+          <h2 id="qc-timeline-heading" className="text-lg font-serif font-bold text-[#143C31]"><StorefrontText id="copy_0fd0e28481b1a982" fallback="Siliguri Cleanroom Quality Assurance (7 Stages)" />
           </h2>
-          <p className="text-xs text-[#65746D]">
-            Rigorous FSSAI batch verification from raw leaf lot arrival to final export shrink-wrap.
+          <p className="text-xs text-[#65746D]"><StorefrontText id="copy_921a5cb8a2ea9613" fallback="Rigorous FSSAI batch verification from raw leaf lot arrival to final export shrink-wrap." />
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium uppercase tracking-wider text-[#65746D]">Job Status:</span>
+          <span className="text-xs font-medium uppercase tracking-wider text-[#65746D]"><StorefrontText id="copy_e8955fecc0f64047" fallback="Job Status:" /></span>
           <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-[#E4ECE7] text-[#143C31] border border-[#C5D6CC]">
             {jobStatus.replace(/_/g, " ")}
           </span>
@@ -128,8 +127,7 @@ export function QCMilestoneTimeline({
 
               {/* Stage Details */}
               <div className="flex flex-col md:items-center w-full">
-                <span className="text-[10px] font-mono uppercase text-[#65746D]">
-                  Stage {idx + 1}
+                <span className="text-[10px] font-mono uppercase text-[#65746D]"><StorefrontText id="copy_de838855e4a6e04e" fallback="Stage" /> {idx + 1}
                 </span>
                 <span className="text-xs font-semibold text-[#143C31] mt-0.5 line-clamp-2 md:max-w-[120px]">
                   {def.name}
@@ -148,13 +146,12 @@ export function QCMilestoneTimeline({
                   </p>
                 )}
                 {m?.cupping_score !== undefined && m.cupping_score !== null && (
-                  <p className="text-[10px] font-medium text-[#143C31] mt-0.5">
-                    Score: {m.cupping_score} / 100
+                  <p className="text-[10px] font-medium text-[#143C31] mt-0.5"><StorefrontText id="copy_9689a814f3584ec9" fallback="Score:" /> {m.cupping_score} / 100
                   </p>
                 )}
                 {m?.recorded_weight_g !== undefined && m.recorded_weight_g !== null && (
                   <p className="text-[10px] text-[#65746D] mt-0.5">
-                    {m.recorded_weight_g}g / {m.target_weight_g || 250}g
+                    {m.recorded_weight_g}<StorefrontText id="copy_f654f17957ad11c2" fallback="g /" /> {m.target_weight_g || 250}g
                   </p>
                 )}
                 {(m?.notes || m?.evidence_notes) && (

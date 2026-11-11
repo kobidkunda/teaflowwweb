@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { SubscribeLink } from "@/components/subscriptions/SubscribeLink";
 import React, { useState } from "react";
 import Image from "next/image";
@@ -80,16 +81,13 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
   return (
     <div className="buybox border border-[#d59e5b5e] rounded-[23px] bg-gradient-to-br from-[#231a16] to-[#16120f] p-6 sm:p-7 shadow-[0_30px_72px_rgba(0,0,0,0.24)] text-[#f7f2eb]">
       <div className="flex items-center justify-between gap-2 mb-3">
-        <span className="inline-block bg-[#33261e] text-[#edd09e] border border-[#704d30] rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide">
-          DISCOVERY KIT · 200G
+        <span className="inline-block bg-[#33261e] text-[#edd09e] border border-[#704d30] rounded-full px-3 py-1 text-[10px] font-extrabold uppercase tracking-wide"><StorefrontText id="copy_7be3740dc771437a" fallback="DISCOVERY KIT · 200G" />
         </span>
         {trial.in_stock ? (
-          <span className="bg-[#1b4332] text-[#86efac] border border-[#2d6a4f] rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-            In Stock
+          <span className="bg-[#1b4332] text-[#86efac] border border-[#2d6a4f] rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"><StorefrontText id="copy_64254d0b795cfb28" fallback="In Stock" />
           </span>
         ) : (
-          <span className="bg-[#4a1515] text-[#fca5a5] border border-[#7f1d1d] rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-            Sold Out
+          <span className="bg-[#4a1515] text-[#fca5a5] border border-[#7f1d1d] rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider"><StorefrontText id="copy_5b92d3d791c59ae1" fallback="Sold Out" />
           </span>
         )}
       </div>
@@ -126,13 +124,12 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
             {comparePrice}
           </span>
         )}
-        <span className="text-[11px] text-[#bda996]">+ delivery at checkout</span>
+        <span className="text-[11px] text-[#bda996]"><StorefrontText id="copy_d8cd83725ce103e5" fallback="+ delivery at checkout" /></span>
       </div>
 
       {/* 4x50g Inclusions List */}
       <div className="inclusions my-5 bg-[#130f0d] border border-[#ffffff10] rounded-xl p-4">
-        <div className="text-[10px] uppercase font-bold tracking-[0.16em] text-[#d59e5b] mb-2 pb-1 border-b border-[#ffffff10]">
-          PACKAGE INCLUSIONS (200G TOTAL)
+        <div className="text-[10px] uppercase font-bold tracking-[0.16em] text-[#d59e5b] mb-2 pb-1 border-b border-[#ffffff10]"><StorefrontText id="copy_1ba7ada3d8d46eed" fallback="PACKAGE INCLUSIONS (200G TOTAL)" />
         </div>
         {(trial.components || []).map((c, idx) => (
           <div
@@ -140,7 +137,7 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
             className="flex justify-between items-center py-2 border-b border-[#ffffff10] text-[12px] last:border-none"
           >
             <strong className="text-white font-normal">{c.name}</strong>
-            <span className="text-[#ccb59e] font-mono">{c.weight_g}g × 1</span>
+            <span className="text-[#ccb59e] font-mono">{c.weight_g}<StorefrontText id="copy_47a1b260ff58e535" fallback="g × 1" /></span>
           </div>
         ))}
       </div>
@@ -173,7 +170,7 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
             className="min-h-[44px] px-4 py-2.5 rounded-xl border border-[#e5b869] text-[#e5b869] bg-[#ffffff05] hover:bg-[#e5b86915] font-bold text-[12px] transition-all flex items-center gap-1.5"
           >
             {pincodeStatus === "loading" && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            <span>Check</span>
+            <span><StorefrontText id="copy_9d60841e0a7891df" fallback="Check" /></span>
           </button>
         </div>
 
@@ -208,16 +205,15 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
         }`}
       >
         {added ? (
-          <span>Added to Cart ✓</span>
+          <span><StorefrontText id="copy_2a1082a97808ed6d" fallback="Added to Cart ✓" /></span>
         ) : trial.in_stock ? (
-          <span>Order Discovery Kit ({priceRupees}) ↗</span>
+          <span><StorefrontText id="copy_f75bc46676cadf41" fallback="Order Discovery Kit (" />{priceRupees}) ↗</span>
         ) : (
-          <span>Sold Out</span>
+          <span><StorefrontText id="copy_5b92d3d791c59ae1" fallback="Sold Out" /></span>
         )}
       </button>
 
-      <div className="mt-3 text-center text-[#bea88e] text-[11px]">
-        Includes 4 nitrogen-flushed 50g pouches with estate invoice traceability.
+      <div className="mt-3 text-center text-[#bea88e] text-[11px]"><StorefrontText id="copy_3ceb8432ffe7ae87" fallback="Includes 4 nitrogen-flushed 50g pouches with estate invoice traceability." />
       </div>
       {trial.in_stock && <SubscribeLink trialId={trial.id} />}
     </div>

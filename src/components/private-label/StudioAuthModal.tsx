@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useEffect, useRef } from "react";
 import { X, Lock, CheckCircle2, AlertCircle, Eye, EyeOff, MessageCircle } from "lucide-react";
 import { formatWhatsAppDigits } from "@/lib/private-label/whatsapp";
@@ -266,7 +267,7 @@ export function StudioAuthModal({
                 color: "#D7B474",
               }}
             >
-              <Lock size={12} /> Account Required
+              <Lock size={12} /><StorefrontText id="copy_f8fdbf0fc119a6a5" fallback="Account Required" />
             </span>
           </div>
 
@@ -289,8 +290,7 @@ export function StudioAuthModal({
               color: "#DDE4DC",
               lineHeight: 1.45,
             }}
-          >
-            Your recipe and packaging selections are saved on this device. Sign in to link your project and issue your quotation reference.
+          ><StorefrontText id="copy_cb68712fffbe48d9" fallback="Your recipe and packaging selections are saved on this device. Sign in to link your project and issue your quotation reference." />
           </p>
         </div>
 
@@ -322,8 +322,7 @@ export function StudioAuthModal({
               borderBottom: tab === "login" ? "2px solid #143C31" : "2px solid transparent",
               cursor: "pointer",
             }}
-          >
-            Sign In
+          ><StorefrontText id="copy_bcc0bcc9140b0c97" fallback="Sign In" />
           </button>
           <button
             role="tab"
@@ -343,8 +342,7 @@ export function StudioAuthModal({
               borderBottom: tab === "register" ? "2px solid #143C31" : "2px solid transparent",
               cursor: "pointer",
             }}
-          >
-            Create Free Account
+          ><StorefrontText id="copy_a1e1b0fc3641d686" fallback="Create Free Account" />
           </button>
         </div>
 
@@ -378,8 +376,7 @@ export function StudioAuthModal({
                 <label
                   htmlFor="auth-identifier"
                   style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#143C31", marginBottom: "6px" }}
-                >
-                  Email Address or Phone
+                ><StorefrontText id="copy_9db2abf693044ed2" fallback="Email Address or Phone" />
                 </label>
                 <input
                   id="auth-identifier"
@@ -407,15 +404,13 @@ export function StudioAuthModal({
                   <label
                     htmlFor="auth-password"
                     style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#143C31" }}
-                  >
-                    Password
+                  ><StorefrontText id="copy_e7cf3ef4f17c3999" fallback="Password" />
                   </label>
                   <a
                     href="/login"
                     target="_blank"
                     style={{ fontSize: "0.75rem", color: "#143C31", textDecoration: "underline" }}
-                  >
-                    Forgot password?
+                  ><StorefrontText id="copy_30c1d8d3e9128893" fallback="Forgot password?" />
                   </a>
                 </div>
                 <div style={{ position: "relative" }}>
@@ -486,8 +481,7 @@ export function StudioAuthModal({
                 <label
                   htmlFor="reg-name"
                   style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#143C31", marginBottom: "4px" }}
-                >
-                  Full Name
+                ><StorefrontText id="copy_8e00cdf71fa7cc76" fallback="Full Name" />
                 </label>
                 <input
                   id="reg-name"
@@ -513,8 +507,7 @@ export function StudioAuthModal({
                 <label
                   htmlFor="reg-email"
                   style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#143C31", marginBottom: "4px" }}
-                >
-                  Email Address (for Quotation Delivery)
+                ><StorefrontText id="copy_4b7605707e64ad37" fallback="Email Address (for Quotation Delivery)" />
                 </label>
                 <input
                   id="reg-email"
@@ -540,8 +533,7 @@ export function StudioAuthModal({
                 <label
                   htmlFor="reg-phone"
                   style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#143C31", marginBottom: "4px" }}
-                >
-                  Phone / WhatsApp (Optional)
+                ><StorefrontText id="copy_c4c66c67dfb189d3" fallback="Phone / WhatsApp (Optional)" />
                 </label>
                 <input
                   id="reg-phone"
@@ -566,8 +558,7 @@ export function StudioAuthModal({
                 <label
                   htmlFor="reg-password"
                   style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#143C31", marginBottom: "4px" }}
-                >
-                  Choose Password (min 6 characters)
+                ><StorefrontText id="copy_cc619a53a8d6c121" fallback="Choose Password (min 6 characters)" />
                 </label>
                 <input
                   id="reg-password"
@@ -621,8 +612,7 @@ export function StudioAuthModal({
               textAlign: "center",
             }}
           >
-            <p style={{ margin: "0 0 10px", fontSize: "0.75rem", color: "#65746D" }}>
-              Prefer to consult with our tea desk before creating an account?
+            <p style={{ margin: "0 0 10px", fontSize: "0.75rem", color: "#65746D" }}><StorefrontText id="copy_f82b22d963bbb2ac" fallback="Prefer to consult with our tea desk before creating an account?" />
             </p>
             <a
               href={whatsappUrl}
@@ -639,7 +629,7 @@ export function StudioAuthModal({
               }}
             >
               <MessageCircle size={16} fill="#25D366" color="#25D366" />
-              <span>Chat directly on WhatsApp ({whatsappNumber})</span>
+              <span><StorefrontText id="copy_e784d9d49932cec3" fallback="Chat directly on WhatsApp (" />{whatsappNumber})</span>
             </a>
           </div>
         </div>

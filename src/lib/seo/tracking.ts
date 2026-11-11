@@ -192,6 +192,7 @@ export function trackPurchase(
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
       event: "teafloww_purchase",
+      ecommerce: { currency, value, items: cleanItems(items) },
       tf_purchase_value: Number(totalAmount.toFixed(2)),
       tf_purchase_currency: currency,
       tf_purchase_order_id: String(transactionId),

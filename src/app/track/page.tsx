@@ -124,8 +124,7 @@ function TrackContent() {
       {/* 1-Click Track for Logged-In Customers */}
       {customerOrders.length > 0 && !order && (
         <div className="mb-6 p-5 rounded-2xl border border-[#d6dfd3] bg-[#f4f7f2]">
-          <p className="text-xs font-bold text-[#23483a] uppercase tracking-wider mb-2">
-            Your Active Shipments
+          <p className="text-xs font-bold text-[#23483a] uppercase tracking-wider mb-2"><StorefrontText id="copy_e846c59fa87f2b63" fallback="Your Active Shipments" />
           </p>
           <div className="flex flex-wrap gap-2.5">
             {customerOrders.slice(0, 3).map((co) => (
@@ -139,7 +138,7 @@ function TrackContent() {
                 className="px-3.5 py-2 rounded-xl bg-white border border-[#c4d6c4] text-xs font-semibold text-[#171713] hover:border-[#23483a] transition-all flex items-center gap-2 shadow-sm"
               >
                 <Package size={14} className="text-[#23483a]" />
-                <span>Order #{co.reference}</span>
+                <span><StorefrontText id="copy_a458d68f7f27f131" fallback="Order #" />{co.reference}</span>
                 <span className="text-[10px] uppercase font-bold text-[#b39156]">
                   {co.dispatch_status}
                 </span>
@@ -206,8 +205,7 @@ function TrackContent() {
               <h2 className="text-2xl font-serif font-bold text-[#171713] mt-0.5">
                 #{order.id.slice(0, 8).toUpperCase()}
               </h2>
-              <p className="text-xs text-[#5c6659] mt-0.5">
-                Recorded: {order.created_at}
+              <p className="text-xs text-[#5c6659] mt-0.5"><StorefrontText id="copy_7426785d230724d4" fallback="Recorded:" /> {order.created_at}
               </p>
             </div>
 
@@ -243,8 +241,7 @@ function TrackContent() {
           {/* Stepper Timeline */}
           {!isCancelled && (
             <div className="py-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#737067] mb-4">
-                Origin Transit Milestones
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#737067] mb-4"><StorefrontText id="copy_86ee732f1ee6ccc8" fallback="Origin Transit Milestones" />
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {DISPATCH_STEPS.map((s, idx) => {
@@ -277,23 +274,23 @@ function TrackContent() {
           {/* Details breakdown */}
           <div className="p-4 rounded-xl bg-[#fbf9f4] border border-[#eee8dc] space-y-2 text-xs text-[#5c6659]">
             <div className="flex justify-between">
-              <span>Items in package:</span>
-              <strong className="text-[#171713]">{order.item_count} items</strong>
+              <span><StorefrontText id="copy_bc3604d0aa63b2a4" fallback="Items in package:" /></span>
+              <strong className="text-[#171713]">{order.item_count}<StorefrontText id="copy_5f3c4f8580d392e4" fallback="items" /></strong>
             </div>
             {order.discount_paise ? (
               <div className="flex justify-between text-[#15803d]">
-                <span>Offer savings:</span>
+                <span><StorefrontText id="copy_48e8af3eb66604c3" fallback="Offer savings:" /></span>
                 <span className="font-semibold">−{formatINR(order.discount_paise)}</span>
               </div>
             ) : null}
             {order.tax_paise ? (
               <div className="flex justify-between text-[#737067] text-[11px]">
-                <span>Includes 5% GST:</span>
+                <span><StorefrontText id="copy_4c330e16dd031f48" fallback="Includes 5% GST:" /></span>
                 <span>{formatINR(order.tax_paise)}</span>
               </div>
             ) : null}
             <div className="flex justify-between text-sm font-bold text-[#171713] pt-2 border-t border-[#eee8dc]">
-              <span>Total Value:</span>
+              <span><StorefrontText id="copy_b9d2f60f0b4d3140" fallback="Total Value:" /></span>
               <span className="text-[#23483a]">{formatINR(order.total_paise)}</span>
             </div>
           </div>
@@ -304,7 +301,7 @@ function TrackContent() {
               href={`/account/orders/${order.id}`}
               className="px-4 py-2 rounded-lg bg-[#23483a] text-white text-xs font-bold hover:bg-[#1a362b] transition-colors inline-flex items-center gap-1.5"
             >
-              <span>Full Order Dossier in Account</span>
+              <span><StorefrontText id="copy_6b8522f4efe0d0b9" fallback="Full Order Dossier in Account" /></span>
               <ChevronRight size={14} />
             </Link>
 
@@ -320,7 +317,7 @@ function TrackContent() {
 
 export default function TrackPage() {
   return (
-    <Suspense fallback={<div className="container page-shell py-12 text-center text-xs text-[#5c6659]">Loading tracker…</div>}>
+    <Suspense fallback={<div className="container page-shell py-12 text-center text-xs text-[#5c6659]"><StorefrontText id="copy_2486dbd63b91815e" fallback="Loading tracker…" /></div>}>
       <TrackContent />
     </Suspense>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React from "react";
 
 export interface StudioMobileBottomBarProps {
@@ -41,8 +42,7 @@ export function StudioMobileBottomBar({
       }}
     >
       <div>
-        <div style={{ fontSize: "0.75rem", color: "#65746D", fontWeight: 600 }}>
-          STEP {currentStep} OF 5
+        <div style={{ fontSize: "0.75rem", color: "#65746D", fontWeight: 600 }}><StorefrontText id="copy_78e75a25d80993a5" fallback="STEP" /> {currentStep} <StorefrontText id="copy_fc074db975e783bc" fallback="OF 5" />
         </div>
         <div style={{ fontSize: "1.125rem", fontWeight: "bold", color: "#143C31" }}>
           {formattedUnitPrice !== "—" ? `${formattedUnitPrice} / pack` : "Custom Estimate"}

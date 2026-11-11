@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -121,8 +122,7 @@ function LoginFormInner() {
           className={`flex-1 pb-3 text-xs sm:text-sm font-semibold transition-all relative ${
             mode === "login" ? "text-[#23483a]" : "text-[#757065] hover:text-[#171713]"
           }`}
-        >
-          Sign In
+        ><StorefrontText id="copy_bcc0bcc9140b0c97" fallback="Sign In" />
           {mode === "login" && (
             <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#23483a]" />
           )}
@@ -138,8 +138,7 @@ function LoginFormInner() {
           className={`flex-1 pb-3 text-xs sm:text-sm font-semibold transition-all relative ${
             mode === "register" ? "text-[#23483a]" : "text-[#757065] hover:text-[#171713]"
           }`}
-        >
-          Create Account
+        ><StorefrontText id="copy_0dffe234b44793b6" fallback="Create Account" />
           {mode === "register" && (
             <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#23483a]" />
           )}
@@ -148,14 +147,14 @@ function LoginFormInner() {
 
       {/* Demo Credentials Quick Fill Bar */}
       <div className="mb-5 flex items-center justify-between p-2.5 rounded-lg bg-[#f6f1e7] border border-[#ded7cb] text-xs">
-        <span className="text-[#5c6659]">Tasting Room Demo?</span>
+        <span className="text-[#5c6659]"><StorefrontText id="copy_e694cf8b748ad69e" fallback="Tasting Room Demo?" /></span>
         <button
           type="button"
           onClick={handleFillDemo}
           className="font-bold text-[#23483a] hover:underline flex items-center gap-1 cursor-pointer"
         >
           <Sparkles size={13} className="text-[#b39156]" />
-          <span>Auto-fill Demo Details</span>
+          <span><StorefrontText id="copy_5ec97dd79327f9fe" fallback="Auto-fill Demo Details" /></span>
         </button>
       </div>
 
@@ -166,7 +165,7 @@ function LoginFormInner() {
           aria-live="polite"
           className="mb-5 p-3.5 rounded-xl border border-[#fca5a5] bg-[#fef2f2] text-xs text-[#991b1b] flex items-start gap-2.5"
         >
-          <span className="font-bold flex-none">Notice:</span>
+          <span className="font-bold flex-none"><StorefrontText id="copy_c77db0ab2c5d60f6" fallback="Notice:" /></span>
           <span>{error}</span>
         </div>
       )}
@@ -189,8 +188,7 @@ function LoginFormInner() {
             <label
               htmlFor="register-name"
               className="block text-xs font-semibold text-[#171713] mb-1"
-            >
-              Full Name *
+            ><StorefrontText id="copy_8fec1bff94bf651a" fallback="Full Name *" />
             </label>
             <input
               id="register-name"
@@ -209,8 +207,7 @@ function LoginFormInner() {
         )}
 
         <div>
-          <label htmlFor="customer-email" className="block text-xs font-semibold text-[#171713] mb-1">
-            Email Address *
+          <label htmlFor="customer-email" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_1b72562c828c7223" fallback="Email Address *" />
           </label>
           <input
             id="customer-email"
@@ -230,8 +227,7 @@ function LoginFormInner() {
 
         {mode === "register" && (
           <div>
-            <label htmlFor="register-phone" className="block text-xs font-semibold text-[#171713] mb-1">
-              Contact Phone (Optional)
+            <label htmlFor="register-phone" className="block text-xs font-semibold text-[#171713] mb-1"><StorefrontText id="copy_cd401e467be20b4e" fallback="Contact Phone (Optional)" />
             </label>
             <input
               id="register-phone"
@@ -254,12 +250,10 @@ function LoginFormInner() {
             <label
               htmlFor="customer-password"
               className="block text-xs font-semibold text-[#171713]"
-            >
-              Password *
+            ><StorefrontText id="copy_7c6dc119843f036f" fallback="Password *" />
             </label>
             {mode === "login" && (
-              <span className="text-[11px] text-[#757065]">
-                Min 8 characters
+              <span className="text-[11px] text-[#757065]"><StorefrontText id="copy_e4e54a0028c8bac4" fallback="Min 8 characters" />
               </span>
             )}
           </div>
@@ -298,12 +292,10 @@ function LoginFormInner() {
           {busy ? (
             "Please wait…"
           ) : mode === "login" ? (
-            <>
-              Sign In <ArrowRight size={15} />
+            <><StorefrontText id="copy_bcc0bcc9140b0c97" fallback="Sign In" /> <ArrowRight size={15} />
             </>
           ) : (
-            <>
-              Create Account <ArrowRight size={15} />
+            <><StorefrontText id="copy_0dffe234b44793b6" fallback="Create Account" /> <ArrowRight size={15} />
             </>
           )}
         </button>
@@ -313,10 +305,9 @@ function LoginFormInner() {
       <div className="mt-6 pt-6 border-t border-[#ded7cb]">
         <div className="p-4 rounded-xl border border-[#d2c9b8] bg-[#f9f7f2] text-center">
           <p className="text-[11px] font-bold uppercase tracking-wider text-[#b39156] flex items-center justify-center gap-1 mb-1">
-            <Sparkles size={13} /> Instant Verification Mode
+            <Sparkles size={13} /><StorefrontText id="copy_775534ca018daf3a" fallback="Instant Verification Mode" />
           </p>
-          <p className="text-xs text-[#524e46] mb-3">
-            Evaluating the tea commerce journey? Sign in immediately with preloaded tasting orders and addresses.
+          <p className="text-xs text-[#524e46] mb-3"><StorefrontText id="copy_be28b2e7356b7df9" fallback="Evaluating the tea commerce journey? Sign in immediately with preloaded tasting orders and addresses." />
           </p>
           <button
             type="button"
@@ -324,7 +315,7 @@ function LoginFormInner() {
             disabled={busy}
             className="w-full min-h-[42px] rounded-lg border border-[#23483a] text-[#23483a] hover:bg-[#23483a] hover:text-white transition-colors text-xs font-semibold flex items-center justify-center gap-2"
           >
-            <span>One-Click Tasting Room Login</span>
+            <span><StorefrontText id="copy_fd5bd43f9a9339b8" fallback="One-Click Tasting Room Login" /></span>
           </button>
         </div>
       </div>
@@ -332,7 +323,7 @@ function LoginFormInner() {
       {/* Trust & Privacy Footnote */}
       <div className="mt-8 text-center text-[11px] text-[#757065] flex items-center justify-center gap-1.5">
         <ShieldCheck size={14} className="text-[#23483a]" />
-        <span>TLS 1.3 encrypted · Zero third-party tracker data sharing</span>
+        <span><StorefrontText id="copy_9f5586cb55e7c96c" fallback="TLS 1.3 encrypted · Zero third-party tracker data sharing" /></span>
       </div>
     </div>
   );
@@ -341,7 +332,7 @@ function LoginFormInner() {
 export default function LoginPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center bg-[#fdfbf7] py-8">
-      <Suspense fallback={<div className="text-center p-8 text-xs text-[#5c6659]">Loading login…</div>}>
+      <Suspense fallback={<div className="text-center p-8 text-xs text-[#5c6659]"><StorefrontText id="copy_a85680660c9c16fd" fallback="Loading login…" /></div>}>
         <LoginFormInner />
       </Suspense>
     </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import Image from "next/image";
 import React, { useState } from "react";
 import type { PublicPackagingVariantDto } from "@/lib/private-label/public-dto";
@@ -62,12 +63,9 @@ export function Step2PackagingSelection({
             fontFamily: 'Georgia, "Times New Roman", serif',
             color: "#143C31",
           }}
-        >
-          Step 2: Choose Primary Packaging Structure
+        ><StorefrontText id="copy_405227c95a492142" fallback="Step 2: Choose Primary Packaging Structure" />
         </h2>
-        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}>
-          Select food-safe, high-barrier packaging designed specifically to preserve delicate tea
-          volatiles against humidity, light, and oxygen.
+        <p style={{ margin: 0, fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_b426b86c9c166496" fallback="Select food-safe, high-barrier packaging designed specifically to preserve delicate tea volatiles against humidity, light, and oxygen." />
         </p>
       </div>
 
@@ -151,7 +149,7 @@ export function Step2PackagingSelection({
                     />
                   </div>
                 )}
-                {variant.image_illustrative && <p style={{ fontSize: 12, color: "#65746D" }}>Illustrative packaging concept</p>}
+                {variant.image_illustrative && <p style={{ fontSize: 12, color: "#65746D" }}><StorefrontText id="copy_1c2af68677963065" fallback="Illustrative packaging concept" /></p>}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <span
                     style={{
@@ -198,12 +196,11 @@ export function Step2PackagingSelection({
                 </h3>
 
                 <div style={{ fontSize: "0.8125rem", color: "#65746D", display: "flex", flexDirection: "column", gap: "2px" }}>
-                  {variant.material && <div>Material: <strong>{variant.material}</strong></div>}
-                  {variant.finish && <div>Finish: {variant.finish}</div>}
-                  {variant.closure_type && <div>Closure: {variant.closure_type}</div>}
+                  {variant.material && <div><StorefrontText id="copy_9df416bf2823ed11" fallback="Material:" /> <strong>{variant.material}</strong></div>}
+                  {variant.finish && <div><StorefrontText id="copy_38c772972bd5af3a" fallback="Finish:" /> {variant.finish}</div>}
+                  {variant.closure_type && <div><StorefrontText id="copy_3eb7803d7b440c90" fallback="Closure:" /> {variant.closure_type}</div>}
                   {variant.width_mm && variant.height_mm && (
-                    <div>
-                      Dimensions: {variant.width_mm} &times; {variant.height_mm} mm
+                    <div><StorefrontText id="copy_f6436c866a446d1f" fallback="Dimensions:" /> {variant.width_mm} &times; {variant.height_mm} mm
                     </div>
                   )}
                 </div>
@@ -219,8 +216,7 @@ export function Step2PackagingSelection({
                         borderRadius: "4px",
                         border: "1px solid #FFE4A3",
                       }}
-                    >
-                      Ultra-High Barrier
+                    ><StorefrontText id="copy_1c68c0ca01d08af5" fallback="Ultra-High Barrier" />
                     </span>
                   </div>
                 )}
@@ -236,8 +232,7 @@ export function Step2PackagingSelection({
                   fontSize: "0.8125rem",
                 }}
               >
-                <span style={{ color: "#65746D" }}>
-                  MOQ: <strong>{variant.moq_units || 500}</strong> units
+                <span style={{ color: "#65746D" }}><StorefrontText id="copy_492f5a49ed026e3f" fallback="MOQ:" /> <strong>{variant.moq_units || 500}</strong><StorefrontText id="copy_c981a30c0e7b420b" fallback="units" />
                 </span>
                 <span style={{ fontWeight: 700, color: "#143C31" }}>
                   {variant.starting_price?.formatted_unit_price || "Tiered Rates"}
