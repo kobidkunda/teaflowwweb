@@ -15,6 +15,7 @@ import {
   type PackagingFormat,
 } from "@/lib/productModels";
 import { SubscribeLink } from "@/components/subscriptions/SubscribeLink";
+import { formatPackWeight } from "@/lib/packSize";
 import { ShoppingCart, Share2, Check } from "lucide-react";
 import { catalogItem, trackViewItem } from "@/lib/seo/tracking";
 
@@ -200,8 +201,7 @@ export function VariantPicker({
   const isSoldOut = activeVariant.stock < 1;
   const servings = activeVariant.servings || Math.floor(activeVariant.grams / product.leaf_dose_grams);
   const perCupDisplay = formatPerCup(activeVariant.price_paise, servings);
-  const sizeLabel =
-    activeVariant.grams >= 1000 ? "1kg" : `${activeVariant.grams}g`;
+  const sizeLabel = formatPackWeight(activeVariant.grams);
 
   const handleAddToBag = () => {
     if (isSoldOut || isAdding) return;
@@ -365,7 +365,7 @@ export function VariantPicker({
         <div className="wholesale-tier-container bg-[#f5f7f2] border border-[#bcd2bf] rounded-lg p-3.5 mb-4 mt-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-bold uppercase tracking-wider text-[#23483a] flex items-center gap-1.5">
-              <span><StorefrontText id="copy_8b20d91a650659c7" fallback="📊 Volume Pricing Slabs (" />{activeVariant.grams}g)</span>
+              <span><StorefrontText id="copy_8b20d91a650659c7" fallback="📊 Volume Pricing Slabs (" />{sizeLabel})</span>
             </span>
             <span className="text-[11px] font-semibold text-[#5a6655]"><StorefrontText id="copy_492f5a49ed026e3f" fallback="MOQ:" /> {effectiveMoq}<StorefrontText id="copy_d7d4f59db48fb4b8" fallback="pcs" />
             </span>
@@ -496,11 +496,9 @@ export function VariantPicker({
             const cups = v?.servings || Math.floor(grams / product.leaf_dose_grams);
 
             const displaySizeTitle =
-              grams >= 1000
-                ? "1kg"
-                : selectedFormat === "pyramid_bags"
-                  ? `${v?.servings || 25} Bags (${grams}g)`
-                  : `${grams}g`;
+              selectedFormat === "pyramid_bags" && grams < 1000
+                ? `${v?.servings || 25} Bags (${formatPackWeight(grams)})`
+                : formatPackWeight(grams);
 
             return (
               <button
