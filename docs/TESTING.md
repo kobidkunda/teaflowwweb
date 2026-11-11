@@ -505,3 +505,154 @@ but failed collecting page data with a missing `.next/server/pages-manifest.json
 an isolated `.next-tracking-build` build was then executed to avoid shared-output
 interference. The published container resource is preserved in
 `docs/analytics/published-container-resource.json` for independent inspection.
+
+## Meta CAPI helper and Tag Assistant CSP — 2026-11-11
+
+`tracking-csp.test.ts` plus `gtm-export.test.ts`: 7 tests passed. Focused ESLint
+and TypeScript checks passed. A temporary local HTTP harness used the production
+header exported by security.ts: Chromium loaded both official Meta helper CDN
+URLs (including unpkg's current 1.3.3 redirect), found the expected builder API,
+and recorded no CSP violations. The harness did not initialize pixels or send
+conversion events. Two exact CAPI origins were verified in the merchant pixel's
+public Meta config; their receiving-side event processing has not been tested.
+See `docs/analytics/GTM_V7_FIX.md` for deployment and platform verification limits.
+
+The complete unit suite for this correction passed: 174 files, 2,931 tests,
+with 6 PostgreSQL-only tests skipped. The isolated production build in
+`.next-capi-csp-build` also passed. These checks do not replace live verification
+after deployment of the changed HTTP security headers.
+
+
+2026-11-11 authorized CSP deployment: isolated server production build passed;
+candidate and activated production PostgreSQL health/readiness checks passed.
+After TeaFloww-only Nginx cache invalidation, the normal public shop URL serves
+the new CSP. Fresh Chromium loaded the real Meta helper (HTTP 200, initialized
+object) and observed GA4 collection HTTP 204. Meta CAPI ingestion and verified
+purchase reception remain unverified; no orders/payments were created.
+
+
+2026-11-11 Meta retargeting supplement: seven focused GTM contract tests pass.
+The mapping tests exercise product SKU/quantity/value transformation, zero
+values, malformed items, search isolation, customer-field exclusion, consent,
+and event-ID routing. Full local test suite: 2,935 passed, 6 PostgreSQL-only
+skipped. Typecheck and lint pass. Import compatibility and event delivery must
+still be validated in GTM Preview and Meta Test Events before publication.
+
+Full `npm run check` completed successfully, including the production build.
+
+Meta destination correction: live GTM used 1128432123376468, while the merchant
+identified 29619022431117471. Corrected import includes existing Meta base and
+Purchase updates and keeps the duplicate paused. Fixed missing numeric version
+in new variable template INFO after GTM reported an import-format error; added
+regression coverage. This format correction is local; successful import and
+Meta receipt have not yet been confirmed.
+
+Private-label follow-up acceptance (11 November 2026): see `docs/ui/private-label-flow/verification-2026-11-11.md` for the executed browser matrix, 2,935-test full check, 865-test focused replay and remaining gateway/prepress boundaries.
+
+Second GTM import correction: replace unresolved cvt_TFMetaProperties with the
+container/template-scoped cvt_266900144_9500 and use INFO cvt_temp_public_id.
+Ten focused tests and lint pass; actual importer acceptance is still pending.
+
+## Saved cart prices and checkout quotes — 2026-11-11
+
+Cart catalogue metadata now optionally returns current public prices in integer
+paise. CartProvider refreshes saved estimates on hydration, identity changes and
+window focus, preserving quantities. Checkout still recalculates and validates
+prices and stock independently. `tests/unit/cart-images.test.ts` covers changed
+catalogue prices and safe reconciliation of saved prices.
+
+The actual CartProvider and LiveCheckout components were also bundled into a
+throwaway isolated React/browser harness with mocked catalogue/address/quote
+endpoints. Verified cached ₹199 -> current ₹30, quantity-only changes from 1 to
+9 to 11, payable totals ₹29.40 / ₹264.60 / ₹323.40, immediate hiding of outdated
+pay controls, and a delayed quantity-9 response arriving after quantity 11 without
+restoring the old total. API observations confirmed quantities [1,9,11,9,11].
+Quote inputs include address, currency, coupon and payment method; outdated
+responses are ignored, automatic quote failures are visible, and expiry removes
+the payable quote. Copy no longer claims stock/tariff guarantees or a coupon
+without evidence. No schema, payment gateway or deployment changes.
+
+`npm run check` completed successfully after these changes. Focused cart-image
+suite: six passing tests. Existing unrelated working-tree changes were retained.
+
+## Cart / checkout total consistency — 2026-11-11
+
+The browser regression reproduced an unchanged ₹10 coupon saving after increasing
+a ₹100 line from one to two: the cart displayed ₹190 instead of ₹180. CouponField
+now recalculates on subtotal changes, aborts obsolete requests, and clears old
+savings while validating. Cart cookie hydration delegates validation to that field.
+Existing in-progress saved-price refresh and checkout quote-input invalidation
+changes were preserved and exercised alongside this fix.
+
+`node tests/browser/cart-totals.mjs` passed against a local SQLite dev server on
+port 3367. It uses synthetic catalogue/coupon/quote responses and blocks cart sync;
+no order or payment is created. Checks cover quantity changes, catalogue price
+refresh on focus, matching cart/checkout merchandise, changed-coupon quote
+invalidation, and mobile overflow. Real 390px/1440px captures were reviewed in
+`output/playwright/cart-totals/`. Signed-out `/api/customer/me` returns expected 401.
+The browser regression needs the installed Playwright CLI skill wrapper (PWCLI can
+override its path); BASE_URL overrides the local cart URL. Focused API/quote tests:
+13 passed. This verifies the local fix, not the user's production browser cart.
+No deployment, schema or dependency changes.
+
+Saved-price reconciliation additionally passed three focused unit tests covering
+trial/variant identity, quantity preservation, invalid/missing values and zero
+prices. The browser regression is retained in `tests/browser/cart-totals.mjs`.
+
+Final `npm run check` passed: TypeScript, ESLint (existing warnings), 2,939 passing
+unit/integration tests across 175 passing files, six skipped PostgreSQL-live tests,
+and the optimized production build. `git diff --check` passed. Browser captures
+show the corrected ₹200 subtotal, ₹20 coupon saving and ₹180 merchandise estimate.
+
+### Authorized production deployment — 2026-11-11
+
+User requested production deployment. Built an isolated candidate from current
+server source with only the six cart/checkout pricing files overlaid. Production
+build and private-port health/readiness/storefront/price-endpoint probes passed
+using PostgreSQL. Activated build `sG_aycXWWmMj8dzqgl5Kt`; prior build and source
+are retained for rollback. No migrations, dependency or payment-setting changes.
+
+Public cart, checkout, health, readiness and price-refresh API return HTTP 200;
+all 20 cart JS/CSS assets return HTTP 200. A real published variant's endpoint
+price matched its catalogue price. Backed up and invalidated 327 Nginx cache
+entries belonging specifically to TeaFloww's port-3050 origin.
+
+The browser regression also passed on the production host with intercepted
+synthetic catalogue/coupon/quote requests and blocked cart sync. It verified
+quantity/price changes, matching merchandise and quote invalidation, without
+creating orders or payments. Test browser cart/coupon storage was cleared.
+Only expected signed-out customer 401 errors were recorded. Production captures
+and public probes: `output/deploy-cart-totals-20261111/`.
+
+Server rollback build: `/www/wwwroot/teafloww.com/.next-previous-20261111-cart-totals`.
+Source backups and deployment logs:
+`/www/wwwroot/teafloww-cart-totals-release-20261111/`.
+
+## Meta iframe/form CSP transport — 2026-11-11
+
+`src/lib/security.ts` now allows only the exact `https://www.facebook.com`
+origin in frame-src and `https://www.facebook.com/tr/` in form-action, preserving
+the existing payment provider, frame-ancestors none, X-Frame-Options DENY and
+production eval restrictions. connect-src/script-src did not cover these
+separate browser transports. Marketing consent and GTM ownership are unchanged.
+
+The new regression failed before the change and passed afterward. Twenty tests
+pass across tracking-csp, blog-routes and video-story; focused ESLint passes.
+A temporary localhost harness served the actual production SECURITY_HEADERS:
+Chromium initiated the Facebook iframe with no parent CSP violations, submitted
+an empty form to `/tr/` with no parent CSP violations, and blocked an empty form
+to `/unapproved/` with a form-action violation. No pixel ID or conversion payload
+was sent. This verifies CSP permission, not Events Manager/CAPI processing.
+No production deployment or GTM publication was performed.
+
+The first full check stopped on incomplete deployment backup copies under the
+Git-ignored `output/deploy-cart-totals-20261111/server-before/` directory. Added
+`output` to TypeScript excludes and `output/**` to ESLint ignores so generated
+artifacts are not validated as application source. No backup files were deleted.
+The live `/shop` response was read back and still has the old frame/form sources;
+production is intentionally unchanged until explicitly requested.
+
+Full suite follow-up: TypeScript and ESLint pass; 2,945 tests pass and six
+PostgreSQL-only tests are skipped. Production build validation follows in the
+same `npm run check`; local development/testing remains SQLite.
+Production build completed successfully; the full `npm run check` exited zero.

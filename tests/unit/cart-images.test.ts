@@ -6,6 +6,7 @@ import { replaceProductImages } from "@/lib/productImages";
 import { GET } from "@/app/api/cart/images/route";
 import { TrialService } from "@/lib/trials/service";
 import { cartImageKey, getCartItemImage } from "@/lib/cartImageHelper";
+import { refreshCartPrices } from "@/lib/cartPricing";
 import { CartItemImage } from "@/components/CartItemImage";
 import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
@@ -39,6 +40,18 @@ describe("Catalogue-backed cart photos", () => {
       [`var-${variantIds[0]}`]: "/images/cart-50.jpg",
       [`var-${variantIds[1]}`]: "/images/cart-100.jpg",
     } });
+  });
+  it("refreshes stale saved prices from published catalogue packs without changing quantities", async () => {
+    const url = new URL(request(variantIds.map(variantId => ({ variantId }))).url);
+    url.searchParams.set("includePrices", "1");
+    const data = await GET(new Request(url)).json();
+    expect(data.prices).toEqual({ [`var-${variantIds[0]}`]: 10000, [`var-${variantIds[1]}`]: 20000 });
+    const saved = [{ variantId: variantIds[0], pricePaise: 19900, quantity: 9 }];
+    expect(refreshCartPrices(saved, data.prices)).toEqual([{ ...saved[0], pricePaise: 10000 }]);
+    expect(refreshCartPrices(saved, { [`var-${variantIds[0]}`]: -1 })).toEqual(saved);
+    expect(refreshCartPrices(saved, {})).toEqual(saved);
+    env.db.prepare("UPDATE variants SET price_paise=3000 WHERE id=?").run(variantIds[0]);
+    expect((await GET(new Request(url)).json()).prices[`var-${variantIds[0]}`]).toBe(3000);
   });
   it("uses current uploaded art and hides unpublished or missing products", async () => {
     replaceProductImages(id, [{ url: "/images/replacement.jpg" }]);

@@ -364,7 +364,7 @@ export function Step5QuantityQuote({
           <button
             type="button"
             data-testid="step-next-btn"
-            disabled={isGeneratingQuote}
+            disabled={isGeneratingQuote || !isEligible}
             onClick={onGenerateQuote}
             aria-busy={isGeneratingQuote}
             style={{

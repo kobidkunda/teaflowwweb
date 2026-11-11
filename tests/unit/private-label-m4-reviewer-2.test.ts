@@ -354,7 +354,7 @@ describe("Milestone M4 Reviewer 2: Studio UI, 2D Canvas, Stepper & A11y Adversar
       expect(html).toContain('aria-labelledby="proof-modal-title"');
       expect(html).toContain('data-testid="proof-approval-modal"');
       expect(html).toContain("Digital Proof Sign-Off &amp; Preflight Attestation");
-      expect(html).toContain("FSSAI regulations and Siliguri manufacturing standards");
+      expect(html).toContain("Production release requires operator review");
     });
 
     it("V4.2: StudioMobileBottomBar renders sticky bar for mobile viewports with min 48px tap targets", () => {

@@ -204,7 +204,7 @@ export function StudioTeaserPreview() {
               {format === "pouch" ? (
                 <div className={styles.teaserMockupStage}>
                   <Image
-                    src={view === "front" ? "/images/private-label/teafloww-reserve-front.webp" : "/images/private-label/teafloww-reserve-back.webp"}
+                    src={view === "front" ? "/images/private-label/teafloww-reserve-front-v2.webp" : "/images/private-label/teafloww-reserve-back-v2.webp"}
                     alt={view === "front" ? `${brandName.trim() || "TEAFLOWW RESERVE"} Front View Packaging Mockup` : "TEAFLOWW RESERVE Darjeeling First Flush Back View Packaging Mockup"}
                     fill
                     sizes="(max-width: 768px) 90vw, 480px"

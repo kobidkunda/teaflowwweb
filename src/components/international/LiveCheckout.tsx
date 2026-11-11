@@ -89,7 +89,9 @@ export function LiveCheckout() {
   const searchParams = useSearchParams();
   const initialCoupon = searchParams ? searchParams.get("coupon") || "" : "";
 
-  const [quote, setQuote] = useState<QuoteView | null>(null);
+  const [quoteResult, setQuoteResult] = useState<{ view: QuoteView; input: string } | null>(null);
+  const requestSequence = useRef(0);
+  const [couponCode, setCouponCode] = useState(initialCoupon);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -169,10 +171,8 @@ export function LiveCheckout() {
                 postcode: def.postal_code || "",
               };
               setFormData(loadedAddr);
-              const defCountry = def.country || "IN";
               if (def.country) setCountry(def.country);
-              // Auto-calculate quote immediately for user with saved address
-              computeQuote(method, loadedAddr, defCountry, true);
+              // The quote effect recalculates after the saved address is loaded.
             }
           });
       })
@@ -201,8 +201,16 @@ export function LiveCheckout() {
     };
   }, []);
 
+  const itemsSignature = JSON.stringify(cart.items.map(i => ({ variantId: i.variantId, ...(i.trialId ? { trialId: i.trialId } : {}), quantity: i.quantity })));
+  const quoteInput = JSON.stringify({ items: itemsSignature, formData, country, method, paymentCurrency, couponCode, onlinePaymentEnabled });
+  const latestInput = useRef(quoteInput);
+  latestInput.current = quoteInput;
+  const quote = quoteResult?.input === quoteInput ? quoteResult.view : null;
+
   const invalidate = () => {
-    setQuote(null);
+    requestSequence.current++;
+    setQuoteResult(null);
+    setBusy(false);
     key.current = "";
     setFieldErrors({});
   };
@@ -237,7 +245,16 @@ export function LiveCheckout() {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [formData, country, method, cart.items.length]);
+  }, [formData, country, method, itemsSignature, paymentCurrency, couponCode, onlinePaymentEnabled]);
+
+  useEffect(() => {
+    if (!quote) return;
+    const timer = setTimeout(() => {
+      invalidate();
+      setError(t("expired"));
+    }, Math.max(0, quote.expires - Date.now()));
+    return () => clearTimeout(timer);
+  }, [quote]);
 
   // Trigger or re-trigger quote calculation
   async function computeQuote(
@@ -251,10 +268,12 @@ export function LiveCheckout() {
       return;
     }
 
+    const sequence = ++requestSequence.current;
+    const inputSnapshot = quoteInput;
+    setQuoteResult(null);
     const activeAddress = explicitAddress || formData;
     const activeCountry = explicitCountry || country || "IN";
-    const couponInput = form.current?.querySelector<HTMLInputElement>('input[name="coupon"]');
-    const coupon = (couponInput ? couponInput.value : initialCoupon || "").trim();
+    const coupon = couponCode.trim();
 
     const address = {
       name: (activeAddress.name || "").trim(),
@@ -335,6 +354,7 @@ export function LiveCheckout() {
       });
 
       const result = await response.json();
+      if (sequence !== requestSequence.current || latestInput.current !== inputSnapshot) return;
       if (!response.ok) {
         if (Array.isArray(result.detail)) {
           const mapped: Record<string, string> = {};
@@ -357,18 +377,17 @@ export function LiveCheckout() {
         throw new Error(result.error || "Unable to calculate total.");
       }
 
-      setQuote(result);
+      setQuoteResult({ view: result, input: inputSnapshot });
       if (result.analytics) {
         trackAddShippingInfo("destination_quote", result.analytics.items, result.analytics.value, result.analytics.currency);
       }
       key.current = generateUUID();
       quotedItems.current = JSON.stringify(items);
     } catch (e) {
-      if (!silent) {
-        setError(e instanceof Error ? e.message : "Unable to calculate total.");
-      }
+      if (sequence !== requestSequence.current || latestInput.current !== inputSnapshot) return;
+      setError(e instanceof Error ? e.message : "Unable to calculate total.");
     } finally {
-      setBusy(false);
+      if (sequence === requestSequence.current) setBusy(false);
     }
   }
 
@@ -381,7 +400,7 @@ export function LiveCheckout() {
     if (!onlinePaymentEnabled && newMethod !== "cod") return;
     setMethod(newMethod);
     key.current = generateUUID();
-    computeQuote(newMethod, formData, country, false);
+    // The quote effect uses the newly selected method.
   }
 
   async function pay() {
@@ -1072,7 +1091,8 @@ export function LiveCheckout() {
               <div className="flex gap-2">
                 <input
                   name="coupon"
-                  defaultValue={initialCoupon}
+                  value={couponCode}
+                  onChange={e => setCouponCode(e.target.value)}
                   maxLength={24}
                   placeholder="e.g. HARVEST10"
                   className="flex-1 min-h-[46px] border border-[#b8b5a8] rounded-md px-3 py-2 bg-[#fffefa] text-sm uppercase tracking-wider"
@@ -1155,7 +1175,7 @@ export function LiveCheckout() {
           <div className="flex items-center justify-between border-b border-[#e4dfd5] pb-4">
             <h2 className="text-xl font-serif text-[#171713] font-normal">{t("total")}</h2>
             <div className="text-xs text-[#737067] flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-[#23483a]" /> 256-Bit SSL
+              <Lock className="w-3.5 h-3.5 text-[#23483a]" /> Secure checkout
             </div>
           </div>
 
@@ -1179,7 +1199,7 @@ export function LiveCheckout() {
                       : component === "paymentDiscount"
                       ? "⚡ Prepaid Instant Discount"
                       : component === "merchandise"
-                      ? "Teas after coupons"
+                      ? "Teas"
                       : t(component);
 
                   return (
@@ -1218,7 +1238,7 @@ export function LiveCheckout() {
 
               {/* Quote Expiry Notice */}
               <p className="text-[11px] text-[#737067] leading-relaxed">
-                Quote locked until {new Date(quote.expires).toLocaleTimeString()}. All prices guaranteed against stock or tariff shifts.
+                Quote valid until {new Date(quote.expires).toLocaleTimeString()}. Availability is checked again before your order is created.
               </p>
 
               {/* Dynamic Action Button */}

@@ -1,6 +1,6 @@
 {
   "exportFormatVersion": 2,
-  "exportTime": "2026-11-10T20:22:37.861Z",
+  "exportTime": "2026-11-10T23:25:26.971Z",
   "containerVersion": {
     "path": "accounts/6000000000/containers/100000000/versions/0",
     "accountId": "6000000000",
@@ -1003,7 +1003,7 @@
           {
             "type": "TEMPLATE",
             "key": "value",
-            "value": "REPLACE_WITH_META_PIXEL_ID"
+            "value": "1128432123376468"
           }
         ]
       },

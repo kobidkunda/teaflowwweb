@@ -27,8 +27,8 @@ export default function CommercialSummary({ params }: { params: Promise<{ id: st
   if (error) return <div role="alert" style={{ padding: 32 }}><p>{error}</p><Link href="/account/private-label">Return to your workspace</Link></div>;
   if (!invoice) return <p role="status" style={{ padding: 32 }}>Loading commercial summary…</p>;
   const money = (paise: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: invoice.currency }).format(paise / 100);
-  return <article style={{ maxWidth: 820, margin: "32px auto", padding: "24px 16px", background: "#fff", color: "#143C31" }}>
-    <style>{`@media print { header, footer, .commercial-no-print { display: none !important; } @page { margin: 15mm; } }`}</style>
+  return <article className="commercial-summary" style={{ maxWidth: 820, margin: "32px auto", padding: "24px 16px", background: "#fff", color: "#143C31" }}>
+    <style>{`@media print { body * { visibility: hidden; } .commercial-summary, .commercial-summary * { visibility: visible; } .commercial-summary { position: absolute; inset: 0 auto auto 0; width: 100%; max-width: none !important; margin: 0 !important; padding: 0 !important; } header, footer, .commercial-no-print { display: none !important; } @page { margin: 15mm; } }`}</style>
     <div className="commercial-no-print" style={{ display: "flex", flexWrap: "wrap", gap: 20, marginBottom: 24 }}>
       <Link href={`/private-label/orders/${encodeURIComponent(id)}`}>← Return to order</Link>
       <button type="button" onClick={() => window.print()} style={{ minHeight: 44, padding: "8px 16px", border: "1px solid #143C31" }}>Print / Save PDF</button>

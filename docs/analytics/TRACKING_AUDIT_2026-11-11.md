@@ -1,5 +1,7 @@
 # TeaFloww tracking audit — 11 November 2026
 
+> Follow-up: the live container is now version 7 and the website emits ecommerce events. See [the current v7 diagnosis and corrected import](GTM_V7_FIX.md); it supersedes the original version-2 production snapshot below.
+
 ## Verdict and evidence
 
 The production website loads **GTM-M5G27HSQ**, which loads **G-62FDHK0EQ6**.

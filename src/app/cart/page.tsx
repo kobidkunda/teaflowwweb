@@ -107,31 +107,13 @@ function CartPageContent() {
 
   // 2. Check for locally unlocked coupon from LeadCaptureModal
   useEffect(() => {
-    if (couponCode) return;
     try {
       const match = document.cookie.match(/(?:^|;\s*)hth_applied_coupon=([^;]*)/);
-      const savedCoupon = match ? decodeURIComponent(match[1]) : null;
-      if (savedCoupon) {
-        setCouponCode(savedCoupon);
-        if (subtotal > 0) {
-          fetch("/api/coupons/validate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: savedCoupon, subtotalPaise: subtotal }),
-          })
-            .then((r) => r.json())
-            .then((data) => {
-              if (data.valid) {
-                setDiscount(data.discountPaise);
-              }
-            })
-            .catch(() => {});
-        }
-      }
+      if (match) setCouponCode(decodeURIComponent(match[1]));
     } catch {
       // Storage unavailable
     }
-  }, [couponCode, subtotal]);
+  }, []);
 
   const trackedCart = useRef("");
   const trackingItems = JSON.stringify(items.map(line => ({ item_id: line.sku || (line.trialId ? line.trialId : (line.variantId ? `HTH-${line.variantId}` : "")), item_name: line.name, price: line.pricePaise / 100, quantity: line.quantity })));

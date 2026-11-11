@@ -38,7 +38,7 @@ const variables = [
   {
     name: "Const - Meta Pixel ID",
     type: "c",
-    parameter: [{ type: "TEMPLATE", key: "value", value: "REPLACE_WITH_META_PIXEL_ID" }],
+    parameter: [{ type: "TEMPLATE", key: "value", value: "1128432123376468" }],
   },
 
   // Data Layer Variables

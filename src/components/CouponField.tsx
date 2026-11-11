@@ -30,71 +30,75 @@ export function CouponField({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
-  const initialCheckedRef = useRef(false);
+  const [selectedCode, setSelectedCode] = useState(initialCode || "");
+  const [attempt, setAttempt] = useState(0);
+  const callbacks = useRef({ onApplied, onCleared, formatPrice });
+  callbacks.current = { onApplied, onCleared, formatPrice };
 
-  // Auto-validate initialCode if provided from URL query or recovered bag
   useEffect(() => {
-    if (initialCode && !applied && subtotalPaise > 0 && !initialCheckedRef.current) {
-      initialCheckedRef.current = true;
-      const clean = initialCode.trim().toUpperCase();
-      fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: clean, subtotalPaise }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.valid) {
-            setApplied(clean);
-            setDiscount(data.discountPaise);
-            setMessage(`Code ${clean} applied · ${formatPrice(data.discountPaise)} off.`);
-            setIsError(false);
-            onApplied(clean, data.discountPaise);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [initialCode, subtotalPaise, applied, onApplied, formatPrice]);
+    setSelectedCode(initialCode || "");
+  }, [initialCode]);
 
-  async function apply() {
+  // A coupon preview belongs to a particular subtotal. Cancel older validations
+  // and remove stale savings while the current server calculation is pending.
+  useEffect(() => {
+    const clean = selectedCode.trim().toUpperCase();
+    if (!clean) { setBusy(false); return; }
+    const controller = new AbortController();
+    setBusy(true);
+    setDiscount(0);
+    setMessage("Checking coupon for your current bag…");
+    setIsError(false);
+    callbacks.current.onApplied(clean, 0);
+    fetch("/api/coupons/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: clean, subtotalPaise }),
+      signal: controller.signal,
+    })
+      .then(async res => ({ ok: res.ok, data: await res.json() }))
+      .then(({ ok, data }) => {
+        if (controller.signal.aborted) return;
+        if (!ok || !data.valid) {
+          setApplied(null);
+          setMessage(data.reason || "This code is not valid for this order.");
+          setIsError(true);
+          callbacks.current.onCleared();
+          return;
+        }
+        setApplied(clean);
+        setDiscount(data.discountPaise);
+        setMessage(`Code ${clean} applied · ${callbacks.current.formatPrice(data.discountPaise)} off.`);
+        callbacks.current.onApplied(clean, data.discountPaise);
+      })
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setApplied(null);
+        setMessage("Unable to check the code right now. Please retry.");
+        setIsError(true);
+        callbacks.current.onCleared();
+      })
+      .finally(() => { if (!controller.signal.aborted) setBusy(false); });
+    return () => controller.abort();
+  }, [selectedCode, subtotalPaise, attempt]);
+
+  function apply() {
     const clean = code.trim().toUpperCase();
     if (!clean) {
       setMessage("Enter a coupon code first.");
       setIsError(true);
       return;
     }
-    setBusy(true);
-    setMessage("");
-    setIsError(false);
-    try {
-      const res = await fetch("/api/coupons/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: clean, subtotalPaise }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.valid) {
-        setMessage(data.reason || "This code is not valid for this order.");
-        setIsError(true);
-        return;
-      }
-      setApplied(clean);
-      setDiscount(data.discountPaise);
-      setMessage(`Code ${clean} applied · ${formatPrice(data.discountPaise)} off.`);
-      setIsError(false);
-      onApplied(clean, data.discountPaise);
-    } catch {
-      setMessage("Unable to check the code right now. Please retry.");
-      setIsError(true);
-    } finally {
-      setBusy(false);
-    }
+    setSelectedCode(clean);
+    setAttempt(value => value + 1);
   }
 
   function clear() {
+    setSelectedCode("");
     setCode("");
     setApplied(null);
     setDiscount(0);
+    setBusy(false);
     setMessage("");
     setIsError(false);
     onCleared();

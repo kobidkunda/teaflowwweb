@@ -52,7 +52,7 @@ export function StudioMobileBottomBar({
       <button
         type="button"
         onClick={onNext}
-        disabled={isGeneratingQuote}
+        disabled={isGeneratingQuote || (isLastStep && !isEligible)}
         style={{
           minHeight: "48px",
           minWidth: "130px",

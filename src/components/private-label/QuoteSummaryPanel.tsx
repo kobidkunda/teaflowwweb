@@ -297,7 +297,7 @@ export function QuoteSummaryPanel({
         {onGenerateQuote && (
           <button
             type="button"
-            disabled={isGeneratingQuote}
+            disabled={isGeneratingQuote || !isEligible}
             onClick={onGenerateQuote}
             aria-busy={isGeneratingQuote}
             style={{

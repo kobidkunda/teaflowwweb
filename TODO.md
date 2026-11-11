@@ -859,3 +859,69 @@ product API/MCP suite passed 26 tests. No deployment was needed.
   reconciliation. No production deployment performed in this audit.
 - [ ] Separately design consent-aware server-side purchase delivery/retries,
   refunds and business-specific subscription/private-label/Blend Lab payments.
+
+## Meta CAPI / GTM Preview CSP correction — 2026-11-11
+
+- [x] Verify blocked helper URLs against the official Meta GTM template and
+  blocked CAPI destinations against the merchant's public pixel config.
+- [x] Add narrow script/connect allowances and documented Preview style/fonts.
+- [x] Pass seven targeted tests, typecheck, focused lint, and real Chromium
+  primary/fallback helper checks under the corrected production header.
+- [x] User-authorized CSP deployment completed on 2026-11-11; fresh normal
+  public shop URL serves the corrected header after TeaFloww-only Nginx cache
+  invalidation. Meta helper HTTP 200, GA4 hit HTTP 204, health/readiness HTTP 200.
+- [ ] Confirm Safari Tag Assistant reconnection and Meta CAPI event reception
+  in destination tools; a verified paid purchase remains untested.
+
+## Meta retargeting supplement — 2026-11-11
+
+- [x] Prepare additive GTM mappings for ViewContent, AddToCart, InitiateCheckout,
+  AddPaymentInfo, Lead and Search with consent, SKU/value and event-ID handling.
+- [x] Seven focused tests pass; no GTM publication or website change performed.
+- [ ] Import supplement once, preview granted/denied consent and verify receipt
+  in Meta Test Events before publishing; match content IDs to catalog IDs.
+
+- [x] Correct retargeting import to merchant-specified dataset 29619022431117471,
+  updating existing base/Purchase tags too; retain paused duplicate.
+- [x] Fix GTM template INFO missing numeric version reported by actual importer.
+- [ ] Import corrected dataset file using Merge with overwrite conflicts,
+  inspect changes and confirm Meta Test Events before publication.
+
+- [x] Verify private-label form validation, CAS recovery, first-time sample ownership, reviewed proof signing, idempotent unpaid order conversion, commercial totals and responsive generated Reserve images (2026-11-11). Evidence: `docs/ui/private-label-flow/verification-2026-11-11.md`.
+- [ ] Connect private-label payment creation to an actual configured gateway and verified webhook flow; payment intent currently reports unavailable.
+
+## Saved cart pricing and quote consistency — 2026-11-11
+
+- [x] Refresh saved cart unit prices from published catalogue data and preserve requested quantities.
+- [x] Requote quantity, coupon, currency, payment-method and address changes; ignore obsolete responses.
+- [x] Hide outdated/expired pay controls and show automatic quote failures.
+- [x] Remove misleading coupon/stock/tariff/security copy in the checkout summary.
+- [x] Pass cart-price regressions, isolated browser quantity/race checks and npm run check.
+- [ ] Deploy only on an explicit request.
+
+## Cart / checkout total consistency — 2026-11-11
+
+- [x] Revalidate coupon savings after quantity or catalogue-price changes; cancel stale responses and clear stale savings while validating.
+- [x] Remove the duplicate cart cookie-coupon calculation; use the shared CouponField server validation.
+- [x] Verify saved-price reconciliation and checkout quote invalidation for changed coupon inputs.
+- [x] Reproduce ₹190 instead of ₹180 for two ₹100 items with a 10% coupon, then verify the corrected browser journey on local SQLite.
+- [ ] Deploy only on an explicit deployment request.
+
+## Tracking version 9 follow-up — 2026-11-11
+
+- [x] Verify live Meta AddToCart transport: intended dataset, real SKU, INR 30, HTTP 200.
+- [x] Identify disconnected Safari Preview and signed-out/container-access blocker.
+- [x] Identify absent Google/GA4 tags in published version 9 and prepare combined restoration import with 12 passing contract tests.
+- [ ] Sign in to Tag Assistant with GTM access; export/back up current workspace, review combined Merge import and Preview both destinations.
+- [ ] Confirm receiving-side Meta activity after connector reauthentication; no processing/CAPI success claimed from browser HTTP 200 alone.
+- [ ] Publish only after reviewed Preview and explicit authorization.
+- [x] Full `npm run check` passed: 2,939 tests, six skipped, TypeScript, lint and production build; browser regression and screenshot review passed.
+- [x] User-authorized cart/checkout production deployment completed on 2026-11-11; PostgreSQL health/readiness, public assets, catalogue price API and browser regression passed. Previous build/source retained for rollback; no orders or payments created.
+
+## Meta iframe/form CSP transport — 2026-11-11
+
+- [x] Reproduce missing frame/form sources with a failing regression.
+- [x] Allow exact www.facebook.com frame origin and /tr/ form path while preserving payment and framing protections.
+- [x] Pass 20 focused tests and real Chromium positive/negative transport checks with production CSP.
+- [ ] Deploy on explicit request, then verify fresh public response headers and Meta receipt.
+- [x] Full check passes after excluding generated output from source checks: 2,945 tests passed, six skipped, production build successful.

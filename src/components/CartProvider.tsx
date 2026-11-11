@@ -1,4 +1,5 @@
 "use client";
+import { refreshCartPrices } from "@/lib/cartPricing";
 import { cartImageKey } from "@/lib/cartImageHelper";
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { trackCartDelta } from "@/lib/seo/tracking";
@@ -46,15 +47,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (imageItems === "[]") return;
     const controller = new AbortController();
-    fetch(`/api/cart/images?${new URLSearchParams({ items: imageItems, includeTracking: "1" })}`, { signal: controller.signal })
+    const refresh = () => fetch(`/api/cart/images?${new URLSearchParams({ items: imageItems, includeTracking: "1", includePrices: "1" })}`, { signal: controller.signal })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
         if (controller.signal.aborted) return;
         if (data?.images) setCatalogImages(data.images);
+        if (data?.prices) setItems(current => refreshCartPrices(current, data.prices));
         if (data?.tracking) setCatalogSkus(Object.fromEntries(Object.entries(data.tracking as Record<string, { item_id: string }>).map(([key, item]) => [key, item.item_id])));
       })
       .catch(() => { /* Unavailable images use the neutral placeholder. */ });
-    return () => controller.abort();
+    void refresh();
+    window.addEventListener("focus", refresh);
+    return () => { controller.abort(); window.removeEventListener("focus", refresh); };
   }, [imageItems]);
 
   const displayItems = useMemo(() => items.map((line) => ({
