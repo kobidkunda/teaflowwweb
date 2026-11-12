@@ -23,4 +23,129 @@
 .note { color: #485347; font-size: 14px; }
 .item { display: flex; gap: 12px; justify-content: space-between; margin: 12px 0; }
 .page :is(input, select, button, a):focus-visible { outline: 3px solid #966b38; outline-offset: 4px; }
-@media (max-width: 700px) { .grid, .fields { grid-template-columns: minmax(0, 1fr); } .page { padding: 30px 16px 60px; } .card { padding: 18px; } .actions > * { flex: 1 1 150px; } }
+
+/* Admin Filtering & Pagination */
+.filterBar {
+  background: #fbf8f1;
+  border: 1px solid #c9c2b6;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 24px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filterItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filterLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #485347;
+  white-space: nowrap;
+}
+.searchInput {
+  flex: 1;
+  min-width: 220px;
+}
+.filterSelect {
+  min-height: 40px !important;
+  padding: 6px 10px !important;
+}
+.paginationBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 20px 0;
+  padding: 12px 16px;
+  background: #fbf8f1;
+  border: 1px solid #c9c2b6;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+.paginationInfo {
+  font-size: 13px;
+  color: #485347;
+}
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pageBtn {
+  min-height: 36px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  background: #ffffff !important;
+  color: #23483a !important;
+  border: 1px solid #c9c2b6 !important;
+}
+.pageBtnActive {
+  background: #23483a !important;
+  color: #ffffff !important;
+  border-color: #23483a !important;
+}
+.badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badgeActive {
+  background: rgba(35, 72, 58, 0.12);
+  color: #23483a;
+  border: 1px solid rgba(35, 72, 58, 0.3);
+}
+.badgePaused {
+  background: rgba(179, 145, 86, 0.15);
+  color: #7d6537;
+  border: 1px solid rgba(179, 145, 86, 0.3);
+}
+.badgeCancelled {
+  background: rgba(143, 47, 42, 0.12);
+  color: #8f2f2a;
+  border: 1px solid rgba(143, 47, 42, 0.3);
+}
+.planHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.planTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.metaLine {
+  font-size: 13px;
+  color: #555850;
+  margin: 4px 0 !important;
+}
+.cycleList {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #d9d4c8;
+}
+
+@media (max-width: 700px) {
+  .grid, .fields { grid-template-columns: minmax(0, 1fr); }
+  .page { padding: 30px 16px 60px; }
+  .card { padding: 18px; }
+  .actions > * { flex: 1 1 150px; }
+  .paginationBar { flex-direction: column; align-items: flex-start; }
+}

@@ -54,6 +54,23 @@ describe("Milestone 4: Sales & Content Modules Unit Tests", () => {
       expect(data.orders.length).toBe(1);
       expect(data.orders[0].id).toBe(unpaidOrderId);
       expect(data.orders[0].customer_name).toBe("Kabir Sen");
+      expect(data.pagination).toBeDefined();
+      expect(data.pagination.page).toBe(1);
+      expect(data.pagination.total).toBeGreaterThanOrEqual(1);
+    });
+
+    it("supports server-side pagination with page and pageSize", async () => {
+      const req = new Request("http://localhost/api/admin/orders?page=1&pageSize=2", {
+        headers: { Cookie: authCookie },
+      });
+
+      const res = await ordersGET(req);
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.orders.length).toBeLessThanOrEqual(2);
+      expect(data.pagination.pageSize).toBe(2);
+      expect(data.pagination.page).toBe(1);
+      expect(data.pagination.totalPages).toBeGreaterThanOrEqual(1);
     });
 
     it("retrieves full order dossier with line items, notes, and audit timeline", async () => {
@@ -69,6 +86,41 @@ describe("Milestone 4: Sales & Content Modules Unit Tests", () => {
       expect(data.order.customer_name).toBe("Ananya Roy");
       expect(data.order.admin_notes).toBe("VIP high tea lover");
       expect(Array.isArray(data.order.events)).toBe(true);
+    });
+
+    it("modifies customer contact, address, and tracking via PATCH /api/admin/orders/[id]", async () => {
+      const req = new Request(`http://localhost/api/admin/orders/${paidOrderId}`, {
+        method: "PATCH",
+        headers: { Cookie: authCookie, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer_name: "Ananya Roy-Choudhury",
+          customer_phone: "+91 9830012345",
+          shipping_address: "Flat 4B, Silver Oak, Salt Lake, Kolkata 700091",
+          shipping_carrier: "Blue Dart",
+          tracking_number: "BLU123456789",
+          tracking_url: "https://www.bluedart.com/tracking?handler=t&awb=awb&numbers=BLU123456789",
+          admin_notes: "Priority delivery - handle with care",
+        }),
+      });
+
+      const res = await orderDetailPATCH(req, { params: Promise.resolve({ id: paidOrderId }) });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.order.customer_name).toBe("Ananya Roy-Choudhury");
+      expect(data.order.customer_phone).toBe("+91 9830012345");
+      expect(data.order.shipping_address).toBe("Flat 4B, Silver Oak, Salt Lake, Kolkata 700091");
+      expect(data.order.admin_notes).toBe("Priority delivery - handle with care");
+
+      // Verify dossier GET includes shipment details
+      const getReq = new Request(`http://localhost/api/admin/orders/${paidOrderId}`, {
+        headers: { Cookie: authCookie },
+      });
+      const getRes = await orderDetailGET(getReq, { params: Promise.resolve({ id: paidOrderId }) });
+      expect(getRes.status).toBe(200);
+      const dossier = await getRes.json();
+      expect(dossier.shipment).toBeDefined();
+      expect(dossier.shipment.carrierName).toBe("Blue Dart");
+      expect(dossier.shipment.awb.awb_code).toBe("BLU123456789");
     });
 
     it("updates admin internal notes via PATCH /api/admin/orders/[id]", async () => {

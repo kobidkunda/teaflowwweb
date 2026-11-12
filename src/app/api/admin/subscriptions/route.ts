@@ -1,12 +1,38 @@
 import { z } from 'zod';
 import { gate, body, json, failure } from '@/lib/international/http';
-import { subscriptionPolicy, subscriptionList, saveSubscriptionPolicy } from '@/lib/subscriptions/store';
+import { subscriptionPolicy, subscriptionListPaginated, saveSubscriptionPolicy } from '@/lib/subscriptions/store';
 import { getAdminUser } from '@/lib/adminAuth';
 import { enqueue, audit } from '@/lib/international/store';
 export const runtime = 'nodejs';
 export async function GET(request: Request) {
   const denied = gate(request, true); if (denied) return denied;
-  try { return json({ policy: subscriptionPolicy(), subscriptions: subscriptionList() }); } catch (error) { return failure(error); }
+  try {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get("page") || "1", 10) || 1;
+    const pageSize = Math.min(Math.max(parseInt(url.searchParams.get("pageSize") || url.searchParams.get("limit") || "20", 10) || 20, 1), 100);
+    const status = url.searchParams.get("status") || undefined;
+    const intervalDays = parseInt(url.searchParams.get("intervalDays") || "0", 10) || undefined;
+    const q = (url.searchParams.get("q") || "").slice(0, 60) || undefined;
+
+    const result = subscriptionListPaginated({
+      page,
+      pageSize,
+      status,
+      intervalDays,
+      q,
+    });
+
+    return json({
+      policy: subscriptionPolicy(),
+      subscriptions: result.subscriptions,
+      pagination: {
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+    });
+  } catch (error) { return failure(error); }
 }
 export async function POST(request: Request) {
   const denied = gate(request, true); if (denied) return denied;

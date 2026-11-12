@@ -179,6 +179,14 @@ export function OrderFulfillmentForm({ orderId }: { orderId: string }) {
         <p className="customer-info-line">
           Customer: <strong>{order.customer_name}</strong> ({order.customer_email})
         </p>
+        <div style={{ display: "flex", gap: "10px", marginTop: "12px", flexWrap: "wrap" }}>
+          <Link href={`/admin/orders/${order.id}/dispatch`} className="button button-primary" style={{ fontSize: "12px", padding: "6px 12px" }}>
+            <span>Open Dedicated Dispatch Center →</span>
+          </Link>
+          <Link href={`/admin/orders/${order.id}/modify`} className="button button-outline" style={{ fontSize: "12px", padding: "6px 12px" }}>
+            <span>Modify Customer & Address →</span>
+          </Link>
+        </div>
       </div>
 
       <div className="fulfillment-grid">

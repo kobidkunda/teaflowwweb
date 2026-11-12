@@ -241,6 +241,17 @@ describe('subscription API authorization', () => {
     const policy=await routes.GET(new Request('http://localhost/api/subscriptions/policy'),{params:Promise.resolve({action:'policy'})}); expect(policy.status).toBe(200); expect(await policy.text()).not.toContain('customer');
     expect((await admin.GET(new Request('http://localhost/api/admin/subscriptions'))).status).toBe(401);
   });
+  it('supports subscriptionListPaginated with status and cadence filters', async () => {
+    const list = store.subscriptionListPaginated({ page: 1, pageSize: 5 });
+    expect(list.pagination).toBeDefined();
+    expect(list.pagination.page).toBe(1);
+    expect(list.pagination.pageSize).toBe(5);
+    expect(Array.isArray(list.subscriptions)).toBe(true);
+
+    const filtered = store.subscriptionListPaginated({ status: 'active', intervalDays: 7 });
+    expect(filtered.pagination.total).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(filtered.subscriptions)).toBe(true);
+  });
 });
 
 describe('all products: tasting kits and edge cases', () => {

@@ -31,16 +31,107 @@ export function openCycle(id: string): Cycle | null {
 export function record(id: string, action: string, document: unknown = {}) {
   getDb().prepare('INSERT INTO tea_subscription_events(id,subscription_id,action,document,created_ms) VALUES (?,?,?,?,?)').run(randomUUID(), id, action, JSON.stringify(document), Date.now());
 }
-export function subscriptionList(customerId?: string) {
-  const rows = (customerId ? getDb().prepare('SELECT id FROM tea_subscriptions WHERE customer_id=? ORDER BY created_ms DESC LIMIT 200').all(customerId) : getDb().prepare('SELECT id FROM tea_subscriptions ORDER BY created_ms DESC LIMIT 200').all()) as { id: string }[];
-  return rows.map(r => {
-    const p = plan(r.id); const doc = JSON.parse(p.document);
-    const cycles = (getDb().prepare('SELECT id FROM tea_subscription_cycles WHERE subscription_id=? ORDER BY sequence DESC LIMIT 20').all(p.id) as { id: string }[]).map(r => {
-      const c = cycle(r.id);
-      const order = c.order_id ? getDb().prepare('SELECT payment_status,fulfillment_status,refund_minor,document FROM commerce_orders WHERE id=?').get(c.order_id) as { payment_status: string; fulfillment_status: string; refund_minor: number; document: string } : null;
-      const q = order ? JSON.parse(order.document) : null;
-      return { ...c, paymentStatus: order?.payment_status || '', fulfillmentStatus: order?.fulfillment_status || '', refundMinor: Number(order?.refund_minor || 0), totalPaise: q?.totalPaise, lines: q?.lines, paymentUrl: `/account/subscriptions?renewal=${c.id}` };
-    });
-    return { id: p.id, status: p.status, nextMs: p.next_ms, revision: p.revision, ...doc, cycles };
+export type SubscriptionListOptions = {
+  customerId?: string;
+  status?: string;
+  intervalDays?: number;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type PaginatedSubscriptionsResult = {
+  subscriptions: Array<ReturnType<typeof hydrateSubscriptionDetails>>;
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  pagination: {
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+};
+
+export function hydrateSubscriptionDetails(id: string) {
+  const p = plan(id);
+  const doc = JSON.parse(p.document);
+  const cycles = (getDb().prepare('SELECT id FROM tea_subscription_cycles WHERE subscription_id=? ORDER BY sequence DESC LIMIT 20').all(p.id) as { id: string }[]).map(r => {
+    const c = cycle(r.id);
+    const order = c.order_id ? getDb().prepare('SELECT payment_status,fulfillment_status,refund_minor,document FROM commerce_orders WHERE id=?').get(c.order_id) as { payment_status: string; fulfillment_status: string; refund_minor: number; document: string } : null;
+    const q = order ? JSON.parse(order.document) : null;
+    return { ...c, paymentStatus: order?.payment_status || '', fulfillmentStatus: order?.fulfillment_status || '', refundMinor: Number(order?.refund_minor || 0), totalPaise: q?.totalPaise, lines: q?.lines, paymentUrl: `/account/subscriptions?renewal=${c.id}` };
   });
+  return { id: p.id, customerId: p.customer_id, status: p.status, nextMs: p.next_ms, revision: p.revision, createdMs: p.created_ms, ...doc, cycles };
+}
+
+export function subscriptionListPaginated(opts: SubscriptionListOptions = {}): PaginatedSubscriptionsResult {
+  const db = getDb();
+  const page = Math.max(1, Number(opts.page) || 1);
+  const pageSize = Math.min(Math.max(Number(opts.pageSize) || 20, 1), 100);
+
+  const clauses: string[] = [];
+  const params: (string | number)[] = [];
+
+  if (opts.customerId) {
+    clauses.push("customer_id = ?");
+    params.push(opts.customerId);
+  }
+  if (opts.status && opts.status !== "all") {
+    clauses.push("status = ?");
+    params.push(opts.status);
+  }
+  if (opts.q && opts.q.trim()) {
+    const term = "%" + opts.q.trim().slice(0, 60) + "%";
+    clauses.push("(id LIKE ? OR customer_id LIKE ? OR document LIKE ?)");
+    params.push(term, term, term);
+  }
+
+  const where = clauses.length ? " WHERE " + clauses.join(" AND ") : "";
+
+  let rows: Array<{ id: string; created_ms: number; document: string }> = [];
+  try {
+    rows = db.prepare("SELECT id, created_ms, document FROM tea_subscriptions" + where + " ORDER BY created_ms DESC").all(...params) as typeof rows;
+  } catch {
+    rows = [];
+  }
+
+  if (opts.intervalDays && opts.intervalDays > 0) {
+    rows = rows.filter((r) => {
+      try {
+        const doc = JSON.parse(r.document);
+        return doc.intervalDays === opts.intervalDays;
+      } catch {
+        return false;
+      }
+    });
+  }
+
+  const total = rows.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageSlice = rows.slice(startIndex, startIndex + pageSize);
+
+  const subscriptions = pageSlice.map((r) => hydrateSubscriptionDetails(r.id));
+
+  return {
+    subscriptions,
+    total,
+    page: currentPage,
+    pageSize,
+    totalPages,
+    pagination: {
+      total,
+      page: currentPage,
+      pageSize,
+      totalPages,
+    },
+  };
+}
+
+export function subscriptionList(customerId?: string) {
+  const res = subscriptionListPaginated({ customerId, pageSize: 200 });
+  return res.subscriptions;
 }

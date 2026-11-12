@@ -16,6 +16,9 @@ import {
   CheckCircle2,
   Building2,
   Landmark,
+  Edit,
+  Printer,
+  ExternalLink,
 } from "lucide-react";
 import { ShiprocketDispatchCard } from "./ShiprocketDispatchCard";
 
@@ -27,6 +30,7 @@ export type FullOrder = {
   id: string;
   customer_name: string;
   customer_email: string;
+  customer_phone?: string;
   shipping_address: string;
   subtotal_paise: number;
   shipping_paise: number;
@@ -39,6 +43,20 @@ export type FullOrder = {
   created_at: string;
   admin_notes?: string;
   idempotency_key?: string;
+  payment_info?: {
+    gateway: string;
+    gateway_order_id?: string | null;
+    gateway_payment_id?: string | null;
+    payment_method?: string | null;
+    refund_minor?: number;
+    transactions?: Array<{
+      gateway: string;
+      gateway_payment_id?: string;
+      amount_paise: number;
+      status: string;
+      created_at: string;
+    }>;
+  };
   wholesale?: {
     isWholesale: true;
     advancePercent: number;
@@ -78,6 +96,21 @@ function formatRupees(paise: number): string {
 export function OrderDossierView({ orderId }: OrderDetailProps) {
   const [order, setOrder] = useState<FullOrder | null>(null);
   const [events, setEvents] = useState<FullOrder["events"]>([]);
+  const [transactions, setTransactions] = useState<Array<{
+    id?: number;
+    gateway?: string;
+    gateway_payment_id?: string;
+    amount_paise?: number;
+    status?: string;
+    created_at?: string;
+  }>>([]);
+  const [shipment, setShipment] = useState<{
+    carrierName?: string;
+    awb?: { awb_code?: string; courier_name?: string };
+    trackingUrl?: string;
+    labelUrl?: string;
+  } | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +136,8 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
         if (mounted) {
           setOrder(data.order);
           setEvents(data.events || data.order?.events || []);
+          setTransactions(data.transactions || data.order?.payment_info?.transactions || []);
+          setShipment(data.shipment || null);
         }
       } catch (err: unknown) {
         if (mounted) {
@@ -146,6 +181,7 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
         const refreshed = await refreshRes.json();
         if (refreshed.order) setOrder(refreshed.order);
         if (refreshed.events) setEvents(refreshed.events);
+        if (refreshed.transactions) setTransactions(refreshed.transactions);
       }
     } catch (err: unknown) {
       setConfirmError(err instanceof Error ? err.message : "Error confirming payment");
@@ -191,7 +227,7 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
           <div className="title-row">
             <h1 className="order-dossier-title">Order #{order.id}</h1>
             <span className={`status-pill payment-${order.payment_status}`}>
-              {order.payment_status}
+              {order.payment_status.replace(/_/g, " ")}
             </span>
             <span className={`status-pill dispatch-${order.dispatch_status}`}>
               {order.dispatch_status}
@@ -222,15 +258,28 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
               style={{ background: "#23483a", color: "#ffffff", borderColor: "#23483a" }}
             >
               <CheckCircle2 size={16} aria-hidden="true" />
-              <span>Confirm Full A/C Transfer Received</span>
+              <span>Confirm Bank Transfer</span>
             </button>
           )}
           {!isCancelled && (
-            <Link href={`/admin/orders/${order.id}/edit`} className="button button-primary">
+            <Link href={`/admin/orders/${order.id}/dispatch`} className="button button-primary">
               <Truck size={16} aria-hidden="true" />
-              <span>Update Fulfillment & Notes</span>
+              <span>Dispatch Center</span>
             </Link>
           )}
+          <Link href={`/admin/orders/${order.id}/modify`} className="button button-outline">
+            <Edit size={16} aria-hidden="true" />
+            <span>Modify Order</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="button button-outline"
+            title="Print packing manifest"
+          >
+            <Printer size={16} aria-hidden="true" />
+            <span>Print Slip</span>
+          </button>
           {!isCancelled && (
             <Link href={`/admin/orders/${order.id}/cancel`} className="button button-outline text-danger">
               <XCircle size={16} aria-hidden="true" />
@@ -368,10 +417,15 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
         <div className="grid-side-col">
           {/* Customer Dossier */}
           <section className="dossier-card" aria-label="Customer profile">
-            <h2 className="card-heading">
-              <User size={18} aria-hidden="true" />
-              <span>Customer Information</span>
-            </h2>
+            <div className="card-header-flex">
+              <h2 className="card-heading">
+                <User size={18} aria-hidden="true" />
+                <span>Customer Information</span>
+              </h2>
+              <Link href={`/admin/orders/${order.id}/modify`} className="edit-notes-link">
+                Modify Info →
+              </Link>
+            </div>
             <div className="info-item">
               <span className="info-label">Full Name</span>
               <span className="info-value font-bold">{order.customer_name}</span>
@@ -382,37 +436,183 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
                 {order.customer_email}
               </a>
             </div>
+            {order.customer_phone && (
+              <div className="info-item">
+                <span className="info-label">Phone</span>
+                <span className="info-value font-mono">{order.customer_phone}</span>
+              </div>
+            )}
           </section>
 
           {/* Shipping Address */}
           <section className="dossier-card" aria-label="Delivery destination">
-            <h2 className="card-heading">
-              <MapPin size={18} aria-hidden="true" />
-              <span>Delivery Address</span>
-            </h2>
+            <div className="card-header-flex">
+              <h2 className="card-heading">
+                <MapPin size={18} aria-hidden="true" />
+                <span>Delivery Address</span>
+              </h2>
+              <Link href={`/admin/orders/${order.id}/modify`} className="edit-notes-link">
+                Edit →
+              </Link>
+            </div>
             <p className="address-display">
               {order.shipping_address || "No shipping address on file."}
             </p>
           </section>
 
-          {/* Payment Transaction Reference */}
+          {/* Payment Transaction Details Card */}
           <section className="dossier-card" aria-label="Payment transaction details">
             <h2 className="card-heading">
               <CreditCard size={18} aria-hidden="true" />
-              <span>Payment Details</span>
+              <span>Payment &amp; Transaction Details</span>
             </h2>
             <div className="info-item">
               <span className="info-label">Payment Status</span>
               <span className={`status-pill payment-${order.payment_status}`}>
-                {order.payment_status}
+                {order.payment_status.replace(/_/g, " ")}
               </span>
             </div>
+
+            <div className="info-item">
+              <span className="info-label">Gateway</span>
+              <span className="info-value font-bold">
+                {order.payment_info?.gateway ||
+                  (order.payment_status === "cod_due" || order.payment_status === "cod_remitted"
+                    ? "Cash On Delivery (COD)"
+                    : "Standard Gateway")}
+              </span>
+            </div>
+
+            {order.payment_info?.payment_method && (
+              <div className="info-item">
+                <span className="info-label">Payment Method</span>
+                <span className="info-value font-mono">
+                  {order.payment_info.payment_method.toUpperCase()}
+                </span>
+              </div>
+            )}
+
+            {order.payment_info?.gateway_order_id && (
+              <div className="info-item">
+                <span className="info-label">Gateway Order ID</span>
+                <span className="info-value font-mono font-xs">
+                  {order.payment_info.gateway_order_id}
+                </span>
+              </div>
+            )}
+
+            {order.payment_info?.gateway_payment_id && (
+              <div className="info-item">
+                <span className="info-label">Gateway Payment ID</span>
+                <span className="info-value font-mono font-xs">
+                  {order.payment_info.gateway_payment_id}
+                </span>
+              </div>
+            )}
+
+            {order.payment_info?.refund_minor !== undefined && order.payment_info.refund_minor > 0 && (
+              <div className="info-item">
+                <span className="info-label">Refunded Amount</span>
+                <span className="info-value font-bold text-amber">
+                  {formatRupees(order.payment_info.refund_minor)}
+                </span>
+              </div>
+            )}
+
             <div className="info-item">
               <span className="info-label">Idempotency Reference</span>
               <span className="info-value font-mono font-xs">
                 {order.idempotency_key || "Direct capture / demo"}
               </span>
             </div>
+
+            {/* Transactions Log */}
+            {transactions && transactions.length > 0 && (
+              <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid #ede9df" }}>
+                <span className="info-label" style={{ display: "block", marginBottom: 6 }}>
+                  Gateway Transactions Log
+                </span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {transactions.map((tx, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: "6px 8px",
+                        background: "#ede9df",
+                        borderRadius: "4px",
+                        fontSize: "12px",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <div>
+                        <strong>{formatRupees(tx.amount_paise || 0)}</strong> ·{" "}
+                        <span style={{ textTransform: "uppercase" }}>{tx.status}</span>
+                        {tx.gateway_payment_id && (
+                          <div className="font-mono text-muted" style={{ fontSize: "11px" }}>
+                            {tx.gateway_payment_id}
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-muted" style={{ fontSize: "11px" }}>
+                        {tx.created_at ? new Date(tx.created_at).toLocaleDateString("en-IN") : "—"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Dispatch & Tracking Summary */}
+          <section className="dossier-card" aria-label="Dispatch & tracking summary">
+            <div className="card-header-flex">
+              <h2 className="card-heading">
+                <Truck size={18} aria-hidden="true" />
+                <span>Dispatch &amp; Tracking</span>
+              </h2>
+              <Link href={`/admin/orders/${order.id}/dispatch`} className="edit-notes-link">
+                Dispatch Center →
+              </Link>
+            </div>
+
+            <div className="info-item">
+              <span className="info-label">Fulfillment Status</span>
+              <span className={`status-pill dispatch-${order.dispatch_status}`}>
+                {order.dispatch_status}
+              </span>
+            </div>
+
+            {shipment?.carrierName && (
+              <div className="info-item">
+                <span className="info-label">Courier Carrier</span>
+                <span className="info-value font-bold">{shipment.carrierName}</span>
+              </div>
+            )}
+
+            {shipment?.awb?.awb_code && (
+              <div className="info-item">
+                <span className="info-label">AWB / Tracking Number</span>
+                <span className="info-value font-mono font-bold">{shipment.awb.awb_code}</span>
+              </div>
+            )}
+
+            {shipment?.trackingUrl && (
+              <div className="info-item">
+                <span className="info-label">Tracking Link</span>
+                <a
+                  href={shipment.trackingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="info-value text-link"
+                  style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                >
+                  <span>Track Package</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+            )}
           </section>
 
           {/* Wholesale Settlement & Bank Transfer Details */}
@@ -485,6 +685,8 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
                 .then((d) => {
                   if (d.order) setOrder(d.order);
                   if (d.events) setEvents(d.events);
+                  if (d.transactions) setTransactions(d.transactions);
+                  if (d.shipment) setShipment(d.shipment);
                 })
                 .catch(() => {});
             }}
@@ -497,7 +699,7 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
                 <FileText size={18} aria-hidden="true" />
                 <span>Admin Notes</span>
               </h2>
-              <Link href={`/admin/orders/${order.id}/edit`} className="edit-notes-link">
+              <Link href={`/admin/orders/${order.id}/modify`} className="edit-notes-link">
                 Edit
               </Link>
             </div>
@@ -658,7 +860,7 @@ export function OrderDossierView({ orderId }: OrderDetailProps) {
         .dossier-actions {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           flex-wrap: wrap;
         }
 

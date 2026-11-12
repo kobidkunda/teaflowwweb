@@ -1,11 +1,31 @@
 import { getDb } from "@/lib/db";
 export type OrderItem = { variant_id: number; quantity: number; unit_price_paise: number; sku?: string };
+export type OrderPaymentInfo = {
+  gateway?: string;
+  method?: string;
+  gateway_payment_id?: string | null;
+  gateway_order_id?: string | null;
+  refund_paise?: number;
+  utr?: string | null;
+  transactions?: Array<{
+    id: string;
+    gateway: string;
+    gateway_payment_id?: string | null;
+    amount_paise: number;
+    status: string;
+    created_at: string;
+  }>;
+};
 export type Order = {
   id: string; customer_name: string; customer_email: string; shipping_address: string;
   subtotal_paise: number; shipping_paise: number; discount_paise: number; total_paise: number;
   coupon_code: string | null; status: string; payment_status: string; dispatch_status: string;
   created_at: string; items: OrderItem[];
   wholesale?: import("@/lib/international/models").WholesaleQuoteMeta;
+  admin_notes?: string;
+  customer_phone?: string | null;
+  idempotency_key?: string;
+  payment_info?: OrderPaymentInfo;
 };
 export class OrderTransitionError extends Error {}
 const DISPATCH_NEXT: Record<string, string[]> = {
@@ -21,17 +41,47 @@ function hydrate(row: Record<string, unknown>): Order {
   const items = db.prepare(
     "SELECT oi.variant_id, oi.quantity, oi.unit_price_paise, v.sku FROM order_items oi LEFT JOIN variants v ON v.id=oi.variant_id WHERE oi.order_id=?"
   ).all(row.id) as OrderItem[];
-  return { ...(row as unknown as Omit<Order, "items">), items };
+
+  let transactions: NonNullable<OrderPaymentInfo["transactions"]> = [];
+  try {
+    transactions = db.prepare(
+      "SELECT id, gateway, gateway_payment_id, amount_paise, status, created_at FROM order_payments WHERE order_id = ? ORDER BY created_at DESC"
+    ).all(row.id) as typeof transactions;
+  } catch {
+    transactions = [];
+  }
+
+  const pStatus = String(row.payment_status || "unpaid");
+  const sMethod = String(row.shipping_method || "standard");
+  const payment_info: OrderPaymentInfo = {
+    gateway: transactions[0]?.gateway || (pStatus === "pending_bank_transfer" ? "Bank Transfer" : "Standard"),
+    method: sMethod === "cod" ? "Cash On Delivery (COD)" : (pStatus === "pending_bank_transfer" ? "NEFT / RTGS Bank Transfer" : "Online Gateway"),
+    gateway_payment_id: transactions[0]?.gateway_payment_id || null,
+    refund_paise: 0,
+    transactions,
+  };
+
+  return { ...(row as unknown as Omit<Order, "items">), items, payment_info };
 }
-function hydrateCommerceOrder(row: { id: string; document: string; payment_status: string; fulfillment_status: string; created_ms: number }): Order {
+function hydrateCommerceOrder(row: { id: string; document: string; payment_status: string; fulfillment_status: string; created_ms: number; gateway_order_id?: string; gateway_payment_id?: string; refund_minor?: number }): Order {
   try {
     const q = JSON.parse(row.document);
     const a = q?.input?.address || {};
     const addressStr = `${a.name || "Customer"}, ${a.line1 || ""}${a.line2 ? ", " + a.line2 : ""}, ${a.city || ""}, ${a.state || ""} - ${a.postcode || ""}, ${a.country || "IN"}`;
+    const methodStr = q?.input?.method ? String(q.input.method).toUpperCase() : "CARD";
+    const payment_info: OrderPaymentInfo = {
+      gateway: row.gateway_order_id ? "Razorpay" : "Commerce Gateway",
+      method: methodStr,
+      gateway_order_id: row.gateway_order_id || null,
+      gateway_payment_id: row.gateway_payment_id || null,
+      refund_paise: Number(row.refund_minor || 0),
+      transactions: [],
+    };
     return {
       id: row.id,
       customer_name: a.name || "Customer",
       customer_email: a.email || "customer@example.com",
+      customer_phone: a.phone || null,
       shipping_address: addressStr,
       subtotal_paise: Number(q.subtotalPaise || 0),
       shipping_paise: Number(q.shippingPaise || 0),
@@ -49,6 +99,7 @@ function hydrateCommerceOrder(row: { id: string; document: string; payment_statu
         sku: l.sku,
       })),
       wholesale: q?.wholesale,
+      payment_info,
     };
   } catch {
     return {
@@ -87,41 +138,120 @@ export function getOrder(id: string): Order | null {
 
   return null;
 }
-export function listOrders(opts: { paymentStatus?: string; dispatchStatus?: string; q?: string; limit?: number; cursor?: string } = {}): Order[] {
+export type ListOrdersOptions = {
+  paymentStatus?: string;
+  dispatchStatus?: string;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+  limit?: number;
+  cursor?: string;
+};
+
+export type PaginatedOrdersResult = {
+  orders: Order[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export function listOrdersPaginated(opts: ListOrdersOptions = {}): PaginatedOrdersResult {
+  const db = getDb();
+  const page = Math.max(1, Number(opts.page) || 1);
+  const pageSize = Math.min(Math.max(Number(opts.pageSize ?? opts.limit ?? 20) || 20, 1), 100);
+
+  // 1. Fetch matching from `orders`
   const clauses: string[] = [];
   const params: (string | number)[] = [];
-  if (opts.paymentStatus) { clauses.push("payment_status = ?"); params.push(opts.paymentStatus); }
-  if (opts.dispatchStatus) { clauses.push("dispatch_status = ?"); params.push(opts.dispatchStatus); }
-  if (opts.q) { clauses.push("(id LIKE ? OR customer_email LIKE ?)"); params.push("%" + opts.q.slice(0, 60) + "%", "%" + opts.q.slice(0, 60) + "%"); }
-  if (opts.cursor) { clauses.push("created_at < (SELECT created_at FROM orders WHERE id=?)"); params.push(opts.cursor); }
+  if (opts.paymentStatus && opts.paymentStatus !== "all") {
+    clauses.push("payment_status = ?");
+    params.push(opts.paymentStatus);
+  }
+  if (opts.dispatchStatus && opts.dispatchStatus !== "all") {
+    clauses.push("dispatch_status = ?");
+    params.push(opts.dispatchStatus);
+  }
+  if (opts.q && opts.q.trim()) {
+    const term = "%" + opts.q.trim().slice(0, 60) + "%";
+    clauses.push("(id LIKE ? OR customer_email LIKE ? OR customer_name LIKE ? OR customer_phone LIKE ?)");
+    params.push(term, term, term, term);
+  }
+  if (opts.cursor) {
+    clauses.push("created_at < (SELECT created_at FROM orders WHERE id=?)");
+    params.push(opts.cursor);
+  }
+
   const where = clauses.length ? " WHERE " + clauses.join(" AND ") : "";
-  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 100);
-  const rows = getDb().prepare("SELECT *, COALESCE(discount_paise,0) AS discount_paise FROM orders" + where + " ORDER BY created_at DESC LIMIT ?").all(...params, limit) as Record<string, unknown>[];
-  const list = rows.map(hydrate);
-
-  // Also include commerce_orders if not present
+  let orderRows: Array<{ id: string; created_at: string }> = [];
   try {
-    const cRows = getDb().prepare("SELECT id, document, payment_status, fulfillment_status, created_ms FROM commerce_orders ORDER BY created_ms DESC LIMIT ?").all(limit) as Array<{
-      id: string;
-      document: string;
-      payment_status: string;
-      fulfillment_status: string;
-      created_ms: number;
-    }>;
-    const existingIds = new Set(list.map(o => o.id));
-    for (const c of cRows) {
-      if (!existingIds.has(c.id)) {
-        const hyd = hydrateCommerceOrder(c);
-        if (opts.paymentStatus && hyd.payment_status !== opts.paymentStatus) continue;
-        if (opts.dispatchStatus && hyd.dispatch_status !== opts.dispatchStatus) continue;
-        if (opts.q && !hyd.id.includes(opts.q) && !hyd.customer_email.includes(opts.q)) continue;
-        list.push(hyd);
-      }
-    }
-  } catch {}
+    orderRows = db.prepare("SELECT id, created_at FROM orders" + where).all(...params) as Array<{ id: string; created_at: string }>;
+  } catch {
+    orderRows = [];
+  }
 
-  list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  return list.slice(0, limit);
+  // 2. Fetch matching from `commerce_orders` (excluding IDs that exist in orders)
+  const cClauses: string[] = ["id NOT IN (SELECT id FROM orders)"];
+  const cParams: (string | number)[] = [];
+  if (opts.paymentStatus && opts.paymentStatus !== "all") {
+    cClauses.push("payment_status = ?");
+    cParams.push(opts.paymentStatus);
+  }
+  if (opts.dispatchStatus && opts.dispatchStatus !== "all") {
+    cClauses.push("fulfillment_status = ?");
+    cParams.push(opts.dispatchStatus);
+  }
+  if (opts.q && opts.q.trim()) {
+    const term = "%" + opts.q.trim().slice(0, 60) + "%";
+    cClauses.push("(id LIKE ? OR document LIKE ?)");
+    cParams.push(term, term);
+  }
+
+  let cRows: Array<{ id: string; created_ms: number }> = [];
+  try {
+    cRows = db.prepare("SELECT id, created_ms FROM commerce_orders WHERE " + cClauses.join(" AND ")).all(...cParams) as Array<{ id: string; created_ms: number }>;
+  } catch {
+    cRows = [];
+  }
+
+  // Combine IDs and sort by timestamp DESC
+  const allIds: Array<{ id: string; time: number }> = [
+    ...orderRows.map((r) => ({ id: r.id, time: new Date(r.created_at).getTime() || 0 })),
+    ...cRows.map((r) => ({ id: r.id, time: Number(r.created_ms) || 0 })),
+  ];
+
+  allIds.sort((a, b) => b.time - a.time);
+
+  const total = allIds.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (currentPage - 1) * pageSize;
+  const pageSlice = allIds.slice(startIndex, startIndex + pageSize);
+
+  const orders = pageSlice
+    .map((item) => getOrder(item.id))
+    .filter((o): o is Order => o !== null);
+
+  return {
+    orders,
+    total,
+    page: currentPage,
+    pageSize,
+    totalPages,
+  };
+}
+
+export function listOrders(opts: { paymentStatus?: string; dispatchStatus?: string; q?: string; limit?: number; cursor?: string } = {}): Order[] {
+  const pageSize = Math.min(Math.max(opts.limit ?? 20, 1), 100);
+  const result = listOrdersPaginated({
+    paymentStatus: opts.paymentStatus,
+    dispatchStatus: opts.dispatchStatus,
+    q: opts.q,
+    cursor: opts.cursor,
+    pageSize,
+    page: 1,
+  });
+  return result.orders;
 }
 // Service-enforced dispatch state machine; audit row in the same transaction.
 export function setDispatchStatus(orderId: string, to: string, actor = "admin"): Order {
