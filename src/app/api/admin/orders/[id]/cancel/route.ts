@@ -12,6 +12,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (e instanceof OrderTransitionError) {
       return /not found/i.test(e.message) ? notFound("Order not found.") : conflict(e.message);
     }
-    return conflict("Unable to cancel the order.");
+    const msg = e instanceof Error ? e.message : "Unable to cancel the order.";
+    return conflict(msg);
   }
 }

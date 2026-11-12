@@ -281,10 +281,39 @@ export function setDispatchStatus(orderId: string, to: string, actor = "admin"):
     }
     if (isCommerceOrder) {
       db.prepare("UPDATE commerce_orders SET fulfillment_status=? WHERE id=?").run(to, orderId);
+      if (to === "cancelled") {
+        try {
+          const lines = db.prepare("SELECT variant_id, quantity FROM commerce_reservations WHERE order_id = ?").all(orderId) as { variant_id: number; quantity: number }[];
+          for (const line of lines) {
+            if (line.variant_id > 0) {
+              db.prepare("UPDATE variants SET stock = stock + ? WHERE id = ?").run(line.quantity, line.variant_id);
+            }
+          }
+        } catch {}
+        try {
+          const hold = db.prepare("SELECT code FROM commerce_coupon_holds WHERE order_id = ?").get(orderId) as { code: string } | undefined;
+          if (hold) {
+            db.prepare("UPDATE coupons SET used_count = CASE WHEN used_count > 0 THEN used_count - 1 ELSE 0 END WHERE code = ?").run(hold.code);
+            db.prepare("DELETE FROM commerce_coupon_holds WHERE order_id = ?").run(orderId);
+          }
+        } catch {}
+      }
+      try {
+        db.prepare("INSERT INTO commerce_events (id, kind, document, created_ms) VALUES (?, 'order.status', ?, ?)").run(
+          `status:${orderId}:${Date.now()}`,
+          JSON.stringify({ orderId, from, to, actor }),
+          Date.now()
+        );
+      } catch {}
     } else {
       db.prepare("UPDATE orders SET dispatch_status=? WHERE id=?").run(to, orderId);
     }
-    db.prepare("INSERT INTO payment_events (order_id, from_status, to_status, actor) VALUES (?,?,?,?)").run(orderId, from, to, actor);
+    try {
+      const existsInOrders = db.prepare("SELECT 1 FROM orders WHERE id=?").get(orderId);
+      if (existsInOrders) {
+        db.prepare("INSERT INTO payment_events (order_id, from_status, to_status, actor) VALUES (?,?,?,?)").run(orderId, from, to, actor);
+      }
+    } catch {}
     return getOrder(orderId)!;
   })();
 }

@@ -251,6 +251,34 @@ describe("Milestone 4: Sales & Content Modules Unit Tests", () => {
       const data = await res.json();
       expect(data.error).toMatch(/delivered orders cannot be cancelled/i);
     });
+
+    it("successfully cancels an unfulfilled commerce order without foreign key violation", async () => {
+      const commOrderId = "comm-order-unit-cancel";
+      const quoteId = "quote-comm-cancel-unit";
+      env.db.exec(`
+        INSERT INTO commerce_quotes (id, owner, document, expires_ms) VALUES ('${quoteId}', 'admin', '{}', 9999999999999);
+        INSERT INTO commerce_orders (
+          id, owner, idempotency_key, quote_id, document, payment_status, fulfillment_status, reserved_until, created_ms
+        ) VALUES (
+          '${commOrderId}', 'admin', 'idem-comm-cancel', '${quoteId}',
+          '{"input":{"address":{"name":"Kobid","email":"test@example.com"}},"totalPaise":164000}',
+          'cod_due', 'unfulfilled', 9999999999999, 1000000000
+        );
+      `);
+
+      const req = new Request(`http://localhost/api/admin/orders/${commOrderId}/cancel`, {
+        method: "POST",
+        headers: { Cookie: authCookie },
+      });
+
+      const res = await orderCancelPOST(req, { params: Promise.resolve({ id: commOrderId }) });
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.order.dispatch_status).toBe("cancelled");
+
+      const check = getOrder(commOrderId);
+      expect(check?.dispatch_status).toBe("cancelled");
+    });
   });
 
   describe("Visitors & Analytics API and Conversion Funnel", () => {

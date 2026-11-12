@@ -31,7 +31,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   // Fetch audit event timeline from payment_events
   let events: Array<{
-    id: number;
+    id: number | string;
     order_id: string;
     from_status: string;
     to_status: string;
@@ -46,6 +46,30 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       .all(decodedId) as typeof events;
   } catch {
     events = [];
+  }
+
+  if (events.length === 0) {
+    try {
+      const cEvents = db
+        .prepare(
+          "SELECT id, kind, document, created_ms FROM commerce_events WHERE document LIKE ? ORDER BY created_ms ASC"
+        )
+        .all(`%"orderId":"${decodedId}"%`) as Array<{ id: string; kind: string; document: string; created_ms: number }>;
+      events = cEvents.map((ce) => {
+        let doc: Record<string, unknown> = {};
+        try { doc = JSON.parse(ce.document); } catch {}
+        return {
+          id: ce.id,
+          order_id: decodedId,
+          from_status: String(doc.from || "unfulfilled"),
+          to_status: String(doc.to || ce.kind),
+          actor: String(doc.actor || "admin"),
+          created_at: new Date(Number(ce.created_ms)).toISOString(),
+        };
+      });
+    } catch {
+      // Ignored
+    }
   }
 
   // Fetch transaction records from order_payments
