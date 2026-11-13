@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   FileSpreadsheet,
   FileCode,
+  FileJson,
   Copy,
   Check,
   Download,
@@ -41,7 +42,7 @@ export function AdminFeedsClient({
   const [testToken, setTestToken] = useState(configuredToken || "");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "in_stock" | "out_of_stock">("all");
-  const [activeGuideTab, setActiveGuideTab] = useState<"google" | "meta">("google");
+  const [activeGuideTab, setActiveGuideTab] = useState<"google" | "meta" | "openai">("google");
 
   const [domainMode, setDomainMode] = useState<"public" | "current" | "custom">("public");
   const [clientOrigin, setClientOrigin] = useState<string>(detectedOrigin || "");
@@ -114,6 +115,12 @@ export function AdminFeedsClient({
   const metaCsvDownloadUrl = buildEndpointUrl("/feeds/catalog.csv", true);
   const metaApiAliasUrl = `${activeBaseUrl}/api/feeds/meta${tokenQuery}`;
   const metaCsvInspectUrl = buildEndpointUrl("/feeds/catalog.csv", false);
+
+  const openaiJsonlUrl = `${activeBaseUrl}/feeds/openai.jsonl${tokenQuery}`;
+  const openaiJsonlDownloadUrl = buildEndpointUrl("/feeds/openai.jsonl", true);
+  const openaiJsonlGzDownloadUrl = `${openaiJsonlDownloadUrl}${openaiJsonlDownloadUrl.includes("?") ? "&" : "?"}gzip=1`;
+  const openaiApiAliasUrl = `${activeBaseUrl}/api/feeds/openai${tokenQuery}`;
+  const openaiJsonlInspectUrl = buildEndpointUrl("/feeds/openai.jsonl", false);
 
   const copyToClipboard = async (text: string, key: string) => {
     try {
@@ -578,6 +585,141 @@ export function AdminFeedsClient({
             <span className="feature-pill">link</span>
           </div>
         </div>
+
+        {/* Card 3: OpenAI Commerce JSONL */}
+        <div className="feed-endpoint-card">
+          <div className="endpoint-card-header">
+            <div className="endpoint-title-row">
+              <span className="endpoint-icon-box xml">
+                <FileJson size={22} aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="endpoint-name">OpenAI Commerce</h2>
+                <span className="endpoint-format-tag">UTF-8 JSONL / JSONL.GZ</span>
+              </div>
+            </div>
+            <span className="endpoint-channel-tag">Agentic Commerce</span>
+          </div>
+
+          <p className="endpoint-description">
+            Compliant with OpenAI Commerce Product Feed specification for ChatGPT discovery. Outputs newline-delimited JSON with <code>item_id</code>, geo-tagging, and search/checkout eligibility flags.
+          </p>
+
+          <div className="endpoint-url-box">
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+              <label className="url-label" htmlFor="openai-feed-url" style={{ marginBottom: 0 }}>
+                Live Feed URL
+              </label>
+              {isCurrentPrivate ? (
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    background: "rgba(220, 100, 30, 0.12)",
+                    color: "#b36b3d",
+                  }}
+                  title="Private LAN IPs cannot be crawled externally"
+                >
+                  Private LAN (Not Publicly Crawlable)
+                </span>
+              ) : (
+                <span
+                  style={{
+                    fontSize: "11px",
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                    background: "rgba(35, 72, 58, 0.12)",
+                    color: "#23483a",
+                  }}
+                  title="Public URL ready for OpenAI Commerce snapshot ingestion"
+                >
+                  Publicly Available
+                </span>
+              )}
+            </div>
+            <div className="url-input-group">
+              <input
+                id="openai-feed-url"
+                type="text"
+                readOnly
+                value={openaiJsonlUrl}
+                className="url-display-input"
+              />
+              <button
+                type="button"
+                onClick={() => copyToClipboard(openaiJsonlUrl, "openai-url")}
+                className="button button-outline copy-btn"
+                aria-label="Copy OpenAI Commerce JSONL URL"
+              >
+                {copiedKey === "openai-url" ? (
+                  <>
+                    <Check size={15} className="text-success" aria-hidden="true" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={15} aria-hidden="true" />
+                    <span>Copy URL</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="endpoint-crawler-alias">
+            <span className="alias-label">Crawler Alias:</span>
+            <code className="alias-code">{openaiApiAliasUrl}</code>
+            <button
+              type="button"
+              onClick={() => copyToClipboard(openaiApiAliasUrl, "openai-alias")}
+              className="alias-copy-btn"
+              title="Copy Crawler Alias"
+            >
+              {copiedKey === "openai-alias" ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+            </button>
+          </div>
+
+          <div className="endpoint-actions-bar">
+            <a
+              href={openaiJsonlDownloadUrl}
+              download="openai-product-feed.jsonl"
+              className="button button-primary action-btn"
+            >
+              <Download size={15} aria-hidden="true" />
+              <span>Download JSONL</span>
+            </a>
+            <a
+              href={openaiJsonlGzDownloadUrl}
+              download="openai-product-feed.jsonl.gz"
+              className="button button-outline action-btn"
+            >
+              <Download size={15} aria-hidden="true" />
+              <span>Download .jsonl.gz</span>
+            </a>
+            <a
+              href={openaiJsonlInspectUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button button-outline action-btn"
+              title="Inspect raw JSONL on current server"
+            >
+              <ExternalLink size={15} aria-hidden="true" />
+              <span>Inspect Raw JSONL</span>
+            </a>
+          </div>
+
+          <div className="endpoint-features-list">
+            <span className="feature-pill">item_id</span>
+            <span className="feature-pill">url</span>
+            <span className="feature-pill">image_url</span>
+            <span className="feature-pill">seller_name</span>
+            <span className="feature-pill">target_countries</span>
+            <span className="feature-pill">is_eligible_search</span>
+          </div>
+        </div>
       </div>
 
       {/* Security Gate & Token Configuration Tester */}
@@ -815,6 +957,15 @@ export function AdminFeedsClient({
             >
               Meta Commerce Manager
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeGuideTab === "openai"}
+              className={`guide-tab-btn ${activeGuideTab === "openai" ? "active" : ""}`}
+              onClick={() => setActiveGuideTab("openai")}
+            >
+              OpenAI Commerce
+            </button>
           </div>
         </div>
 
@@ -854,7 +1005,7 @@ export function AdminFeedsClient({
                 </li>
               </ol>
             </div>
-          ) : (
+          ) : activeGuideTab === "meta" ? (
             <div className="guide-panel" role="tabpanel">
               <h4>Configuring Meta Commerce Manager (Facebook / Instagram Shopping)</h4>
               <ol className="guide-steps-list">
@@ -886,6 +1037,38 @@ export function AdminFeedsClient({
                 </li>
                 <li>
                   Complete setup to activate Instagram Shop and Facebook Store product tagging across your catalog.
+                </li>
+              </ol>
+            </div>
+          ) : (
+            <div className="guide-panel" role="tabpanel">
+              <h4>Configuring OpenAI Commerce Product Feed (ChatGPT Discovery)</h4>
+              <ol className="guide-steps-list">
+                <li>
+                  Follow the <a href="https://developers.openai.com/commerce/specs/file-upload/products" target="_blank" rel="noopener noreferrer">OpenAI Commerce Product Feed Spec</a>.
+                </li>
+                <li>
+                  Use the live JSONL endpoint or download a compressed <code>.jsonl.gz</code> full snapshot:
+                  <div className="guide-url-preview">
+                    <code>{openaiJsonlUrl}</code>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(openaiJsonlUrl, "guide-openai-url")}
+                      className="button button-cream"
+                    >
+                      {copiedKey === "guide-openai-url" ? <Check size={13} className="text-success" /> : <Copy size={13} />}
+                      <span>{copiedKey === "guide-openai-url" ? "Copied" : "Copy"}</span>
+                    </button>
+                  </div>
+                </li>
+                <li>
+                  Each record includes required fields (<code>item_id</code>, <code>title</code>, <code>description</code>, <code>url</code>, <code>image_url</code>, <code>price</code>, <code>availability</code>, <code>brand</code>, <code>seller_name</code>, <code>target_countries</code>, <code>store_country</code>) plus <code>is_eligible_search</code> and <code>is_eligible_checkout</code>.
+                </li>
+                <li>
+                  Optionally configure <code>FEED_STORE_COUNTRY</code> and <code>FEED_TARGET_COUNTRIES</code> in your environment (defaults to <code>IN</code>).
+                </li>
+                <li>
+                  Upload full snapshots daily using a stable filename via SFTP or file upload.
                 </li>
               </ol>
             </div>

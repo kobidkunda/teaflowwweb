@@ -1,5 +1,97 @@
 # Prioritized Development Checklist
 
+## Checkout WhatsApp Support for Stuck Customers & International Phone Input Validation — 2026-11-14
+- [x] Checkout WhatsApp Live Assistance (`src/components/international/LiveCheckout.tsx` & `src/app/checkout/page.tsx`):
+  - Added persistent floating WhatsApp help button docked at bottom-right (`fixed bottom-5 right-5 z-40 sm:bottom-6 sm:right-6`) with vivid brand WhatsApp green `#128C7E` / `#25D366`, pulsing live status beacon ("Online · Siliguri Desk"), and label "Need Help? Chat on WhatsApp".
+  - Added header quick-help pill on `/checkout` (`src/app/checkout/page.tsx`) with WhatsApp icon and direct helpline (`+91 7001304853`).
+  - Added inline assistance card under the checkout form for customers who get stuck or prefer ordering via chat.
+  - Linked prefilled contextual WhatsApp message including customer name, phone, delivery destination, cart line items, order total, preferred payment method, and exact field errors/notices if stuck.
+  - Configured dynamic WhatsApp helpline propagation from database store settings via `/api/commerce/payment-methods` route.
+  - Provided prominent 1-click WhatsApp action inside the native `<dialog>` error modal (`#checkout-error-dialog`) to ensure customers never abandon cart when encountering an issue.
+- [x] Modern Phone Input with Country Code Auto-Selection & As-You-Type Formatting (`src/components/checkout/PhoneInputField.tsx` & `PhoneInputField.module.css`):
+  - Installed and integrated `react-phone-number-input` powered by Google's `libphonenumber-js` with zero runtime conflicts in React 19 / Next.js 15.
+  - Bundled local SVG country flags from `country-flag-icons/react/3x2` for offline safety and strict CSP compliance without external network requests.
+  - Auto-selects country calling code based on customer's delivery destination (e.g. India +91, US +1, UK +44, UAE +971).
+  - Allows customer to freely change country code anytime via native accessible dropdown with country flags.
+  - Implemented as-you-type phone number formatting in international format.
+  - Implemented robust `validatePhoneNumber` logic supporting both international format (`+91...`) and national 10-digit format with fallback country resolution.
+  - Enforced Modern Web Guidance & WCAG 2.2 AA rules: minimum 48px touch target for coarse pointers, `16px` (`1rem`) font size on mobile to prevent iOS auto-zoom, and programmatic error syncing (`aria-invalid`, `aria-describedby`).
+- [x] Quality Assurance & Verification:
+  - Created comprehensive unit tests in `tests/unit/checkout-phone-and-whatsapp.test.ts` verifying phone validation for India, US, UK, UAE, short number rejection, international formatting, accessible attributes, floating WhatsApp button, and header help button (9/9 tests passing).
+  - Verified `tests/unit/checkout-error-modal.test.ts` (3/3 tests passing).
+  - Executed full `npm run check` verifying `typecheck`, `lint`, Vitest test suite, and Next.js production build pass with 0 errors.
+
+## Storefront Footer Dynamic Links, Blog Integration & Collection Routes Resilience — 2026-11-14
+- [x] Resilient Collection Routes (`src/app/collections/[slug]/page.tsx`):
+  - Fixed 404 errors on `/collections/darjeeling-first-flush`, `/collections/black-tea`, `/collections/green-tea`, etc.
+  - Implemented multi-tier category/collection resolver in `findCategory(slug)`:
+    1. Active database categories with slug variations (stripping `-tea`, `-teas`, `reserve-`).
+    2. Name-based case-insensitive fallback matching.
+    3. Inactive category fallback matching.
+    4. Virtual curated collections dictionary providing full metadata, description, and blog guide association for `darjeeling-first-flush`, `black-tea`, `green-tea`, `white-tea`, `oolong-tea`, `everyday-milk-chai`, `chai`, `bengal-signature-blends`, and `regional-tea-origins`.
+    5. Catalogue product scanning for matching origins, flushes, estates, or categories.
+    6. Seamless redirect fallback to `/shop?q=${slug}` for completely unknown slugs so no customer ever encounters a dead 404 page.
+  - Expanded product filtering to match flushes (e.g., First Flush for `darjeeling-first-flush`), origins, and categories.
+  - Added related blog article recommendation banner at the bottom of collection pages linking to in-depth tea journal articles (e.g. `darjeeling-first-flush-guide`).
+- [x] Dynamic Footer Navigation & Blog Integration (`src/components/Footer.tsx`):
+  - Column 1 ("Shop Teas"): Dynamically populated from active database categories (`listStorefrontCategories()`) combined with core shopping destinations (`/shop`, `/trials`, `/wholesale`, `/blend-lab`).
+  - Column 3 ("Tea Journal & Blog"):
+    - Updated column header to explicitly display "Tea Journal & Blog" (fixing "blog not listed in footer menu").
+    - Added dedicated top link to `/blog` labeled "Tea Journal & Blog (All Articles)" with visual "Blog" tag badge.
+    - Dynamically populated top published blog articles from `blog_posts` table via `blogs` prop.
+    - Included heritage and brewing craft links (`/leaf-to-cup`, `/ways-to-make-ctc-tea`, `/locations/siliguri`, `/about`, `/brand`).
+  - Column 4 ("Customer Care & Featured Topics"): Prioritized operator custom links from `content.footer_links` (homepage admin), ensuring custom blog entries configured in admin are properly displayed.
+- [x] Storefront Shell & Layout Integration (`src/app/layout.tsx`, `StorefrontShell.tsx`, `RitualFooter.tsx`):
+  - Passed dynamic `categories` and `footerBlogs` from server layout down through `StorefrontShell` to `Footer` and `RitualFooter`.
+- [x] Site Navigation & Admin Presets (`src/lib/contentBlocks.ts`, `NavigationTab.tsx`):
+  - Added `{ label: "Blog & Tea Journal", href: "/blog" }` to `defaultFooterLinks` in `contentBlocks.ts`.
+  - Added `{ label: "Blog & Tea Journal", href: "/blog" }` to `COMMON_PATH_PRESETS` in `NavigationTab.tsx`.
+- [x] Quality Assurance & Automated Tests:
+  - Created unit tests in `tests/unit/footer-and-collection-routes.test.ts` verifying footer blog heading, blog badge, dynamic blog articles, dynamic shop categories, operator links, collection route resolution for `darjeeling-first-flush`, `black-tea`, `green-tea`, `everyday-milk-chai`, and redirect on unknown slug (11/11 tests passing).
+  - Verified `npm run typecheck` and `npm run lint` pass with 0 errors.
+  - Verified `npm run build` succeeds (101 static/dynamic routes compiled).
+
+## Storefront Cart Clearing on Order Placement — 2026-11-14
+- [x] Resilient Client Cart Management (`CartProvider.tsx`):
+  - Updated `clear()` to synchronously clear `localStorage.removeItem("tea-house-cart")` and `localStorage.setItem("tea-house-cart", "[]")`, preventing stale items from surviving full-page redirects.
+  - Added `clearedRef` guard preventing the React hydration race condition where child components (e.g. `PurchaseStatus`) call `clear()` before the parent `CartProvider` hydration effect runs.
+  - Aborted pending debounced background abandoned cart sync and reset `lastSyncedRef` upon `clear()`.
+  - Added listeners for `tea-house-cart-cleared` and cross-tab `storage` events to ensure all tabs and windows synchronize instantly when an order is completed.
+- [x] Checkout & Payment Execution Handlers (`LiveCheckout.tsx`):
+  - Added synchronous `cart.clear()` invocation before full-page navigation (`window.location.assign`) for Cash on Delivery (COD) orders.
+  - Added synchronous `cart.clear()` invocation before full-page navigation for Wholesale Direct Bank Transfer orders.
+  - Added synchronous `cart.clear()` invocation inside the Razorpay `handler` callback immediately upon successful payment verification before redirecting to the order confirmation page.
+- [x] Order Confirmation Receipt Pages (`PurchaseStatus.tsx` & `/order/[id]`):
+  - Updated `PurchaseStatus.tsx` to reliably execute `clear()` whenever order status is confirmed (`paid`, `cod_due`, `cod_remitted`, `advance_paid`, `pending_bank_transfer`).
+  - Created client helper `src/components/cart/OrderCartClear.tsx` and mounted it on `/order/[id]` (`src/app/order/[id]/page.tsx`) to guarantee cart clearance on demo order completion and order receipts.
+- [x] Server-Side Abandoned Cart Conversion (`orders.ts` & `abandonedCarts.ts`):
+  - Updated `markCartConverted` in `src/lib/abandonedCarts.ts` to safely check if the order exists in the legacy `orders` table to satisfy SQLite foreign key constraints, safely updating the abandoned cart record status to `'converted'`.
+  - Added `markCartConverted` calls in `src/lib/international/orders.ts` on order reservation (COD & bank transfer), online payment capture (Razorpay/YouPi), and COD conversions.
+- [x] Verification & Automated Tests:
+  - Created unit tests in `tests/unit/cart-clear-on-order.test.ts` verifying synchronous `localStorage` clearing, hydration race prevention, `OrderCartClear` component execution, and database abandoned cart conversion (4/4 tests passing).
+  - Verified full test suite passes (192 test files, 3040 tests passing).
+  - Verified `npm run typecheck` and `npm run lint` pass with 0 errors.
+  - Verified `npm run build` succeeds (101 static/dynamic routes compiled).
+
+## Public HTML Sitemap Page & Footer Navigation — 2026-11-14
+- [x] Dedicated HTML Sitemap Page (`/sitemap`):
+  - Created server component page at `src/app/sitemap/page.tsx` with dynamic rendering and `constructMetadata` canonical pointing to `/sitemap`.
+  - Added BreadcrumbList JSON-LD structured data for search engine comprehension.
+  - Implemented domain data provider in `src/lib/seo/htmlSitemap.ts` (`getPublicSitemapData`) collecting all public pages into structured, categorized sections.
+  - Strict security & privacy fence: EXCLUDES all non-public routes (`/admin`, `/api`, `/checkout`, `/account`, `/login`, `/order`, `/purchase`, etc.), draft products, unpublished blogs, draft trials, and inactive collections.
+  - Client component `src/components/sitemap/SitemapExplorer.tsx` with live keyword search, category filter pills, link counters, machine feed protocol links (`/sitemap.xml`, `/llms.txt`, `/feeds`, `/brochure`), and responsive card grid.
+  - WCAG 2.2 AA compliant typography, focus visible indicators, and prefers-reduced-motion safety.
+- [x] Footer & Navigation Integration:
+  - Added "Site Directory & Sitemap" to `DISCOVERY_LINKS` in `src/components/Footer.tsx`.
+  - Added "Sitemap" link to bottom legal navigation bar (`tf-footer-bottom-links`) in `src/components/Footer.tsx`.
+  - Added `/sitemap` to default footer links in `src/lib/contentBlocks.ts`.
+- [x] XML Sitemap Protocol Synchronization:
+  - Added `/sitemap` entry to `src/lib/seo/sitemap.ts` (`getCatalogSitemapEntries()`) with weekly change frequency and 0.7 priority.
+- [x] Automated Testing & Quality Assurance:
+  - Created `tests/unit/html-sitemap.test.ts` covering sitemap data structures, strict public URL isolation, server component rendering, explorer client component, footer link rendering, and XML sitemap synchronization (12/12 tests passing).
+  - Verified zero regressions on related test suites (`tests/unit/seo-metadata-schema.test.ts`, `tests/unit/feeds-page-ui.test.ts`, `tests/unit/private-label-storefront.test.ts`, `tests/unit/storefront-shell.test.ts`).
+  - Verified `npm run typecheck` and `npm run lint` pass with zero errors.
+
 ## Homepage Signature Blends Carousel: Price Range & Add-to-Cart Modal Fix — 2026-11-12
 - [x] Price Range Calculation & Display:
   - Updated `SignatureBlendsCarousel.tsx` to calculate `minPrice` and `maxPrice` across all product variants (`Math.min` and `Math.max` over `variantPrices`).
@@ -1088,3 +1180,10 @@ product API/MCP suite passed 26 tests. No deployment was needed.
 - [x] Pass 20 focused tests and real Chromium positive/negative transport checks with production CSP.
 - [ ] Deploy on explicit request, then verify fresh public response headers and Meta receipt.
 - [x] Full check passes after excluding generated output from source checks: 2,945 tests passed, six skipped, production build successful.
+# Google Search campaign preparation — 2026-11-13
+
+- [x] Prepare reviewed campaign settings, two ad groups, exact/phrase keywords and four Hindi/English RSAs in `docs/ads/google-search-2026-11-13/`; validate copy lengths and fetch live canonical product page with all eight pack SKUs.
+- [ ] Resolve Composio keyword-creation restriction without bypass; no Google Ads resources created or changed.
+- [ ] Verify genuine purchase receipt, value/currency/transaction ID, deduplication, refund reconciliation, mobile checkout and five-state shipping/serviceability before spending.
+- [ ] Once permitted and verified, create paused, read back settings, set 14-day dates, and activate the approved ₹500/day Search test. Leave existing Performance Max paused.
+- [ ] Arrange daily review and pause/readback after the test; no automation has been created.

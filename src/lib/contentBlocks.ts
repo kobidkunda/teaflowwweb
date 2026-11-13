@@ -175,9 +175,11 @@ export function getSiteNavigation(): SiteNavigation {
 
   const defaultFooterLinks: NavLinkItem[] = [
     { label: "Shop Tea", href: "/shop" },
+    { label: "Blog & Tea Journal", href: "/blog" },
     { label: "Wholesale & Bulk", href: "/wholesale" },
     { label: "Private Label", href: "/private-label" },
     { label: "Product Feeds", href: "/feeds" },
+    { label: "Sitemap", href: "/sitemap" },
     { label: "Brand Assets", href: "/brand" },
     { label: "Shipping", href: "/shipping" },
     { label: "Returns", href: "/returns" },

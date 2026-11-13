@@ -163,11 +163,11 @@ export function ShopExplorer({
         const query = filters.q.toLowerCase().trim();
         const tags = (product.aroma_tags || []).join(" ").toLowerCase();
         const matches =
-          product.name.toLowerCase().includes(query) ||
-          product.origin.toLowerCase().includes(query) ||
-          product.estate.toLowerCase().includes(query) ||
-          product.tasting_notes.toLowerCase().includes(query) ||
-          product.cultivar.toLowerCase().includes(query) ||
+          (product.name ?? "").toLowerCase().includes(query) ||
+          (product.origin ?? "").toLowerCase().includes(query) ||
+          (product.estate ?? "").toLowerCase().includes(query) ||
+          (product.tasting_notes ?? "").toLowerCase().includes(query) ||
+          (product.cultivar ?? "").toLowerCase().includes(query) ||
           tags.includes(query);
         if (!matches) return false;
       }
@@ -175,7 +175,7 @@ export function ShopExplorer({
       // 2. Category
       if (filters.category) {
         const target = filters.category.toLowerCase().replace(/-tea$/, "").replace(/[^a-z]/g, "");
-        const prodCat = product.category.toLowerCase().replace(/-tea$/, "").replace(/[^a-z]/g, "");
+        const prodCat = (product.category ?? "").toLowerCase().replace(/-tea$/, "").replace(/[^a-z]/g, "");
         const matchesCategory =
           prodCat === target ||
           prodCat.includes(target) ||
@@ -183,7 +183,7 @@ export function ShopExplorer({
           categories.some(
             (c) =>
               c.id === product.category_id &&
-              c.slug.toLowerCase().replace(/-tea$/, "").replace(/[^a-z]/g, "") === target
+              (c.slug ?? "").toLowerCase().replace(/-tea$/, "").replace(/[^a-z]/g, "") === target
           );
         if (!matchesCategory) return false;
       }
@@ -191,17 +191,18 @@ export function ShopExplorer({
       // 3. Region / Terroir
       if (filters.region) {
         const reg = filters.region.toLowerCase();
+        const orig = (product.origin ?? "").toLowerCase();
+        const est = (product.estate ?? "").toLowerCase();
         if (reg === "darjeeling") {
-          if (!product.origin.toLowerCase().includes("darjeeling") && !product.estate.toLowerCase().includes("darjeeling"))
+          if (!orig.includes("darjeeling") && !est.includes("darjeeling"))
             return false;
         } else if (reg === "assam") {
-          if (!product.origin.toLowerCase().includes("assam")) return false;
+          if (!orig.includes("assam")) return false;
         } else if (reg === "kangra valley") {
-          if (!product.origin.toLowerCase().includes("kangra")) return false;
+          if (!orig.includes("kangra")) return false;
         } else if (reg === "nilgiri") {
-          if (!product.origin.toLowerCase().includes("nilgiri")) return false;
+          if (!orig.includes("nilgiri")) return false;
         } else if (reg === "kurseong & mirik") {
-          const orig = product.origin.toLowerCase();
           if (!orig.includes("kurseong") && !orig.includes("mirik")) return false;
         }
       }
@@ -209,7 +210,7 @@ export function ShopExplorer({
       // 4. Harvest Flush
       if (filters.flush) {
         const fl = filters.flush.toLowerCase();
-        const pFlush = product.flush.toLowerCase();
+        const pFlush = (product.flush ?? "").toLowerCase();
         if (fl.includes("first") || fl.includes("spring")) {
           if (!pFlush.includes("first") && !pFlush.includes("spring")) return false;
         } else if (fl.includes("second") || fl.includes("summer")) {
@@ -306,10 +307,11 @@ export function ShopExplorer({
       });
     }
     if (filters.category) {
+      const catFilter = filters.category.toLowerCase();
       const catObj = categories.find(
         (c) =>
-          c.slug.toLowerCase() === filters.category.toLowerCase() ||
-          c.name.toLowerCase() === filters.category.toLowerCase()
+          (c.slug ?? "").toLowerCase() === catFilter ||
+          (c.name ?? "").toLowerCase() === catFilter
       );
       chips.push({
         id: "category",
@@ -394,24 +396,27 @@ export function ShopExplorer({
 
     const seenRoots = new Set<string>();
     for (const cat of categories) {
-      const root = cat.slug.toLowerCase().replace(/-tea$/, "");
+      const catSlug = cat.slug ?? "";
+      const catName = cat.name ?? "";
+      const root = catSlug.toLowerCase().replace(/-tea$/, "");
       if (seenRoots.has(root)) continue;
       seenRoots.add(root);
 
       const count = initialProducts.filter((p) => {
-        const prodRoot = p.category.toLowerCase().replace(/-tea$/, "");
+        const prodCat = (p.category ?? "").toLowerCase();
+        const prodRoot = prodCat.replace(/-tea$/, "");
         return (
           p.category_id === cat.id ||
           prodRoot === root ||
-          p.category.toLowerCase() === cat.name.toLowerCase()
+          prodCat === catName.toLowerCase()
         );
       }).length;
 
       if (count > 0) {
         items.push({
           id: cat.id,
-          name: cat.name.toLowerCase().endsWith("tea") ? cat.name : `${cat.name} Tea`,
-          slug: cat.slug,
+          name: catName.toLowerCase().endsWith("tea") ? catName : `${catName} Tea`,
+          slug: catSlug,
           count,
           thumb: cat.cover_image_url || "/uploads/cat-green-tea.jpg",
         });
@@ -523,8 +528,8 @@ export function ShopExplorer({
                 ? !filters.category && !filters.featuredOnly
                 : cat.isRare
                 ? filters.featuredOnly
-                : filters.category.toLowerCase().replace(/-tea$/, "") ===
-                  cat.slug.toLowerCase().replace(/-tea$/, "");
+                : (filters.category ?? "").toLowerCase().replace(/-tea$/, "") ===
+                  (cat.slug ?? "").toLowerCase().replace(/-tea$/, "");
 
               return (
                 <button

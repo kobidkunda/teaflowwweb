@@ -1,9 +1,22 @@
 import { enabledProductCondition } from "@/lib/productAvailability";
 import { getDb } from "@/lib/db";
 import { timingSafeEqual } from "node:crypto";
+import { gzipSync } from "node:zlib";
 
-import type { FeedItem, FeedCatalogItem, FeedOptions } from "./feedTypes";
-export type { FeedItem, FeedCatalogItem, FeedOptions };
+import type {
+  FeedItem,
+  FeedCatalogItem,
+  FeedOptions,
+  OpenAiFeedOptions,
+  OpenAiFeedRecord,
+} from "./feedTypes";
+export type {
+  FeedItem,
+  FeedCatalogItem,
+  FeedOptions,
+  OpenAiFeedOptions,
+  OpenAiFeedRecord,
+};
 
 interface RawFeedRow {
   variant_id: number;
@@ -409,6 +422,145 @@ export function generateMetaCatalogCsv(items: FeedItem[]): string {
   });
 
   return [headers.join(","), ...rows].join("\r\n");
+}
+
+function resolveTargetCountries(explicit?: string[]): string[] {
+  if (explicit && explicit.length > 0) {
+    const cleaned = explicit.map((c) => c.trim().toUpperCase()).filter(Boolean);
+    if (cleaned.length > 0) return cleaned;
+  }
+  const envCountries = (process.env.FEED_TARGET_COUNTRIES || "")
+    .split(",")
+    .map((c) => c.trim().toUpperCase())
+    .filter(Boolean);
+  return envCountries.length > 0 ? envCountries : ["IN"];
+}
+
+function resolveStoreCountry(explicit?: string): string {
+  const candidate = (explicit || process.env.FEED_STORE_COUNTRY || "IN").trim().toUpperCase();
+  return candidate || "IN";
+}
+
+/**
+ * Maps a catalog FeedItem into an OpenAI Commerce Product Feed record
+ * conforming to https://developers.openai.com/commerce/specs/file-upload/products.
+ */
+export function mapFeedItemToOpenAiRecord(
+  item: FeedItem,
+  originUrl?: string,
+  options?: OpenAiFeedOptions
+): OpenAiFeedRecord {
+  const baseUrl = resolveBaseUrl(originUrl);
+  const sellerName = (options?.sellerName || item.brand || "TeaFloww").trim();
+  const sellerUrl = (options?.sellerUrl || baseUrl).trim();
+  const targetCountries = resolveTargetCountries(options?.targetCountries);
+  const storeCountry = resolveStoreCountry(options?.storeCountry);
+
+  const record: OpenAiFeedRecord = {
+    item_id: item.id,
+    title: item.title,
+    description: item.description,
+    url: item.link,
+    image_url: item.imageLink,
+    price: item.price,
+    availability: item.availability,
+    brand: item.brand,
+    seller_name: sellerName,
+    target_countries: targetCountries,
+    store_country: storeCountry,
+    is_eligible_search: options?.isEligibleSearch ?? true,
+    is_eligible_checkout: options?.isEligibleCheckout ?? false,
+  };
+
+  if (item.itemGroupId) {
+    record.item_group_id = item.itemGroupId;
+  }
+  if (item.condition) {
+    record.condition = item.condition;
+  }
+  if (item.googleProductCategory) {
+    record.product_category = item.googleProductCategory;
+  }
+  if (sellerUrl) {
+    record.seller_url = sellerUrl;
+  }
+  if (typeof item.sizeGrams === "number" && item.sizeGrams > 0) {
+    record.weight = `${item.sizeGrams} g`;
+  }
+  if (typeof item.stock === "number" && item.stock >= 0) {
+    record.inventory_quantity = item.stock;
+  }
+
+  return record;
+}
+
+/**
+ * Generates UTF-8 JSONL (newline-delimited JSON) for the OpenAI Commerce Product Feed specification.
+ */
+export function generateOpenAiProductFeedJsonl(
+  items: FeedItem[],
+  originUrl?: string,
+  options?: OpenAiFeedOptions
+): string {
+  const baseUrl = resolveBaseUrl(originUrl);
+  return items
+    .map((item) => JSON.stringify(mapFeedItemToOpenAiRecord(item, baseUrl, options)))
+    .join("\n");
+}
+
+/**
+ * Shared HTTP response builder for /feeds/openai.jsonl and /api/feeds/openai.
+ * Supports ?download=1, ?gzip=1 (for .jsonl.gz snapshots), ?base_url=..., and FEED_ACCESS_TOKEN.
+ */
+export function buildOpenAiFeedResponse(request: Request): Response {
+  if (!isFeedAuthorized(request)) {
+    return feedUnauthorizedResponse();
+  }
+
+  const url = new URL(request.url);
+  const explicitBase = url.searchParams.get("base_url") || undefined;
+  const originUrl = getRequestOrigin(request);
+  const baseUrl = resolveBaseUrl(originUrl, { explicitOverride: explicitBase });
+  const items = getFeedCatalogData(baseUrl);
+  const jsonl = generateOpenAiProductFeedJsonl(items, baseUrl);
+
+  const isDownload =
+    url.searchParams.get("download") === "1" ||
+    url.searchParams.get("download") === "true";
+  const isGzip =
+    url.searchParams.get("gzip") === "1" ||
+    url.searchParams.get("gzip") === "true" ||
+    url.searchParams.get("format") === "jsonl.gz";
+
+  const isTokenProtected = Boolean((process.env.FEED_ACCESS_TOKEN || "").trim());
+  const cacheControl = isTokenProtected
+    ? "private, no-cache, no-store, must-revalidate"
+    : "public, max-age=3600, s-maxage=3600, stale-while-revalidate=600";
+
+  if (isGzip) {
+    const compressed = gzipSync(Buffer.from(jsonl, "utf8"));
+    return new Response(compressed, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/gzip",
+        "Cache-Control": cacheControl,
+        "Content-Disposition": 'attachment; filename="openai-product-feed.jsonl.gz"',
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
+
+  return new Response(jsonl, {
+    status: 200,
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": cacheControl,
+      "Content-Disposition": isDownload
+        ? 'attachment; filename="openai-product-feed.jsonl"'
+        : "inline",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
 
 /**

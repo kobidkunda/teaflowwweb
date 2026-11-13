@@ -28,3 +28,34 @@ export interface FeedOptions {
   originUrl?: string;
   baseUrl?: string;
 }
+
+export interface OpenAiFeedOptions {
+  targetCountries?: string[];
+  storeCountry?: string;
+  isEligibleSearch?: boolean;
+  isEligibleCheckout?: boolean;
+  sellerName?: string;
+  sellerUrl?: string;
+}
+
+export interface OpenAiFeedRecord {
+  item_id: string;
+  title: string;
+  description: string;
+  url: string;
+  image_url: string;
+  price: string;
+  availability: "in_stock" | "out_of_stock";
+  brand: string;
+  seller_name: string;
+  target_countries: string[];
+  store_country: string;
+  is_eligible_search: boolean;
+  is_eligible_checkout: boolean;
+  item_group_id?: string;
+  condition?: "new";
+  product_category?: string;
+  seller_url?: string;
+  weight?: string;
+  inventory_quantity?: number;
+}

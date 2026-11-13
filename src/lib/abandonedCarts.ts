@@ -16,15 +16,34 @@ export const cartSyncFingerprintSchema = z.object({
   hardwareConcurrency: z.number().nullable().optional(),
 });
 
-export const cartSyncItemSchema = z.object({
-  variantId: z.number().int().positive(),
-  quantity: z.number().int().positive().max(10000),
+export const cartSyncItemSchema = z
+  .object({
+    variantId: z.number().int().min(0).default(0),
+    trialId: z.string().trim().min(1).max(100).optional(),
+    quantity: z.number().int().positive().max(10000),
+  })
+  .refine(
+    (item) => (item.trialId ? item.variantId === 0 : item.variantId > 0),
+    "Provide either a valid variantId or trialId."
+  );
+
+export const cartSyncCustomerSchema = z.object({
+  name: z.string().trim().max(100).optional(),
+  phone: z.string().trim().max(30).optional(),
+  email: z.string().trim().max(254).optional(),
+  city: z.string().trim().max(100).optional(),
+  state: z.string().trim().max(100).optional(),
+  postcode: z.string().trim().max(20).optional(),
+  address: z.string().trim().max(400).optional(),
 });
+
+export type CartSyncCustomerInput = z.infer<typeof cartSyncCustomerSchema>;
 
 export const cartSyncSchema = z.object({
   sessionId: z.string().trim().min(1).max(128),
   fingerprint: cartSyncFingerprintSchema.optional(),
   items: z.array(cartSyncItemSchema).max(30).default([]),
+  customer: cartSyncCustomerSchema.optional(),
 });
 
 export type CartSyncInput = z.infer<typeof cartSyncSchema>;
@@ -98,24 +117,70 @@ export function syncAbandonedCart(
       params.userAgent
     );
 
-    // 2. Look up existing lead information for this session
+    // 2. Look up existing lead information for this session and merge incoming customer details
+    const incomingPhoneRaw = params.customer?.phone?.trim() || "";
+    const incomingPhoneDigits = incomingPhoneRaw.replace(/\D/g, "");
+    const incomingPhone =
+      incomingPhoneDigits.length >= 7 ? cleanWhatsAppNumber(incomingPhoneRaw) : null;
+    const incomingName = params.customer?.name?.trim().slice(0, 100) || null;
+    const incomingEmail = params.customer?.email?.trim().slice(0, 254) || null;
+    const incomingCity = params.customer?.city?.trim().slice(0, 100) || null;
+    const incomingState = params.customer?.state?.trim().slice(0, 100) || null;
+    const incomingPostcode = params.customer?.postcode?.trim().slice(0, 20) || null;
+    const incomingAddress = params.customer?.address?.trim().slice(0, 400) || null;
+
+    if (incomingPhone || incomingName) {
+      db.prepare(`
+        UPDATE visitor_fingerprints
+        SET phone_number = COALESCE(?, phone_number),
+            customer_name = COALESCE(?, customer_name),
+            updated_at = CURRENT_TIMESTAMP
+        WHERE session_id = ?
+      `).run(incomingPhone, incomingName, params.sessionId);
+    }
+
     const knownLead = db.prepare(
       "SELECT phone_number, customer_name FROM visitor_fingerprints WHERE session_id = ?"
     ).get(params.sessionId) as { phone_number?: string; customer_name?: string } | undefined;
 
-    // 3. Verify variant prices against the database and calculate totals
+    // 3. Verify variant & trial prices against the database and calculate totals
     const lookupVariant = db.prepare("SELECT id, price_paise, stock FROM variants WHERE id = ?");
+    const lookupTrial = db.prepare(
+      "SELECT id, price_paise FROM trials WHERE id = ? AND status = 'published'"
+    );
     let subtotalPaise = 0;
     let itemCount = 0;
-    const validatedLines: Array<{ variantId: number; quantity: number; unitPrice: number }> = [];
+    const validatedLines: Array<{
+      variantId: number | null;
+      trialId: string | null;
+      quantity: number;
+      unitPrice: number;
+    }> = [];
 
-    // Deduplicate items by variantId
-    const combined = new Map<number, number>();
+    // Deduplicate items by trialId or variantId
+    const combined = new Map<string, number>();
     for (const item of params.items) {
-      combined.set(item.variantId, (combined.get(item.variantId) || 0) + item.quantity);
+      const key = item.trialId ? `trial:${item.trialId}` : `var:${item.variantId}`;
+      combined.set(key, (combined.get(key) || 0) + item.quantity);
     }
 
-    for (const [variantId, quantity] of combined) {
+    for (const [key, quantity] of combined) {
+      if (key.startsWith("trial:")) {
+        const trialId = key.slice(6);
+        const trial = lookupTrial.get(trialId) as { id: string; price_paise: number } | undefined;
+        if (!trial) continue;
+        subtotalPaise += trial.price_paise * quantity;
+        itemCount += quantity;
+        validatedLines.push({
+          variantId: null,
+          trialId: trial.id,
+          quantity,
+          unitPrice: trial.price_paise,
+        });
+        continue;
+      }
+
+      const variantId = Number(key.slice(4));
       const variant = lookupVariant.get(variantId) as
         | { id: number; price_paise: number; stock: number }
         | undefined;
@@ -130,12 +195,13 @@ export function syncAbandonedCart(
       } catch {}
       subtotalPaise += unitPrice * quantity;
       itemCount += quantity;
-      validatedLines.push({ variantId, quantity, unitPrice });
+      validatedLines.push({ variantId, trialId: null, quantity, unitPrice });
     }
 
     // 4. Find or create abandoned_carts record
     const existingCart = db.prepare(`
-      SELECT id, recovery_token, customer_phone, customer_name, customer_email, status
+      SELECT id, recovery_token, customer_phone, customer_name, customer_email,
+             shipping_city, shipping_state, shipping_postcode, shipping_address, status
       FROM abandoned_carts
       WHERE session_id = ? AND status IN ('active', 'abandoned', 'contacted')
       ORDER BY created_at DESC LIMIT 1
@@ -145,6 +211,10 @@ export function syncAbandonedCart(
       customer_phone?: string;
       customer_name?: string;
       customer_email?: string;
+      shipping_city?: string;
+      shipping_state?: string;
+      shipping_postcode?: string;
+      shipping_address?: string;
       status: string;
     } | undefined;
 
@@ -154,8 +224,13 @@ export function syncAbandonedCart(
     if (existingCart) {
       cartId = existingCart.id;
       recoveryToken = existingCart.recovery_token;
-      const phone = existingCart.customer_phone || knownLead?.phone_number || null;
-      const name = existingCart.customer_name || knownLead?.customer_name || null;
+      const phone = incomingPhone || existingCart.customer_phone || knownLead?.phone_number || null;
+      const name = incomingName || existingCart.customer_name || knownLead?.customer_name || null;
+      const email = incomingEmail || existingCart.customer_email || null;
+      const shippingCity = incomingCity || existingCart.shipping_city || null;
+      const shippingState = incomingState || existingCart.shipping_state || null;
+      const shippingPostcode = incomingPostcode || existingCart.shipping_postcode || null;
+      const shippingAddress = incomingAddress || existingCart.shipping_address || null;
 
       db.prepare(`
         UPDATE abandoned_carts
@@ -164,37 +239,68 @@ export function syncAbandonedCart(
             item_count = ?,
             customer_phone = ?,
             customer_name = ?,
+            customer_email = ?,
+            shipping_city = ?,
+            shipping_state = ?,
+            shipping_postcode = ?,
+            shipping_address = ?,
             last_active_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(subtotalPaise, itemCount, phone, name, cartId);
+      `).run(
+        subtotalPaise,
+        itemCount,
+        phone,
+        name,
+        email,
+        shippingCity,
+        shippingState,
+        shippingPostcode,
+        shippingAddress,
+        cartId
+      );
     } else {
       cartId = "cart_" + randomUUID().replace(/-/g, "").slice(0, 16);
       recoveryToken = "rec_" + randomUUID().replace(/-/g, "");
-      const phone = knownLead?.phone_number || null;
-      const name = knownLead?.customer_name || null;
+      const phone = incomingPhone || knownLead?.phone_number || null;
+      const name = incomingName || knownLead?.customer_name || null;
 
       db.prepare(`
         INSERT INTO abandoned_carts (
           id, session_id, customer_phone, customer_name, customer_email,
+          shipping_city, shipping_state, shipping_postcode, shipping_address,
           status, subtotal_paise, item_count, recovery_token, recovery_channel,
           admin_notes, last_active_at, created_at, updated_at
         ) VALUES (
-          ?, ?, ?, ?, NULL,
+          ?, ?, ?, ?, ?,
+          ?, ?, ?, ?,
           'active', ?, ?, ?, 'whatsapp',
           '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
-      `).run(cartId, params.sessionId, phone, name, subtotalPaise, itemCount, recoveryToken);
+      `).run(
+        cartId,
+        params.sessionId,
+        phone,
+        name,
+        incomingEmail,
+        incomingCity,
+        incomingState,
+        incomingPostcode,
+        incomingAddress,
+        subtotalPaise,
+        itemCount,
+        recoveryToken
+      );
     }
 
     // 5. Replace cart_items lines atomically
     db.prepare("DELETE FROM cart_items WHERE cart_id = ?").run(cartId);
     const insertItem = db.prepare(`
-      INSERT INTO cart_items (cart_id, variant_id, quantity, unit_price_paise, created_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO cart_items (cart_id, variant_id, trial_id, quantity, unit_price_paise, created_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `);
     for (const line of validatedLines) {
-      insertItem.run(cartId, line.variantId, line.quantity, line.unitPrice);
+      insertItem.run(cartId, line.variantId, line.trialId, line.quantity, line.unitPrice);
     }
 
     return {
@@ -250,6 +356,16 @@ export function markCartConverted(
     }
 
     if (cart) {
+      let convertedOrderId: string | null = null;
+      try {
+        const orderExists = Boolean(
+          db.prepare("SELECT 1 FROM orders WHERE id = ?").get(params.orderId)
+        );
+        if (orderExists) convertedOrderId = params.orderId;
+      } catch {
+        convertedOrderId = null;
+      }
+
       db.prepare(`
         UPDATE abandoned_carts
         SET status = 'converted',
@@ -260,7 +376,7 @@ export function markCartConverted(
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(
-        params.orderId,
+        convertedOrderId,
         params.customerName ?? null,
         params.customerEmail ?? null,
         params.customerPhone ?? null,
@@ -381,11 +497,18 @@ export function listAbandonedCarts(
   const cartRows = db.prepare(dataQuery).all(...params, limit, offset) as Array<Record<string, unknown>>;
 
   const itemLookup = db.prepare(`
-    SELECT ci.variant_id, ci.quantity, ci.unit_price_paise,
-           v.grams, v.sku, p.name as product_name, p.slug as product_slug
+    SELECT COALESCE(ci.variant_id, 0) as variant_id,
+           ci.trial_id,
+           ci.quantity,
+           ci.unit_price_paise,
+           COALESCE(v.grams, t.net_weight_g, 0) as grams,
+           COALESCE(v.sku, t.sku, '') as sku,
+           COALESCE(p.name, t.title, 'Tea Item') as product_name,
+           COALESCE(p.slug, t.slug, '') as product_slug
     FROM cart_items ci
-    JOIN variants v ON ci.variant_id = v.id
-    JOIN products p ON v.product_id = p.id
+    LEFT JOIN variants v ON ci.variant_id = v.id
+    LEFT JOIN products p ON v.product_id = p.id
+    LEFT JOIN trials t ON ci.trial_id = t.id
     WHERE ci.cart_id = ?
   `);
 
@@ -398,6 +521,7 @@ export function listAbandonedCarts(
     const cleanPhone = phone ? cleanWhatsAppNumber(phone) : null;
     const items = itemLookup.all(cartId) as Array<{
       variant_id: number;
+      trial_id: string | null;
       quantity: number;
       unit_price_paise: number;
       grams: number;
@@ -419,6 +543,10 @@ export function listAbandonedCarts(
       customer_name: name,
       customer_phone: phone,
       customer_email: (c.customer_email as string) || null,
+      shipping_city: (c.shipping_city as string) || null,
+      shipping_state: (c.shipping_state as string) || null,
+      shipping_postcode: (c.shipping_postcode as string) || null,
+      shipping_address: (c.shipping_address as string) || null,
       item_count: Number(c.item_count || 0),
       subtotal_paise: Number(c.subtotal_paise || 0),
       applied_coupon_code: (c.applied_coupon_code as string) || null,
@@ -485,10 +613,17 @@ export function getAbandonedCartDetails(
   if (!cart) return null;
 
   const items = db.prepare(`
-    SELECT ci.*, v.sku, p.name as product_name, p.slug as product_slug, v.grams, v.packaging_format
+    SELECT ci.*,
+           COALESCE(ci.variant_id, 0) as resolved_variant_id,
+           COALESCE(v.sku, t.sku, '') as sku,
+           COALESCE(p.name, t.title, 'Tea Item') as product_name,
+           COALESCE(p.slug, t.slug, '') as product_slug,
+           COALESCE(v.grams, t.net_weight_g, 0) as grams,
+           v.packaging_format
     FROM cart_items ci
-    JOIN variants v ON ci.variant_id = v.id
-    JOIN products p ON v.product_id = p.id
+    LEFT JOIN variants v ON ci.variant_id = v.id
+    LEFT JOIN products p ON v.product_id = p.id
+    LEFT JOIN trials t ON ci.trial_id = t.id
     WHERE ci.cart_id = ?
   `).all(cartId) as Array<Record<string, unknown>>;
 
@@ -514,6 +649,10 @@ export function getAbandonedCartDetails(
       customer_name: name,
       customer_phone: phone,
       customer_email: (cart.customer_email as string) || null,
+      shipping_city: (cart.shipping_city as string) || null,
+      shipping_state: (cart.shipping_state as string) || null,
+      shipping_postcode: (cart.shipping_postcode as string) || null,
+      shipping_address: (cart.shipping_address as string) || null,
       recovery_token: String(cart.recovery_token),
       recovery_url: recoveryUrl,
       whatsapp_url: cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(preview)}` : null,
@@ -523,7 +662,8 @@ export function getAbandonedCartDetails(
       created_at: String(cart.created_at),
     },
     items: items.map((i) => ({
-      variant_id: Number(i.variant_id),
+      variant_id: Number(i.resolved_variant_id ?? i.variant_id ?? 0),
+      trial_id: (i.trial_id as string) || null,
       sku: String(i.sku),
       product_name: String(i.product_name),
       product_slug: String(i.product_slug),

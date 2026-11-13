@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -25,9 +25,12 @@ const {
   extractClientIp,
   isPrivateIp,
   extractGeo,
+  resolveGeo,
+  clearGeoCache,
 } = await import("../../src/lib/geo");
 
 const {
+  cartSyncSchema,
   syncAbandonedCart,
   markCartConverted,
   getCartBySession,
@@ -218,6 +221,39 @@ describe("2. Server Geolocation & IP Enrichment (src/lib/geo.ts)", () => {
     });
     const geoVercel = extractGeo(reqVercel);
     expect(geoVercel.city).toBe("New Delhi");
+  });
+
+  it("resolves public IP geolocation via ip-api.com and caches the result", async () => {
+    clearGeoCache();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          status: "success",
+          country: "Canada",
+          regionName: "Quebec",
+          city: "Montreal",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      )
+    );
+
+    const req = new Request("http://localhost/api/cart/sync", {
+      headers: { "x-forwarded-for": "24.48.0.1" },
+    });
+
+    const first = await resolveGeo(req);
+    expect(first.ip).toBe("24.48.0.1");
+    expect(first.country).toBe("Canada");
+    expect(first.region).toBe("Quebec");
+    expect(first.city).toBe("Montreal");
+    expect(first.isLocal).toBe(false);
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+    // Second call for same IP should hit the cache without calling fetch again
+    const second = await resolveGeo(req);
+    expect(second.city).toBe("Montreal");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    fetchSpy.mockRestore();
   });
 });
 
@@ -439,6 +475,49 @@ describe("5. POST /api/cart/sync Endpoint", () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toContain("Invalid cart sync payload.");
+  });
+
+  it("accepts trial pack items (variantId: 0 with trialId) and persists checkout customer details", async () => {
+    const payload = {
+      sessionId: "session-trial-customer-01",
+      items: [
+        { variantId: 0, trialId: "trial-pack-uuid-1", quantity: 1 },
+        { variantId: variantId1, quantity: 2 },
+      ],
+      customer: {
+        name: "Aarav Sharma",
+        phone: "+91 98765 43210",
+        email: "aarav@example.com",
+        city: "Siliguri",
+        state: "West Bengal",
+        postcode: "734005",
+        address: "14 Hill Cart Road",
+      },
+    };
+
+    const parsed = cartSyncSchema.safeParse(payload);
+    expect(parsed.success).toBe(true);
+
+    const res = await syncRoutePOST(
+      new Request("http://localhost/api/cart/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-forwarded-for": "127.0.0.1",
+        },
+        body: JSON.stringify(payload),
+      })
+    );
+    expect(res.status).toBe(200);
+
+    const stored = getCartBySession("session-trial-customer-01");
+    expect(stored).not.toBeNull();
+    expect(stored?.cart.customer_name).toBe("Aarav Sharma");
+    expect(stored?.cart.customer_phone).toBe("919876543210");
+    expect(stored?.cart.customer_email).toBe("aarav@example.com");
+    expect(stored?.cart.shipping_city).toBe("Siliguri");
+    expect(stored?.cart.shipping_state).toBe("West Bengal");
+    expect(stored?.cart.shipping_postcode).toBe("734005");
   });
 
   it("successfully synchronizes cart and returns HTTP 200 with tokens", async () => {

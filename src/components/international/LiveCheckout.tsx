@@ -27,6 +27,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/wholesale/WholesaleForm";
+import { PhoneInputField, validatePhoneNumber } from "@/components/checkout/PhoneInputField";
 
 type QuoteView = {
   id: string;
@@ -71,6 +72,7 @@ type Payment = {
 
 type PaymentMethodsConfig = {
   onlinePaymentEnabled?: boolean;
+  whatsappNumber?: string;
   discounts: {
     upi: { enabled: boolean; type: "percentage" | "flat"; value: number; maxRupees: number };
     card: { enabled: boolean; type: "percentage" | "flat"; value: number; maxRupees: number };
@@ -347,7 +349,8 @@ export function LiveCheckout() {
 
   // Pre-filled WhatsApp assistance URL with complete checkout context
   const checkoutWhatsAppUrl = React.useMemo(() => {
-    const helpline = "917001304853";
+    const rawNumber = paymentConfig?.whatsappNumber || "917001304853";
+    const helpline = rawNumber.replace(/\D/g, "") || "917001304853";
     const lines: string[] = [
       "🌿 *TeaFloww Live Checkout Assistance*",
       "",
@@ -391,12 +394,20 @@ export function LiveCheckout() {
 
     if (error) {
       lines.push(`• *Notice / Issue:* ${error}`);
+    } else if (Object.keys(fieldErrors).length > 0) {
+      const activeErrors = Object.entries(fieldErrors)
+        .filter(([, msg]) => Boolean(msg))
+        .map(([k, msg]) => `${k}: ${msg}`)
+        .join("; ");
+      if (activeErrors) {
+        lines.push(`• *Stuck on field:* ${activeErrors}`);
+      }
     }
 
     lines.push("", "Could you please help me verify details and complete this checkout?");
 
     return `https://wa.me/${helpline}?text=${encodeURIComponent(lines.join("\n"))}`;
-  }, [formData, customer, country, cart.items, cart.subtotal, quote, ctx?.locale, method, error]);
+  }, [formData, customer, country, cart.items, cart.subtotal, quote, ctx?.locale, method, error, fieldErrors, paymentConfig?.whatsappNumber]);
 
   // Open / close native <dialog> based on modalError state
   useEffect(() => {
@@ -476,7 +487,7 @@ export function LiveCheckout() {
 
     return (
       name.length >= 2 &&
-      /^\+?[\d ()-]{7,25}$/.test(phone) &&
+      validatePhoneNumber(phone, c) &&
       /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) &&
       line1.length >= 5 &&
       city.length > 0 &&
@@ -592,8 +603,8 @@ export function LiveCheckout() {
     if (!address.name || address.name.length < 2) {
       clientErrors.name = "Please enter your full name (at least 2 characters).";
     }
-    if (!address.phone || !/^\+?[\d ()-]{7,25}$/.test(address.phone)) {
-      clientErrors.phone = "Please enter a valid contact phone number.";
+    if (!address.phone || !validatePhoneNumber(address.phone, address.country)) {
+      clientErrors.phone = "Please enter a valid contact phone number with country code.";
     }
     if (!address.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address.email)) {
       clientErrors.email = "Please enter a valid email address.";
@@ -786,6 +797,13 @@ export function LiveCheckout() {
           setBusy(false);
           return;
         }
+        cart.clear();
+        window.location.assign(resultUrl);
+        return;
+      }
+
+      if (method === "bank_transfer" || p.preferredMethod === "bank_transfer" || p.paymentStatus === "pending_bank_transfer") {
+        cart.clear();
         window.location.assign(resultUrl);
         return;
       }
@@ -809,7 +827,10 @@ export function LiveCheckout() {
         currency: p.currency,
         name: "TeaFloww",
         description: "Direct-from-origin Himalayan orthodox teas",
-        handler: () => window.location.assign(resultUrl),
+        handler: () => {
+          cart.clear();
+          window.location.assign(resultUrl);
+        },
         modal: { ondismiss: () => setBusy(false) },
         theme: { color: "#23483A" },
         prefill: {
@@ -1027,25 +1048,33 @@ export function LiveCheckout() {
                 {fieldErrors.name && <span className="text-[11px] text-red-600 font-medium">{fieldErrors.name}</span>}
               </label>
 
-              <label className="flex flex-col gap-1 text-xs font-semibold text-[#171713]">
-                {t("phone")} *
-                <input
+              <div className="flex flex-col gap-1 text-xs font-semibold text-[#171713]">
+                <label htmlFor="checkout-phone-input" className="text-xs font-semibold text-[#171713]">
+                  {t("phone")} *
+                </label>
+                <PhoneInputField
+                  id="checkout-phone-input"
                   name="phone"
-                  type="tel"
-                  inputMode="tel"
                   required
-                  maxLength={20}
-                  autoComplete="tel"
-                  placeholder="+91 98765 43210"
+                  country={country}
                   value={formData.phone}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, phone: e.target.value }));
-                    setFieldErrors((prev) => ({ ...prev, phone: "" }));
+                  onChange={(val) => {
+                    setFormData((prev) => ({ ...prev, phone: val }));
+                    if (fieldErrors.phone) setFieldErrors((prev) => ({ ...prev, phone: "" }));
                   }}
-                  className={`w-full min-h-[46px] border ${fieldErrors.phone ? "border-red-500 bg-red-50" : "border-[#b8b5a8] bg-[#fffefa]"} rounded-md px-3 py-2 text-sm`}
+                  error={fieldErrors.phone}
+                  aria-describedby={fieldErrors.phone ? "checkout-phone-error" : undefined}
                 />
-                {fieldErrors.phone && <span className="text-[11px] text-red-600 font-medium">{fieldErrors.phone}</span>}
-              </label>
+                {fieldErrors.phone ? (
+                  <span id="checkout-phone-error" className="text-[11px] text-red-600 font-medium" role="alert">
+                    {fieldErrors.phone}
+                  </span>
+                ) : (
+                  <span className="text-[11px] font-normal text-[#737067]">
+                    Country code auto-selected. Change anytime; number formats as you type.
+                  </span>
+                )}
+              </div>
             </div>
 
             <label className="flex flex-col gap-1 text-xs font-semibold text-[#171713]">
@@ -1550,6 +1579,32 @@ export function LiveCheckout() {
               {busy ? "Calculating authoritative rates…" : quote ? "Update Order Total →" : "Review Order & Confirm Total →"}
             </button>
           </div>
+
+          {/* Stuck at Checkout Direct Assistance Callout */}
+          <div className="pt-3 border-t border-[#e4dfd5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#23483a]">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-[#25D366]/20 flex items-center justify-center shrink-0">
+                <WhatsAppIcon size={16} color="#128C7E" />
+              </div>
+              <div>
+                <p className="font-semibold text-[#171713]">Stuck or prefer ordering via chat?</p>
+                <p className="text-[11px] text-[#526359]">
+                  Chat directly with our Siliguri dispatch desk on WhatsApp ({paymentConfig?.whatsappNumber || "+91 7001304853"})
+                </p>
+              </div>
+            </div>
+            <a
+              href={checkoutWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#f0f9f4] hover:bg-[#e1f5eb] text-[#128c7e] border border-[#c3ead4] font-semibold text-xs transition-colors shrink-0 shadow-2xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]"
+              aria-label="Open WhatsApp chat for live checkout assistance (opens in a new tab)"
+            >
+              <WhatsAppIcon size={15} color="#25D366" />
+              <span>Ping on WhatsApp →</span>
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </div>
         </form>
       </div>
 
@@ -1919,6 +1974,32 @@ export function LiveCheckout() {
           </div>
         </div>
       </dialog>
+
+      {/* Floating WhatsApp Live Checkout Help Button for Stuck Customers */}
+      <aside aria-label="Customer Checkout Assistance" className="fixed bottom-5 right-5 z-40 sm:bottom-6 sm:right-6">
+        <a
+          href={checkoutWhatsAppUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group flex items-center gap-2.5 rounded-full bg-[#128C7E] hover:bg-[#075E54] text-white pl-3 pr-4 py-2.5 shadow-lg hover:shadow-xl transition-all duration-200 border border-[#25D366]/40 focus:outline-none focus-visible:ring-3 focus-visible:ring-[#25D366] focus-visible:ring-offset-2"
+          aria-label="Stuck or need help with checkout? Chat with TeaFloww support on WhatsApp (opens in a new tab)"
+        >
+          <span className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xs">
+            <WhatsAppIcon size={17} color="#ffffff" />
+            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border border-white" />
+            </span>
+          </span>
+          <div className="flex flex-col text-left leading-tight">
+            <span className="text-[11px] font-bold tracking-wide">Need Help?</span>
+            <span className="text-[10px] text-emerald-100 flex items-center gap-1">
+              Chat on WhatsApp
+            </span>
+          </div>
+          <span className="sr-only"> (opens in a new tab)</span>
+        </a>
+      </aside>
     </div>
   );
 }

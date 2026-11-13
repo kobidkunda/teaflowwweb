@@ -107,3 +107,110 @@ export function extractGeo(request: Request): GeoLocation {
     isLocal: false,
   };
 }
+
+const GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const GEO_CACHE_MAX_SIZE = 1000;
+const geoCache = new Map<string, { value: GeoLocation; expiresAt: number }>();
+
+/**
+ * Clears the in-memory IP geolocation cache (useful for tests).
+ */
+export function clearGeoCache(): void {
+  geoCache.clear();
+}
+
+/**
+ * Resolves geolocation for a request asynchronously:
+ * 1. Returns Siliguri default for private/loopback IPs.
+ * 2. Uses reverse-proxy/CDN geo headers immediately if present.
+ * 3. Checks in-memory TTL cache, then queries ip-api.com with a short timeout.
+ */
+export async function resolveGeo(request: Request): Promise<GeoLocation> {
+  const ip = extractClientIp(request);
+  if (isPrivateIp(ip) || /^192\.0\.2\.|^198\.51\.100\.|^203\.0\.113\./.test(ip)) {
+    return {
+      ip,
+      city: DEFAULT_GEO.city,
+      region: DEFAULT_GEO.region,
+      country: DEFAULT_GEO.country,
+      isLocal: isPrivateIp(ip),
+    };
+  }
+
+  const headerCountry =
+    safeDecode(request.headers.get("x-vercel-ip-country")) ||
+    safeDecode(request.headers.get("cf-ipcountry")) ||
+    safeDecode(request.headers.get("x-geo-country"));
+  const headerRegion =
+    safeDecode(request.headers.get("x-vercel-ip-country-region")) ||
+    safeDecode(request.headers.get("cf-region")) ||
+    safeDecode(request.headers.get("x-geo-region"));
+  const headerCity =
+    safeDecode(request.headers.get("x-vercel-ip-city")) ||
+    safeDecode(request.headers.get("cf-ipcity")) ||
+    safeDecode(request.headers.get("x-geo-city"));
+
+  if (headerCountry && headerCity) {
+    return {
+      ip,
+      country: headerCountry,
+      region: headerRegion || DEFAULT_GEO.region,
+      city: headerCity,
+      isLocal: false,
+    };
+  }
+
+  const now = Date.now();
+  const cached = geoCache.get(ip);
+  if (cached && cached.expiresAt > now) {
+    return cached.value;
+  }
+
+  try {
+    const res = await fetch(
+      `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,country,regionName,city`,
+      { signal: AbortSignal.timeout(1500), cache: "no-store" }
+    );
+    if (res.ok) {
+      const data = (await res.json()) as {
+        status?: string;
+        country?: string;
+        regionName?: string;
+        city?: string;
+      };
+      if (data.status === "success") {
+        const resolved: GeoLocation = {
+          ip,
+          country: data.country?.trim() || headerCountry || DEFAULT_GEO.country,
+          region: data.regionName?.trim() || headerRegion || DEFAULT_GEO.region,
+          city: data.city?.trim() || headerCity || DEFAULT_GEO.city,
+          isLocal: false,
+        };
+        if (geoCache.size >= GEO_CACHE_MAX_SIZE) {
+          const oldestKey = geoCache.keys().next().value;
+          if (oldestKey) geoCache.delete(oldestKey);
+        }
+        geoCache.set(ip, { value: resolved, expiresAt: now + GEO_CACHE_TTL_MS });
+        return resolved;
+      }
+    }
+  } catch {
+    // Never fail cart sync if ip-api.com times out or is unreachable
+  }
+
+  const fallback: GeoLocation = {
+    ip,
+    country: headerCountry || DEFAULT_GEO.country,
+    region: headerRegion || DEFAULT_GEO.region,
+    city: headerCity || DEFAULT_GEO.city,
+    isLocal: false,
+  };
+
+  if (geoCache.size >= GEO_CACHE_MAX_SIZE) {
+    const oldestKey = geoCache.keys().next().value;
+    if (oldestKey) geoCache.delete(oldestKey);
+  }
+  geoCache.set(ip, { value: fallback, expiresAt: now + 10 * 60 * 1000 });
+
+  return fallback;
+}

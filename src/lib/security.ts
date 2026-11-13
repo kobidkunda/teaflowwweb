@@ -21,7 +21,7 @@ const metaCapiScripts = [
 const scriptSrc = [
   "script-src 'self' 'unsafe-inline'",
   ...(process.env.NODE_ENV === "production" ? [] : ["'unsafe-eval'"]),
-  "https://www.googletagmanager.com https://tagmanager.google.com https://www.googleadservices.com https://www.google.com https://connect.facebook.net https://static.cloudflareinsights.com https://checkout.razorpay.com",
+  "https://www.googletagmanager.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://connect.facebook.net https://static.cloudflareinsights.com https://checkout.razorpay.com",
   metaCapiScripts,
 ].join(" ");
 // These exact CAPI destinations were verified in Meta's public config for pixel

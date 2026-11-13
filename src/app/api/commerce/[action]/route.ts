@@ -10,6 +10,7 @@ import { currencySchema, localeSchema, countrySchema, CommerceError } from "@/li
 import { shipment } from "@/lib/international/fulfillment";
 import { getPaymentSettings } from "@/lib/paymentSettings";
 import { getShippingSettings } from "@/lib/shippingSettings";
+import { getStoreSettings } from "@/lib/storeSettings";
 export const runtime = "nodejs";
 export async function GET(request: Request, { params }: { params: Promise<{ action: string }> }) {
   const denied = gate(request); if (denied) return denied;
@@ -19,8 +20,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ acti
     if (action === "payment-methods") {
       const p = getPaymentSettings();
       const s = getShippingSettings();
+      const st = getStoreSettings();
       return json({
         onlinePaymentEnabled: p.online_payment_enabled,
+        whatsappNumber: st.whatsapp_number || "+91 7001304853",
         discounts: {
           upi: {
             enabled: p.upi_discount_enabled,

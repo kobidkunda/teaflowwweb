@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimitResponse } from "@/lib/rateLimit";
 import { cartSyncSchema, syncAbandonedCart } from "@/lib/abandonedCarts";
-import { extractGeo } from "@/lib/geo";
+import { resolveGeo } from "@/lib/geo";
 
 export const runtime = "nodejs";
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   // 3. Extract Geolocation and User-Agent
-  const geo = extractGeo(request);
+  const geo = await resolveGeo(request);
   const userAgent = request.headers.get("user-agent") || "";
 
   // 4. Atomic abandoned cart synchronization
@@ -36,6 +36,7 @@ export async function POST(request: Request) {
       sessionId: parsed.data.sessionId,
       fingerprint: parsed.data.fingerprint,
       items: parsed.data.items,
+      customer: parsed.data.customer,
       geo,
       userAgent,
     });

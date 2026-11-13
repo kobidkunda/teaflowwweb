@@ -7,7 +7,7 @@ import { AdminFeedsClient } from "@/components/admin/feeds/AdminFeedsClient";
 export const metadata = {
   title: "Product Feeds & Syndication | Himalayan Tea House Admin",
   description:
-    "Manage Google Merchant Center and Meta Product Catalog feeds, test access tokens, and inspect live syndicated variants",
+    "Manage Google Merchant Center, Meta Product Catalog, and OpenAI Commerce feeds, test access tokens, and inspect live syndicated variants",
 };
 
 export default async function AdminFeedsPage() {

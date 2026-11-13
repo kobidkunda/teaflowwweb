@@ -15,7 +15,7 @@ const COMMON_PATH_PRESETS = [
   { label: "Find your tea", href: "/tea-finder" },
   { label: "Trials & Samples", href: "/trials" },
   { label: "About Us", href: "/about" },
-  { label: "Tea Journal", href: "/blog" },
+  { label: "Blog & Tea Journal", href: "/blog" },
   { label: "Track order", href: "/track" },
   { label: "Your bag", href: "/cart" },
   { label: "Privacy policy", href: "/privacy" },

@@ -71,8 +71,10 @@ export function PurchaseStatus({
   }, [id, token, message]);
 
   useEffect(() => {
-    if (["paid", "cod_due", "cod_remitted", "advance_paid", "pending_bank_transfer"].includes(status)) clear();
-  }, [status]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (["paid", "cod_due", "cod_remitted", "advance_paid", "pending_bank_transfer"].includes(status)) {
+      clear();
+    }
+  }, [status, clear]);
 
   const isConfirmed = ["paid", "cod_due", "cod_remitted", "advance_paid", "pending_bank_transfer"].includes(status);
   const isFailedOrPending = ["payment_failed", "payment_pending", "creation_uncertain", "creating"].includes(status);

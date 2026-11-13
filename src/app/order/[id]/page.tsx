@@ -6,6 +6,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { getPublicOrder } from "@/lib/storefront";
 import { formatINR } from "@/lib/money";
 import { CheckoutSteps } from "@/components/checkout/CheckoutSteps";
+import { OrderCartClear } from "@/components/cart/OrderCartClear";
 import { constructMetadata } from "@/lib/seo/metadata";
 import type { Metadata } from "next";
 
@@ -32,6 +33,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
   const step = dispatchStepIndex(order.dispatch_status);
   const cancelled = order.dispatch_status === "cancelled" || order.dispatch_status === "returned";
   return <div className="container page-shell order-page">
+    <OrderCartClear />
     <nav className="breadcrumbs" aria-label="Breadcrumb">
       <Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
         <BrandLogo variant="symbol" size={16} aria-hidden={true} />

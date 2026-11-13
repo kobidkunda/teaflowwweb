@@ -3,6 +3,8 @@ import {
   getFeedCatalogData,
   generateGoogleMerchantXml,
   generateMetaCatalogCsv,
+  generateOpenAiProductFeedJsonl,
+  mapFeedItemToOpenAiRecord,
   escapeXml,
   isFeedAuthorized,
   feedUnauthorizedResponse,
@@ -14,6 +16,9 @@ import { GET as getGoogleXmlRoute } from "@/app/feeds/google.xml/route";
 import { GET as getApiGoogleRoute } from "@/app/api/feeds/google-merchant/route";
 import { GET as getCatalogCsvRoute } from "@/app/feeds/catalog.csv/route";
 import { GET as getApiMetaRoute } from "@/app/api/feeds/meta/route";
+import { GET as getOpenAiJsonlRoute } from "@/app/feeds/openai.jsonl/route";
+import { GET as getApiOpenAiRoute } from "@/app/api/feeds/openai/route";
+import { gunzipSync } from "node:zlib";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -616,6 +621,99 @@ print(f"VALIDATED_{len(items)}_ITEMS")
       expect(xml).not.toContain("http://192.168.88.81:3000");
       // Must contain public production domain
       expect(xml).toContain("https://himalayantea.com");
+    });
+  });
+
+  describe("7. OpenAI Commerce Product Feed (JSONL & JSONL.GZ)", () => {
+    it("maps FeedItem to OpenAI Commerce Product Feed schema without placeholder strings", () => {
+      const items = getFeedCatalogData("https://teafloww.com");
+      expect(items.length).toBeGreaterThan(0);
+
+      const record = mapFeedItemToOpenAiRecord(items[0], "https://teafloww.com");
+      expect(record.item_id).toBe(items[0].id);
+      expect(record.title).toBe(items[0].title);
+      expect(record.description).toBe(items[0].description);
+      expect(record.url).toBe(items[0].link);
+      expect(record.image_url).toBe(items[0].imageLink);
+      expect(record.price).toBe(items[0].price);
+      expect(["in_stock", "out_of_stock"]).toContain(record.availability);
+      expect(record.brand).toBeTruthy();
+      expect(record.seller_name).toBeTruthy();
+      expect(record.seller_url).toBe("https://teafloww.com");
+      expect(record.target_countries).toEqual(["IN"]);
+      expect(record.store_country).toBe("IN");
+      expect(record.is_eligible_search).toBe(true);
+      expect(record.is_eligible_checkout).toBe(false);
+
+      const serialized = JSON.stringify(record);
+      expect(serialized).not.toContain('"unknown"');
+      expect(serialized).not.toContain('"n/a"');
+    });
+
+    it("generates valid UTF-8 JSONL where every line parses as a complete OpenAI record", () => {
+      const items = getFeedCatalogData("https://teafloww.com");
+      const jsonl = generateOpenAiProductFeedJsonl(items, "https://teafloww.com", {
+        targetCountries: ["IN", "US"],
+        storeCountry: "IN",
+      });
+
+      const lines = jsonl.split("\n").filter(Boolean);
+      expect(lines).toHaveLength(items.length);
+
+      for (const line of lines) {
+        const parsed = JSON.parse(line);
+        expect(parsed.item_id).toBeTruthy();
+        expect(parsed.url).toMatch(/^https:\/\/teafloww\.com\/tea\//);
+        expect(parsed.image_url).toMatch(/^https?:\/\//);
+        expect(parsed.target_countries).toEqual(["IN", "US"]);
+        expect(parsed.store_country).toBe("IN");
+        expect(typeof parsed.is_eligible_search).toBe("boolean");
+        expect(typeof parsed.is_eligible_checkout).toBe("boolean");
+      }
+    });
+
+    it("serves /feeds/openai.jsonl and /api/feeds/openai with JSONL, download, gzip, and token auth", async () => {
+      delete process.env.FEED_ACCESS_TOKEN;
+
+      const req = new Request("https://teafloww.com/feeds/openai.jsonl?base_url=https://teafloww.com");
+      const res = await getOpenAiJsonlRoute(req);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("content-type")).toBe("application/x-ndjson; charset=utf-8");
+      expect(res.headers.get("content-disposition")).toBe("inline");
+      const body = await res.text();
+      const lines = body.split("\n").filter(Boolean);
+      expect(lines.length).toBeGreaterThan(0);
+      expect(JSON.parse(lines[0]).item_id).toBeTruthy();
+
+      // Test download=1
+      const dlReq = new Request("https://teafloww.com/api/feeds/openai?download=1&base_url=https://teafloww.com");
+      const dlRes = await getApiOpenAiRoute(dlReq);
+      expect(dlRes.status).toBe(200);
+      expect(dlRes.headers.get("content-disposition")).toBe(
+        'attachment; filename="openai-product-feed.jsonl"'
+      );
+
+      // Test gzip=1 (.jsonl.gz)
+      const gzReq = new Request("https://teafloww.com/feeds/openai.jsonl?gzip=1&base_url=https://teafloww.com");
+      const gzRes = await getOpenAiJsonlRoute(gzReq);
+      expect(gzRes.status).toBe(200);
+      expect(gzRes.headers.get("content-type")).toBe("application/gzip");
+      expect(gzRes.headers.get("content-disposition")).toBe(
+        'attachment; filename="openai-product-feed.jsonl.gz"'
+      );
+      const gzBuf = Buffer.from(await gzRes.arrayBuffer());
+      const decompressed = gunzipSync(gzBuf).toString("utf8");
+      expect(decompressed).toBe(body);
+
+      // Test FEED_ACCESS_TOKEN enforcement
+      process.env.FEED_ACCESS_TOKEN = "openai-secret-token";
+      const unauthRes = await getOpenAiJsonlRoute(new Request("https://teafloww.com/feeds/openai.jsonl"));
+      expect(unauthRes.status).toBe(401);
+
+      const authRes = await getOpenAiJsonlRoute(
+        new Request("https://teafloww.com/feeds/openai.jsonl?token=openai-secret-token")
+      );
+      expect(authRes.status).toBe(200);
     });
   });
 });

@@ -37,6 +37,12 @@ export function getCatalogSitemapEntries(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${siteUrl}/sitemap`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    {
       url: `${siteUrl}/wholesale`,
       lastModified: now,
       changeFrequency: "weekly",

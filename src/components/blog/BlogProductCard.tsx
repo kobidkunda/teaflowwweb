@@ -156,6 +156,11 @@ export function BlogProductCard({
 
   const formattedPrice = formatMoney(currentProduct.pricePaise);
 
+  const productHref =
+    currentProduct.variantId === 0
+      ? `/trials/${currentProduct.slug}`
+      : `/tea/${currentProduct.slug}`;
+
   return (
     <div className="my-8 p-6 sm:p-7 bg-gradient-to-br from-[#ffffff] to-[#faf8f4] border border-[#e2dcd0] hover:border-[#2c4e38]/50 rounded-2xl shadow-sm transition-all duration-300">
       <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#2c4e38] mb-3">
@@ -165,7 +170,7 @@ export function BlogProductCard({
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
         <Link
-          href={`/shop/${currentProduct.slug}`}
+          href={productHref}
           className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-xl overflow-hidden bg-[#ede9df] block group"
         >
           <Image
@@ -184,7 +189,7 @@ export function BlogProductCard({
             </p>
           )}
           <h4 className="font-serif text-lg sm:text-xl font-bold text-[#18231c] leading-snug mb-1 hover:text-[#2c4e38] transition-colors">
-            <Link href={`/shop/${currentProduct.slug}`}>{currentProduct.name}</Link>
+            <Link href={productHref}>{currentProduct.name}</Link>
           </h4>
           {currentProduct.description && (
             <p className="text-xs text-[#52594e] line-clamp-2 leading-relaxed mb-3">
@@ -224,7 +229,7 @@ export function BlogProductCard({
             )}
           </button>
           <Link
-            href={`/shop/${currentProduct.slug}`}
+            href={productHref}
             className="w-full sm:w-auto px-4 py-2 border border-[#cfc8b8] hover:border-[#18231c] text-center text-xs font-semibold text-[#18231c] rounded-lg transition-colors"
           > <StorefrontText id="copy_9f69a67b48048df8" fallback="Details →" /> </Link>
         </div>

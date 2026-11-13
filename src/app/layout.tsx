@@ -11,6 +11,8 @@ import { SITE_CONFIG, getSiteUrl } from "@/lib/seo/site";
 import { getOrganizationSchema, getLocalBusinessSchema, getWebsiteSchema } from "@/lib/seo/schema";
 import "./globals.css";
 import { getStorefrontHomepageContent } from "@/lib/homepage";
+import { listStorefrontCategories } from "@/lib/storefront";
+import { listBlogPosts } from "@/lib/blogs";
 import { trackingBootstrap } from "@/lib/seo/consent";
 import { getPublicTrackingConfig } from "@/lib/trackingSettings";
 import { AnalyticsHeadScripts } from "@/components/analytics/AnalyticsScripts";
@@ -112,6 +114,16 @@ export default async function RootLayout({
   const navigation = shell.navigation;
 
   const currentLang = international.requestedLocale || international.locale;
+  const storefrontCategories = listStorefrontCategories().map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+  }));
+  const footerBlogs = listBlogPosts({ status: "published", limit: 6 }).map((b) => ({
+    slug: b.slug,
+    title: b.title,
+  }));
+
   return (
     <html lang={currentLang === "en" ? "en-IN" : currentLang} dir={international.dir}>
       <head>
@@ -151,6 +163,8 @@ export default async function RootLayout({
           content={localize(getStorefrontHomepageContent(), "homepage", international.locale)}
           announcement={announcement}
           navigation={navigation}
+          categories={storefrontCategories}
+          footerBlogs={footerBlogs}
         >
           {children}
         </StorefrontShell></InternationalProvider>

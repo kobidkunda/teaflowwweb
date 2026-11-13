@@ -49,8 +49,10 @@ describe("Dedicated Feeds Page & UI Components", () => {
     expect(markup).toContain("Product Feeds");
     expect(markup).toContain("Google Merchant Center");
     expect(markup).toContain("Meta Product Catalog");
+    expect(markup).toContain("OpenAI Commerce Feed");
     expect(markup).toContain("/feeds/google.xml");
     expect(markup).toContain("/feeds/catalog.csv");
+    expect(markup).toContain("/feeds/openai.jsonl");
   });
 
   it("renders FeedsClient with channels, metrics, and actions", () => {
@@ -73,6 +75,12 @@ describe("Dedicated Feeds Page & UI Components", () => {
     expect(markup).toContain("RFC 4180 CSV Spreadsheet");
     expect(markup).toContain("/feeds/catalog.csv");
     expect(markup).toContain("Download CSV");
+
+    // Channel 3: OpenAI Commerce
+    expect(markup).toContain("OpenAI Commerce Feed");
+    expect(markup).toContain("UTF-8 JSONL / JSONL.GZ");
+    expect(markup).toContain("/feeds/openai.jsonl");
+    expect(markup).toContain("Download JSONL");
 
     // Metric summary
     expect(markup).toContain("Total SKUs / Variants");
@@ -163,8 +171,10 @@ describe("Dedicated Feeds Page & UI Components", () => {
     expect(markup).toContain("Product Feeds &amp; Syndication");
     expect(markup).toContain("Google Merchant Center");
     expect(markup).toContain("Meta Product Catalog");
+    expect(markup).toContain("OpenAI Commerce");
     expect(markup).toContain("https://himalayantea.com/feeds/google.xml?token=secret123");
     expect(markup).toContain("https://himalayantea.com/feeds/catalog.csv?token=secret123");
+    expect(markup).toContain("https://himalayantea.com/feeds/openai.jsonl?token=secret123");
     expect(markup).toContain("darjeeling-ff-tin-100g");
     expect(markup).toContain("luxury_tin");
     expect(markup).toContain("749.00 INR");

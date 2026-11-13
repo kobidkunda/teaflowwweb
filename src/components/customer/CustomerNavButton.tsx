@@ -14,7 +14,7 @@ export function CustomerNavButton() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/customer/me")
+    fetch("/api/customer/me?optional=1")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (active) {

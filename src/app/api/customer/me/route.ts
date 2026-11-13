@@ -16,6 +16,10 @@ const updateProfileSchema = z.object({
 export async function GET(request: Request) {
   const customer = getCustomerSession(request);
   if (!customer) {
+    const url = new URL(request.url);
+    if (url.searchParams.get("optional") === "1") {
+      return NextResponse.json({ customer: null });
+    }
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   return NextResponse.json({ customer });

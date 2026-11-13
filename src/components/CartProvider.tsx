@@ -33,6 +33,16 @@ export type QuickModalState = {
   initialVariant: Variant;
 };
 
+export type SyncCustomerDetails = {
+  name?: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  state?: string;
+  postcode?: string;
+  address?: string;
+};
+
 type CartContextValue = {
   items: CartLine[];
   add: (
@@ -57,6 +67,7 @@ type CartContextValue = {
     oldVariantId: number,
     newLine: Omit<CartLine, "quantity"> & { quantity?: number }
   ) => void;
+  syncCustomerDetails: (details: SyncCustomerDetails) => void;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -68,6 +79,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [recoveryToken, setRecoveryToken] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastAddedItem, setLastAddedItem] = useState<AddedNotification | null>(null);
+  const [customerDetails, setCustomerDetails] = useState<SyncCustomerDetails | null>(null);
+
+  const syncCustomerDetails = useCallback((details: SyncCustomerDetails) => {
+    setCustomerDetails((prev) => {
+      const next: SyncCustomerDetails = {
+        name: details.name?.trim() || prev?.name,
+        phone: details.phone?.trim() || prev?.phone,
+        email: details.email?.trim() || prev?.email,
+        city: details.city?.trim() || prev?.city,
+        state: details.state?.trim() || prev?.state,
+        postcode: details.postcode?.trim() || prev?.postcode,
+        address: details.address?.trim() || prev?.address,
+      };
+      if (JSON.stringify(prev) === JSON.stringify(next)) return prev;
+      return next;
+    });
+  }, []);
 
   const dismissLastAdded = useCallback(() => {
     setLastAddedItem(null);
@@ -122,26 +150,38 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const lastSyncedRef = useRef<string>("");
   const isInitialMount = useRef<boolean>(true);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const clearedRef = useRef<boolean>(false);
 
   // 1. Initial hydration from localStorage and session ID initialization
   useEffect(() => {
+    if (clearedRef.current) {
+      setHydrated(true);
+      return;
+    }
+
     try {
-      const stored = JSON.parse(localStorage.getItem("tea-house-cart") || "[]");
-      if (Array.isArray(stored)) {
-        setItems(
-          stored.filter(
-            (x) =>
-              (Number.isInteger(x.variantId) || typeof x.trialId === "string") &&
-              Number.isInteger(x.quantity) &&
-              x.quantity > 0 &&
-              x.quantity <= 10000 &&
-              typeof x.name === "string" &&
-              Number.isFinite(x.pricePaise)
-          )
-        );
+      const raw = localStorage.getItem("tea-house-cart");
+      if (raw && raw !== "[]") {
+        const stored = JSON.parse(raw);
+        if (Array.isArray(stored)) {
+          setItems(
+            stored.filter(
+              (x) =>
+                (Number.isInteger(x.variantId) || typeof x.trialId === "string") &&
+                Number.isInteger(x.quantity) &&
+                x.quantity > 0 &&
+                x.quantity <= 10000 &&
+                typeof x.name === "string" &&
+                Number.isFinite(x.pricePaise)
+            )
+          );
+        }
+      } else {
+        setItems([]);
       }
     } catch {
       /* Invalid saved cart: start empty. */
+      setItems([]);
     }
 
     const sid = getOrCreateSessionId();
@@ -149,20 +189,55 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     setHydrated(true);
   }, []);
 
+  // Cross-tab and in-tab synchronization for cart clearing and storage updates
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "tea-house-cart") {
+        if (!e.newValue || e.newValue === "[]") {
+          clearedRef.current = true;
+          setItems([]);
+        } else {
+          try {
+            const next = JSON.parse(e.newValue);
+            if (Array.isArray(next)) setItems(next);
+          } catch {
+            setItems([]);
+          }
+        }
+      }
+    };
+    const handleCartCleared = () => {
+      clearedRef.current = true;
+      setItems([]);
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("tea-house-cart-cleared", handleCartCleared);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("tea-house-cart-cleared", handleCartCleared);
+    };
+  }, []);
+
   // 2. Local storage persistence on state change
   useEffect(() => {
     if (hydrated) {
-      localStorage.setItem("tea-house-cart", JSON.stringify(items));
+      if (items.length === 0) {
+        localStorage.setItem("tea-house-cart", "[]");
+      } else {
+        localStorage.setItem("tea-house-cart", JSON.stringify(items));
+      }
     }
   }, [items, hydrated]);
 
-  // 3. Debounced (1000ms) background server sync with AbortController
+  // 3. Debounced (800ms) background server sync with AbortController
   useEffect(() => {
     if (!hydrated) return;
 
-    const currentNormalized = JSON.stringify(
-      items.map((x) => ({ variantId: x.variantId, trialId: x.trialId, quantity: x.quantity }))
-    );
+    const currentNormalized = JSON.stringify({
+      items: items.map((x) => ({ variantId: x.variantId, trialId: x.trialId, quantity: x.quantity })),
+      customer: customerDetails,
+    });
 
     // Skip syncing initial empty cart on first mount
     if (isInitialMount.current) {
@@ -171,7 +246,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       if (items.length === 0) return;
     }
 
-    // Skip sync if items have not changed since last sync
+    // Skip sync if items and customer details have not changed since last sync
     if (currentNormalized === lastSyncedRef.current) {
       return;
     }
@@ -192,10 +267,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           sessionId: sid,
           fingerprint,
           items: items.map((x) => ({
-            variantId: x.variantId,
-            trialId: x.trialId,
+            variantId: x.trialId ? 0 : x.variantId,
+            ...(x.trialId ? { trialId: x.trialId } : {}),
             quantity: x.quantity,
           })),
+          ...(customerDetails ? { customer: customerDetails } : {}),
         };
 
         const res = await fetch("/api/cart/sync", {
@@ -219,13 +295,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       } finally {
         setIsSyncing(false);
       }
-    }, 1000);
+    }, 800);
 
     return () => {
       clearTimeout(timeoutId);
       abortControllerRef.current?.abort();
     };
-  }, [items, hydrated, sessionId]);
+  }, [items, hydrated, sessionId, customerDetails]);
 
   const add = (
     line: Omit<CartLine, "quantity"> & { quantity?: number },
@@ -254,7 +330,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     setItems((current) => {
       const matchIndex = current.findIndex((x) =>
-        line.trialId ? x.trialId === line.trialId : x.variantId === line.variantId
+        line.trialId ? x.trialId === line.trialId : !x.trialId && x.variantId === line.variantId
       );
       if (matchIndex >= 0) {
         return current.map((x, idx) =>
@@ -352,7 +428,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     void trackCartDelta(newLine, clampedQty, "add");
   }, [displayItems]);
 
-  const clear = () => setItems([]);
+  const clear = useCallback(() => {
+    clearedRef.current = true;
+    setItems([]);
+    abortControllerRef.current?.abort();
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("tea-house-cart");
+        localStorage.setItem("tea-house-cart", "[]");
+        window.dispatchEvent(new Event("tea-house-cart-cleared"));
+      } catch {
+        /* storage not accessible */
+      }
+    }
+    lastSyncedRef.current = JSON.stringify({ items: [], customer: customerDetails });
+  }, [customerDetails]);
   const count = items.reduce((sum, x) => sum + x.quantity, 0);
   const subtotal = items.reduce((sum, x) => sum + x.pricePaise * x.quantity, 0);
 
@@ -375,6 +465,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         openQuickModal,
         closeQuickModal,
         replaceCartItem,
+        syncCustomerDetails,
       }}
     >
       {children}

@@ -3202,7 +3202,12 @@ export class PrivateLabelService {
   ): SampleOrder {
     const db = getDb();
     const id = `samp_${randomUUID()}`;
-    const sampleNumber = `PL-SMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    let sampleNumber = `PL-SMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const existing = db.prepare("SELECT 1 FROM pl_samples WHERE sample_number = ?").get(sampleNumber);
+      if (!existing) break;
+      sampleNumber = `PL-SMP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
 
     return db.transaction(() => {
       // 1. Capping check (Test F24.B2)

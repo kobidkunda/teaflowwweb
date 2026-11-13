@@ -30,7 +30,7 @@ export function QuickVariantModal() {
   const {
     quickModalState,
     closeQuickModal,
-    replaceCartItem,
+    add,
     subtotal: cartSubtotal,
     count: cartCount,
   } = useCart();
@@ -44,8 +44,7 @@ export function QuickVariantModal() {
   const [selectedVariantId, setSelectedVariantId] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [isWholesale, setIsWholesale] = useState<boolean>(false);
-  const [isUpdated, setIsUpdated] = useState<boolean>(false);
-  const [lastUpdatedVariantId, setLastUpdatedVariantId] = useState<number>(0);
+  const [addedVariants, setAddedVariants] = useState<Record<number, boolean>>({});
 
   // Initialize selection whenever a new product/variant is opened
   useEffect(() => {
@@ -53,8 +52,7 @@ export function QuickVariantModal() {
       setSelectedVariantId(initialVariant.id);
       setQuantity(1);
       setIsWholesale(false);
-      setIsUpdated(false);
-      setLastUpdatedVariantId(initialVariant.id);
+      setAddedVariants({});
     }
   }, [quickModalState?.product?.id, initialVariant?.id]);
 
@@ -133,22 +131,18 @@ export function QuickVariantModal() {
   }
 
   const lineSubtotalPaise = activeUnitPricePaise * quantity;
-  const initialLineSubtotal = initialVariant.price_paise * 1;
-  const hasChanged =
-    selectedVariantId !== lastUpdatedVariantId ||
-    quantity !== (isUpdated ? quantity : 1) ||
-    isWholesale;
+  const isCurrentVariantAdded = Boolean(addedVariants[activeVariant.id]);
+  const hasAnyAdded = Object.values(addedVariants).some(Boolean);
 
   // Toggle variant
   const handleSelectVariant = (variantId: number) => {
     setSelectedVariantId(variantId);
-    setIsUpdated(false);
   };
 
   // Toggle wholesale mode
   const handleToggleWholesale = (enabled: boolean) => {
     setIsWholesale(enabled);
-    setIsUpdated(false);
+    setAddedVariants((prev) => ({ ...prev, [activeVariant.id]: false }));
     if (enabled) {
       const minQty = wholesaleSlabs[0]?.min_qty || wholesaleMoq;
       if (quantity < minQty) {
@@ -169,32 +163,39 @@ export function QuickVariantModal() {
     const stepSize = isWholesale ? (quantity >= 100 ? 50 : 25) : 1;
     const next = Math.max(minQty, Math.min(maxQty, quantity + delta * stepSize));
     setQuantity(next);
-    setIsUpdated(false);
+    setAddedVariants((prev) => ({ ...prev, [activeVariant.id]: false }));
   };
 
-  // Execute update
-  const handleUpdate = () => {
-    replaceCartItem(initialVariant.id, {
-      variantId: activeVariant.id,
-      sku: activeVariant.sku?.trim() || `HTH-${product.id}-${activeVariant.id}`,
-      slug: product.slug,
-      name: product.name,
-      grams: activeVariant.grams,
-      pricePaise: activeUnitPricePaise,
-      quantity,
-      imageUrl: activeVariant.product_image_url || product.primary_image_url || product.primary_image?.url || null,
-      isWholesale,
-      wholesaleSlabPrice: isWholesale ? activeUnitPricePaise : undefined,
-      wholesaleMoq: isWholesale ? wholesaleMoq : undefined,
-    });
-    setLastUpdatedVariantId(activeVariant.id);
-    setIsUpdated(true);
+  // Add selected variant as a distinct item in the cart (never replaces other variants)
+  const addSelectedToCart = () => {
+    add(
+      {
+        variantId: activeVariant.id,
+        sku: activeVariant.sku?.trim() || `HTH-${product.id}-${activeVariant.id}`,
+        slug: product.slug,
+        name: product.name,
+        grams: activeVariant.grams,
+        pricePaise: activeUnitPricePaise,
+        quantity,
+        imageUrl:
+          activeVariant.product_image_url ||
+          product.primary_image_url ||
+          product.primary_image?.url ||
+          null,
+        isWholesale,
+        wholesaleSlabPrice: isWholesale ? activeUnitPricePaise : undefined,
+        wholesaleMoq: isWholesale ? wholesaleMoq : undefined,
+      },
+      true,
+      false
+    );
+    setAddedVariants((prev) => ({ ...prev, [activeVariant.id]: true }));
   };
 
-  // Proceed to checkout
-  const handleProceedCheckout = () => {
-    if (hasChanged && !isUpdated) {
-      handleUpdate();
+  // Buy Now: ensure selected variant is added, then navigate straight to checkout
+  const handleBuyNow = () => {
+    if (!isCurrentVariantAdded) {
+      addSelectedToCart();
     }
     closeQuickModal();
     router.push("/checkout");
@@ -233,10 +234,10 @@ export function QuickVariantModal() {
               <Check size={14} strokeWidth={2.8} />
             </span>
             <span className="quick-variant-status-text">
-              {isUpdated ? (
-                <StorefrontText id="quick_modal.bag_updated" fallback="Bag Updated ✓" />
-              ) : (
+              {isCurrentVariantAdded || hasAnyAdded ? (
                 <StorefrontText id="quick_modal.added_to_bag" fallback="Added to Bag ✓" />
+              ) : (
+                <StorefrontText id="quick_modal.select_pack" fallback="Select Pack & Quantity" />
               )}
             </span>
           </div>
@@ -511,31 +512,42 @@ export function QuickVariantModal() {
 
         {/* Modal Actions Suite */}
         <div className="quick-variant-footer">
-          {hasChanged && !isUpdated ? (
+          <div className="quick-variant-footer-actions">
             <button
               type="button"
-              className="quick-variant-btn-update"
-              onClick={handleUpdate}
-              data-testid="quick-modal-update-btn"
+              className={`quick-variant-btn-add ${isCurrentVariantAdded ? "added" : ""}`}
+              onClick={addSelectedToCart}
+              data-testid="quick-modal-add-btn"
             >
-              <ShoppingBag size={15} aria-hidden="true" />
-              <span>
-                <StorefrontText id="quick_modal.update_bag" fallback="Update Bag" /> • {formatMoney(lineSubtotalPaise)}
-              </span>
+              {isCurrentVariantAdded ? (
+                <>
+                  <Check size={15} strokeWidth={2.5} aria-hidden="true" />
+                  <span>
+                    <StorefrontText id="quick_modal.added_to_cart" fallback="Added ✓" />
+                  </span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={15} aria-hidden="true" />
+                  <span>
+                    <StorefrontText id="quick_modal.add_to_cart" fallback="Add to Cart" />
+                  </span>
+                </>
+              )}
             </button>
-          ) : (
+
             <button
               type="button"
-              className="quick-variant-btn-checkout"
-              onClick={handleProceedCheckout}
-              data-testid="quick-modal-checkout-btn"
+              className="quick-variant-btn-buy"
+              onClick={handleBuyNow}
+              data-testid="quick-modal-buy-now-btn"
             >
               <span>
-                <StorefrontText id="quick_modal.proceed_checkout" fallback="Proceed to Checkout" />
+                <StorefrontText id="quick_modal.buy_now" fallback="Buy Now" />
               </span>
               <ArrowRight size={15} strokeWidth={2.4} aria-hidden="true" />
             </button>
-          )}
+          </div>
 
           <div className="quick-variant-footer-links">
             <Link

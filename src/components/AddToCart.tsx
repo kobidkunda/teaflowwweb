@@ -33,6 +33,11 @@ export function AddToCart({
   const handleQuickAdd = () => {
     if (isOutOfStock) return;
 
+    if (!disableModal && openQuickModal) {
+      openQuickModal(product, target);
+      return;
+    }
+
     add({
       variantId: target.id,
       sku: target.sku?.trim() || `HTH-${product.id}-${target.id}`,
@@ -45,10 +50,6 @@ export function AddToCart({
 
     setAdded(true);
     setTimeout(() => setAdded(false), 2400);
-
-    if (!disableModal && openQuickModal) {
-      openQuickModal(product, target);
-    }
   };
 
   return (

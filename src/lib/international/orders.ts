@@ -14,6 +14,7 @@ import { getActiveRazorpayCredentials, getPaymentSettings, resolveActiveGateway,
 import { getActiveShiprocketCredentials, getShippingSettings } from "@/lib/shippingSettings";
 import { getActiveYoupiClient } from "@/lib/youpi/config";
 import type { YoupiWebhookEvent } from "@/lib/youpi/client";
+import { markCartConverted } from "@/lib/abandonedCarts";
 export type LiveOrder = { id: string; owner: string; idempotency_key: string; quote_id: string; document: string; payment_status: string;
   fulfillment_status: string; gateway_order_id: string | null; gateway_payment_id: string | null; reserved_until: number;
   inventory_status: string; refund_minor: number; created_ms: number };
@@ -93,6 +94,14 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
     attachSubscriptionOrder(q, id);
     if (status === "cod_due" || status === "pending_bank_transfer") {
       enqueue("email", { orderId: id, template: "commerce_order_received" }, `email:confirmation:${id}`);
+      try {
+        markCartConverted(db, {
+          orderId: id,
+          customerName: q.input.address.name,
+          customerEmail: q.input.address.email,
+          customerPhone: q.input.address.phone,
+        });
+      } catch {}
       try {
         const srConfig = getActiveShiprocketCredentials();
         if (status === "cod_due" && !q.subscription && srConfig.orderCreationMode === "auto") {
@@ -307,7 +316,15 @@ export function applyPaymentEvent(id: string, raw: unknown) {
           if (result.changes) {
             subscriptionCaptured(q, row.id, status === "paid_exception");
             enqueue("email", { orderId: row.id, template: status === "paid_exception" ? "commerce_payment_review" : "commerce_order_received" }, `email:confirmation:${row.id}`);
-            if (status === "paid") {
+            if (status === "paid" || status === "advance_paid") {
+              try {
+                markCartConverted(db, {
+                  orderId: row.id,
+                  customerName: q.input.address.name,
+                  customerEmail: q.input.address.email,
+                  customerPhone: q.input.address.phone,
+                });
+              } catch {}
               try {
                 const srConfig = getActiveShiprocketCredentials();
                 if (!q.subscription && srConfig.orderCreationMode === "auto") {
@@ -388,7 +405,15 @@ export function applyYoupiPaymentEvent(deliveryId: string, event: YoupiWebhookEv
             `email:confirmation:${row.id}`
           );
 
-          if (status === "paid") {
+          if (status === "paid" || status === "advance_paid") {
+            try {
+              markCartConverted(db, {
+                orderId: row.id,
+                customerName: q.input.address.name,
+                customerEmail: q.input.address.email,
+                customerPhone: q.input.address.phone,
+              });
+            } catch {}
             try {
               const srConfig = getActiveShiprocketCredentials();
               if (!q.subscription && srConfig.orderCreationMode === "auto") {
@@ -573,6 +598,15 @@ export function switchOrderToCod(id: string, token: string): LiveOrder {
       }),
       Date.now()
     );
+
+    try {
+      markCartConverted(db, {
+        orderId: id,
+        customerName: q.input.address.name,
+        customerEmail: q.input.address.email,
+        customerPhone: q.input.address.phone,
+      });
+    } catch {}
 
     enqueue(
       "email",

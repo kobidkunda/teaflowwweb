@@ -19,7 +19,7 @@ export function SubscribeCheckout({ initialItem }: { initialItem?: InitialItem }
   const [policy, setPolicy] = useState<Policy | null>(null), [loading, setLoading] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [preview, setPreview] = useState<Preview | null>(null), [created, setCreated] = useState('');
   const items = initialItem ? [initialItem] : cart.items;
-  useEffect(() => { let active = true; Promise.all([fetch('/api/customer/me').then(r => r.ok ? r.json() : null), subscriptionRequest('policy')]).then(([me, p]) => { if (active) { setCustomer(me?.customer || null); setPolicy(p.policy); } }).catch(() => { if (active) setError('Could not load subscription settings. Reload to retry.'); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; Promise.all([fetch('/api/customer/me?optional=1').then(r => r.ok ? r.json() : null), subscriptionRequest('policy')]).then(([me, p]) => { if (active) { setCustomer(me?.customer || null); setPolicy(p.policy); } }).catch(() => { if (active) setError('Could not load subscription settings. Reload to retry.'); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, []);
   async function review(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); const f = new FormData(event.currentTarget); setBusy(true); setError('');
     try {

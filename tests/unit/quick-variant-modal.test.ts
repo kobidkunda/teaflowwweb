@@ -166,7 +166,7 @@ describe("QuickVariantModal & Add-To-Cart Architecture", () => {
     // Modal markup checks
     expect(markup).toContain("quick-variant-backdrop");
     expect(markup).toContain("Darjeeling Muscatel Second Flush");
-    expect(markup).toContain("Added to Bag ✓");
+    expect(markup).toContain("Select Pack &amp; Quantity");
     // All 3 variant options are listed
     expect(markup).toContain("100g");
     expect(markup).toContain("250g");
@@ -177,9 +177,11 @@ describe("QuickVariantModal & Add-To-Cart Architecture", () => {
     expect(markup).toContain("₹450");
     // Wholesale tier notice
     expect(markup).toContain("Wholesale Pricing Available");
-    // Action buttons
-    expect(markup).toContain("quick-variant-btn-checkout");
-    expect(markup).toContain("Proceed to Checkout");
+    // Action buttons (left Add to Cart, right Buy Now)
+    expect(markup).toContain("quick-variant-btn-add");
+    expect(markup).toContain("Add to Cart");
+    expect(markup).toContain("quick-variant-btn-buy");
+    expect(markup).toContain("Buy Now");
     expect(markup).toContain("View Bag &amp; Order Summary →");
   });
 

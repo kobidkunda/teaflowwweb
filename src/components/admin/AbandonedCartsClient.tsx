@@ -38,6 +38,10 @@ export type AbandonedCart = {
   customer_name: string | null;
   customer_phone: string | null;
   customer_email: string | null;
+  shipping_city?: string | null;
+  shipping_state?: string | null;
+  shipping_postcode?: string | null;
+  shipping_address?: string | null;
   item_count: number;
   subtotal_paise: number;
   applied_coupon_code: string | null;
@@ -334,20 +338,31 @@ export function AbandonedCartsClient() {
                   <tr key={cart.id} style={{ borderBottom: "1px solid #f0ece1" }}>
                     {/* Customer */}
                     <td style={{ padding: "14px 16px", verticalAlign: "top" }}>
-                      {cart.customer_phone ? (
+                      {cart.customer_phone || cart.customer_name || cart.customer_email ? (
                         <div>
-                          <div style={{ fontWeight: 600, color: "#1d2a24", display: "flex", alignItems: "center", gap: 6 }}>
-                            <Phone size={13} style={{ color: "#166534" }} />
-                            <span>{cart.customer_phone}</span>
-                          </div>
+                          {cart.customer_phone && (
+                            <div style={{ fontWeight: 600, color: "#1d2a24", display: "flex", alignItems: "center", gap: 6 }}>
+                              <Phone size={13} style={{ color: "#166534" }} />
+                              <span>{cart.customer_phone}</span>
+                            </div>
+                          )}
                           {cart.customer_name && (
-                            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{cart.customer_name}</div>
+                            <div style={{ fontSize: 12, fontWeight: cart.customer_phone ? 400 : 600, color: cart.customer_phone ? "#555" : "#1d2a24", marginTop: cart.customer_phone ? 2 : 0 }}>
+                              {cart.customer_name}
+                            </div>
+                          )}
+                          {cart.customer_email && (
+                            <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>{cart.customer_email}</div>
+                          )}
+                          {(cart.shipping_city || cart.shipping_state || cart.shipping_postcode) && (
+                            <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+                              {[cart.shipping_city, cart.shipping_state, cart.shipping_postcode].filter(Boolean).join(", ")}
+                            </div>
                           )}
                         </div>
                       ) : (
                         <div style={{ color: "#888", fontStyle: "italic" }}>
                           Anonymous Visitor
-                          {cart.customer_email && <div style={{ fontSize: 12, color: "#444" }}>{cart.customer_email}</div>}
                         </div>
                       )}
                     </td>

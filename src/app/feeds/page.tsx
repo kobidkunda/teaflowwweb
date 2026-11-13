@@ -9,7 +9,7 @@ export const revalidate = 0;
 export const metadata: Metadata = {
   title: "Product Feeds & Syndication",
   description:
-    "Live, scheduled catalog feeds for Google Merchant Center and Meta (Facebook & Instagram) Catalog.",
+    "Live, scheduled catalog feeds for Google Merchant Center, Meta (Facebook & Instagram) Catalog, and OpenAI Commerce.",
 };
 
 export default function FeedsPage() {

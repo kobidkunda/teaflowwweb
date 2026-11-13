@@ -6,6 +6,7 @@ import { LocalizedLink as Link } from "@/components/international/InternationalP
 import {
   Rss,
   Table,
+  FileJson,
   Copy,
   Check,
   Download,
@@ -435,6 +436,135 @@ export function FeedsClient({ items, isTokenProtected, publicBaseUrl }: FeedsCli
               <strong> <StorefrontText id="copy_77d5aa1023fd7a88" fallback="Endpoint Alias:" /> </strong> <code>/api/feeds/meta</code>
             </div>
           </article>
+
+          {/* OpenAI Commerce Feed Card */}
+          <article
+            style={{
+              background: "white",
+              border: "1px solid var(--stone)",
+              borderRadius: "8px",
+              padding: "24px",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{ background: "#23483a", color: "white", padding: "10px", borderRadius: "6px" }}>
+                  <FileJson size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "18px" }}>OpenAI Commerce Feed</h3>
+                  <span style={{ fontSize: "12px", color: "#5a6655" }}>UTF-8 JSONL / JSONL.GZ</span>
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  background: "#eef4f0",
+                  color: "#23483a",
+                  padding: "4px 10px",
+                  borderRadius: "100px",
+                }}
+              >
+                Active ({totalVariants} items)
+              </span>
+            </div>
+
+            <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.5, marginBottom: "18px" }}>
+              Formatted to the OpenAI Commerce Product Feed specification for ChatGPT discovery with{" "}
+              <code>item_id</code>, <code>url</code>, <code>image_url</code>, <code>seller_name</code>,{" "}
+              <code>target_countries</code>, and search/checkout eligibility flags.
+            </p>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ display: "block", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "#5a6655", marginBottom: "6px" }}>
+                Live Feed URL (JSONL Snapshot)
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  background: "var(--paper)",
+                  border: "1px solid var(--stone)",
+                  borderRadius: "4px",
+                  padding: "8px 12px",
+                  gap: "8px",
+                }}
+              >
+                <code
+                  style={{
+                    flex: 1,
+                    fontSize: "13px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: "var(--forest)",
+                    fontFamily: "monospace",
+                  }}
+                >
+                  {buildUrl("/feeds/openai.jsonl")}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(buildUrl("/feeds/openai.jsonl"), "openai-jsonl")}
+                  className="icon-button"
+                  title="Copy OpenAI JSONL URL"
+                  aria-label="Copy OpenAI Commerce JSONL feed URL"
+                  style={{ padding: "4px" }}
+                >
+                  {copiedKey === "openai-jsonl" ? <Check size={16} color="#23483a" /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(buildUrl("/feeds/openai.jsonl"), "openai-jsonl")}
+                className="button button-primary"
+                style={{ flex: 1, minHeight: "40px" }}
+              >
+                {copiedKey === "openai-jsonl" ? <Check size={16} /> : <Copy size={16} />}
+                <span>{copiedKey === "openai-jsonl" ? "Copied URL!" : "Copy Live URL"}</span>
+              </button>
+              <a
+                href={buildUrl("/feeds/openai.jsonl", true)}
+                download="openai-product-feed.jsonl"
+                className="button button-outline"
+                style={{ minHeight: "40px", padding: "10px 16px" }}
+                title="Download JSONL File"
+              >
+                <Download size={16} />
+                <span>Download JSONL</span>
+              </a>
+              <a
+                href={`${buildUrl("/feeds/openai.jsonl", true)}&gzip=1`}
+                download="openai-product-feed.jsonl.gz"
+                className="button button-outline"
+                style={{ minHeight: "40px", padding: "10px 16px" }}
+                title="Download Gzipped JSONL (.jsonl.gz)"
+              >
+                <Download size={16} />
+                <span>.jsonl.gz</span>
+              </a>
+              <a
+                href={buildUrl("/feeds/openai.jsonl")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button button-cream"
+                style={{ minHeight: "40px", padding: "10px 14px" }}
+                title="View in new tab"
+                aria-label="View OpenAI Commerce JSONL in new browser tab"
+              >
+                <ExternalLink size={16} />
+              </a>
+            </div>
+
+            <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid #eee", fontSize: "12px", color: "#666" }}>
+              <strong> <StorefrontText id="copy_77d5aa1023fd7a88" fallback="Endpoint Alias:" /> </strong> <code>/api/feeds/openai</code>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -470,6 +600,19 @@ export function FeedsClient({ items, isTokenProtected, publicBaseUrl }: FeedsCli
               <li> <StorefrontText id="copy_677d99fa997cf31e" fallback="Paste the live CSV feed URL:" /> <code>{origin ? `${origin}/feeds/catalog.csv` : "/feeds/catalog.csv"}</code></li>
               <li> <StorefrontText id="copy_97d12ca2a7fea56e" fallback="Set default currency to" /> <strong> <StorefrontText id="copy_a7c07c281fad3bc0" fallback="INR" /> </strong> <StorefrontText id="copy_4d8d62fdbb616619" fallback="and schedule automatic daily refreshes." /> </li>
               <li> <StorefrontText id="copy_95ba4ed9329f4a25" fallback="Click" /> <strong> <StorefrontText id="copy_865e89de78d94c74" fallback="Upload" /> </strong> <StorefrontText id="copy_4cf62f0b36bbf1c1" fallback="to complete the catalog onboarding." /> </li>
+            </ol>
+          </div>
+
+          <div style={{ background: "white", padding: "24px", borderRadius: "8px", border: "1px solid var(--stone)" }}>
+            <h3 style={{ fontSize: "18px", display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+              <CheckCircle size={18} color="#23483a" />
+              <span>OpenAI Commerce Feed Setup</span>
+            </h3>
+            <ol style={{ paddingLeft: "20px", fontSize: "14px", lineHeight: 1.7, color: "#333", margin: 0 }}>
+              <li>Download the full catalog snapshot as <code>.jsonl.gz</code> or fetch from <code>{origin ? `${origin}/feeds/openai.jsonl` : "/feeds/openai.jsonl"}</code>.</li>
+              <li>Each line is a UTF-8 JSON object with <code>item_id</code>, <code>title</code>, <code>description</code>, <code>url</code>, <code>image_url</code>, <code>price</code>, <code>availability</code>, <code>brand</code>, and <code>seller_name</code>.</li>
+              <li>Geo-tagging defaults to <code>store_country: &quot;IN&quot;</code> and <code>target_countries: [&quot;IN&quot;]</code> (configurable via environment variables).</li>
+              <li>Upload the snapshot using a stable filename via OpenAI Commerce SFTP or file upload on a daily schedule.</li>
             </ol>
           </div>
         </div>

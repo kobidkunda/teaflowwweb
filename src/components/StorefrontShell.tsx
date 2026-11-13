@@ -37,17 +37,22 @@ import { AddToCartPrompt } from "@/components/cart/AddToCartPrompt";
 import type { HomepageContent } from "@/lib/homepageSchema";
 import type { AnnouncementData } from "@/components/StorefrontHeader";
 import type { SiteNavigation } from "@/lib/contentBlocks";
+import type { FooterCategory, FooterBlog } from "@/components/Footer";
 
 export function StorefrontShell({
   children,
   content,
   announcement,
   navigation,
+  categories,
+  footerBlogs,
 }: {
   children: React.ReactNode;
   content: HomepageContent | null;
   announcement?: AnnouncementData | null;
   navigation?: SiteNavigation | null;
+  categories?: FooterCategory[];
+  footerBlogs?: FooterBlog[];
 }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
@@ -86,9 +91,19 @@ export function StorefrontShell({
           {children}
         </main>
         {pathname === "/" ? (
-          <RitualFooter content={content} navigation={navigation} />
+          <RitualFooter
+            content={content}
+            navigation={navigation}
+            categories={categories}
+            blogs={footerBlogs}
+          />
         ) : (
-          <Footer content={content} navigation={navigation} />
+          <Footer
+            content={content}
+            navigation={navigation}
+            categories={categories}
+            blogs={footerBlogs}
+          />
         )}
         <WholesaleFloatingTrigger />
         <LeadCaptureModal />
