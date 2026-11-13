@@ -22,7 +22,11 @@ import {
   Sparkles,
   AlertCircle,
   Lock,
+  Clock,
+  X,
+  ShoppingBag,
 } from "lucide-react";
+import { WhatsAppIcon } from "@/components/wholesale/WholesaleForm";
 
 type QuoteView = {
   id: string;
@@ -178,7 +182,7 @@ export function LiveCheckout() {
   // Fetch logged in customer and their saved addresses
   useEffect(() => {
     let active = true;
-    fetch("/api/customer/me")
+    fetch("/api/customer/me?optional=1")
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!active || !data?.customer) return;
@@ -252,6 +256,215 @@ export function LiveCheckout() {
     setFieldErrors({});
   };
 
+  const errorDialogRef = useRef<HTMLDialogElement>(null);
+  const [modalError, setModalError] = useState<{
+    title: string;
+    message: string;
+    detail?: string;
+    type: "expired" | "address" | "cart" | "payment" | "general";
+  } | null>(null);
+
+  const showErrorModal = (
+    message: string,
+    explicitType?: "expired" | "address" | "cart" | "payment" | "general"
+  ) => {
+    if (!message) return;
+    setError(message);
+
+    let type = explicitType;
+    if (!type) {
+      const lower = message.toLowerCase();
+      if (lower.includes("expired") || lower.includes("expire") || message === t("expired")) {
+        type = "expired";
+      } else if (
+        lower.includes("address") ||
+        lower.includes("pin") ||
+        lower.includes("postcode") ||
+        lower.includes("delivery is not available") ||
+        lower.includes("highlighted fields")
+      ) {
+        type = "address";
+      } else if (
+        lower.includes("bag") ||
+        lower.includes("item") ||
+        lower.includes("stock") ||
+        lower.includes("unavailable") ||
+        lower.includes("empty")
+      ) {
+        type = "cart";
+      } else if (
+        lower.includes("payment") ||
+        lower.includes("gateway") ||
+        lower.includes("card") ||
+        lower.includes("upi")
+      ) {
+        type = "payment";
+      } else {
+        type = "general";
+      }
+    }
+
+    let title = "Checkout Notice";
+    let detail = "";
+
+    if (type === "expired") {
+      title = "Quote Expired";
+      detail =
+        "To guarantee real-time shipping rates, fresh inventory stock, and instant payment discounts, quotes remain active for 15 minutes. Click below to recalculate an updated total.";
+    } else if (type === "address") {
+      title = "Delivery Notice";
+      detail =
+        "Please check your shipping address and 6-digit PIN code to ensure courier serviceability.";
+    } else if (type === "cart") {
+      title = "Bag & Stock Notice";
+      detail =
+        "One or more teas in your bag may have adjusted availability or require a different quantity.";
+    } else if (type === "payment") {
+      title = "Payment Notice";
+      detail =
+        "No money was charged. You can retry with your payment provider or select an alternative method like Cash on Delivery.";
+    }
+
+    setModalError({
+      title,
+      message,
+      detail,
+      type,
+    });
+  };
+
+  const closeErrorModal = () => {
+    setModalError(null);
+    if (errorDialogRef.current?.open) {
+      errorDialogRef.current.close();
+    }
+  };
+
+  const handleRecalculateFromModal = () => {
+    closeErrorModal();
+    computeQuote(method, formData, country, false);
+  };
+
+  // Pre-filled WhatsApp assistance URL with complete checkout context
+  const checkoutWhatsAppUrl = React.useMemo(() => {
+    const helpline = "917001304853";
+    const lines: string[] = [
+      "🌿 *TeaFloww Live Checkout Assistance*",
+      "",
+      "Hello TeaFloww Sommelier & Dispatch Desk,",
+      "I'm at the checkout page and would like live help with my order:",
+      "",
+    ];
+
+    const customerName = formData.name.trim() || customer?.name?.trim();
+    if (customerName) {
+      lines.push(`• *Name:* ${customerName}`);
+    }
+
+    const contactPhone = formData.phone.trim() || customer?.phone?.trim();
+    if (contactPhone) {
+      lines.push(`• *Contact Phone:* ${contactPhone}`);
+    }
+
+    const cityLoc = [formData.city.trim(), formData.state.trim(), formData.postcode.trim(), country || "IN"].filter(Boolean).join(", ");
+    if (cityLoc) {
+      lines.push(`• *Delivery Destination:* ${cityLoc}`);
+    }
+
+    if (cart.items.length > 0) {
+      const itemsText = cart.items
+        .map((i) => `${i.quantity}x ${i.name}${i.grams ? ` (${i.grams}g)` : ""}`)
+        .join("; ");
+      lines.push(`• *Bag Items:* ${itemsText}`);
+    }
+
+    if (quote) {
+      lines.push(`• *Calculated Total:* ${formatMoney(quote.totalMinor, quote.currency, ctx?.locale)}`);
+      lines.push(`• *Quote ID:* ${quote.id.slice(0, 8)}...`);
+    } else if (cart.subtotal > 0) {
+      lines.push(`• *Bag Subtotal:* ₹${Math.round(cart.subtotal / 100)}`);
+    }
+
+    if (method) {
+      lines.push(`• *Preferred Payment:* ${method.toUpperCase()}`);
+    }
+
+    if (error) {
+      lines.push(`• *Notice / Issue:* ${error}`);
+    }
+
+    lines.push("", "Could you please help me verify details and complete this checkout?");
+
+    return `https://wa.me/${helpline}?text=${encodeURIComponent(lines.join("\n"))}`;
+  }, [formData, customer, country, cart.items, cart.subtotal, quote, ctx?.locale, method, error]);
+
+  // Open / close native <dialog> based on modalError state
+  useEffect(() => {
+    const dialog = errorDialogRef.current;
+    if (!dialog) return;
+
+    if (modalError) {
+      if (!dialog.open) {
+        try {
+          dialog.showModal();
+        } catch {
+          // Dialog may already be open
+        }
+      }
+    } else if (dialog.open) {
+      dialog.close();
+    }
+  }, [modalError]);
+
+  // Modern Web Guidance: Native dialog close sync & light-dismiss fallback for browsers without native <dialog closedby="any"> (e.g. Safari)
+  useEffect(() => {
+    const dialog = errorDialogRef.current;
+    if (!dialog) return;
+
+    const handleNativeClose = () => {
+      setModalError(null);
+    };
+    dialog.addEventListener("close", handleNativeClose);
+
+    let removePointerListener: (() => void) | undefined;
+    if (!("closedBy" in HTMLDialogElement.prototype)) {
+      let pressedOutside = false;
+
+      const isOutside = (e: PointerEvent, el: HTMLDialogElement) => {
+        const r = el.getBoundingClientRect();
+        return (
+          e.clientX < r.left ||
+          e.clientX > r.right ||
+          e.clientY < r.top ||
+          e.clientY > r.bottom
+        );
+      };
+
+      const handlePointerDown = (e: PointerEvent) => {
+        pressedOutside = isOutside(e, dialog);
+      };
+
+      const handlePointerUp = (e: PointerEvent) => {
+        if (pressedOutside && isOutside(e, dialog)) {
+          dialog.close();
+        }
+      };
+
+      dialog.addEventListener("pointerdown", handlePointerDown);
+      dialog.addEventListener("pointerup", handlePointerUp);
+
+      removePointerListener = () => {
+        dialog.removeEventListener("pointerdown", handlePointerDown);
+        dialog.removeEventListener("pointerup", handlePointerUp);
+      };
+    }
+
+    return () => {
+      dialog.removeEventListener("close", handleNativeClose);
+      if (removePointerListener) removePointerListener();
+    };
+  }, []);
+
   const isAddressComplete = (addr: typeof formData, c: string) => {
     const name = addr.name.trim();
     const phone = addr.phone.trim();
@@ -272,6 +485,47 @@ export function LiveCheckout() {
     );
   };
 
+  // Auto-sync checkout contact & partial shipping details to abandoned cart as user types
+  const syncCustomerDetails = cart.syncCustomerDetails;
+  useEffect(() => {
+    if (!cart.items.length) return;
+    const cleanName = formData.name.trim();
+    const cleanPhone = formData.phone.trim();
+    const cleanEmail = formData.email.trim();
+    const phoneDigits = cleanPhone.replace(/\D/g, "");
+    const hasMeaningfulContact =
+      cleanName.length >= 2 ||
+      phoneDigits.length >= 7 ||
+      cleanEmail.includes("@");
+    if (!hasMeaningfulContact) return;
+
+    const addressLine = [formData.line1.trim(), formData.line2.trim()].filter(Boolean).join(", ");
+    const timer = setTimeout(() => {
+      syncCustomerDetails({
+        name: cleanName || undefined,
+        phone: phoneDigits.length >= 7 ? cleanPhone : undefined,
+        email: cleanEmail.includes("@") ? cleanEmail : undefined,
+        city: formData.city.trim() || undefined,
+        state: formData.state.trim() || undefined,
+        postcode: formData.postcode.trim() || undefined,
+        address: addressLine || undefined,
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [
+    cart.items.length,
+    formData.name,
+    formData.phone,
+    formData.email,
+    formData.line1,
+    formData.line2,
+    formData.city,
+    formData.state,
+    formData.postcode,
+    syncCustomerDetails,
+  ]);
+
   // Auto-quote calculation effect with debounce when valid address details are typed
   useEffect(() => {
     if (!cart.items.length) return;
@@ -288,7 +542,9 @@ export function LiveCheckout() {
     if (!quote) return;
     const timer = setTimeout(() => {
       invalidate();
-      setError(t("expired"));
+      const expMsg = t("expired");
+      setError(expMsg);
+      showErrorModal(expMsg, "expired");
     }, Math.max(0, quote.expires - Date.now()));
     return () => clearTimeout(timer);
   }, [quote]);
@@ -301,7 +557,11 @@ export function LiveCheckout() {
     silent = false
   ) {
     if (!cart.items.length) {
-      if (!silent) setError("Your shopping bag is empty.");
+      if (!silent) {
+        const emptyMsg = "Your shopping bag is empty.";
+        setError(emptyMsg);
+        showErrorModal(emptyMsg, "cart");
+      }
       return;
     }
 
@@ -354,7 +614,9 @@ export function LiveCheckout() {
     if (Object.keys(clientErrors).length > 0) {
       if (!silent) {
         setFieldErrors(clientErrors);
-        setError("Please check the highlighted fields on your address.");
+        const valMsg = "Please check the highlighted fields on your address.";
+        setError(valMsg);
+        showErrorModal(valMsg, "address");
       }
       return;
     }
@@ -422,7 +684,11 @@ export function LiveCheckout() {
       quotedItems.current = JSON.stringify(items);
     } catch (e) {
       if (sequence !== requestSequence.current || latestInput.current !== inputSnapshot) return;
-      setError(e instanceof Error ? e.message : "Unable to calculate total.");
+      const calcMsg = e instanceof Error ? e.message : "Unable to calculate total.";
+      setError(calcMsg);
+      if (!silent) {
+        showErrorModal(calcMsg);
+      }
     } finally {
       if (sequence === requestSequence.current) setBusy(false);
     }
@@ -443,7 +709,9 @@ export function LiveCheckout() {
   async function pay() {
     if (!quote) return;
     if (country !== "IN" && quote.currency === "INR" && !inrAccepted) {
-      setError("Please confirm acceptance of the INR charge before continuing.");
+      const inrMsg = "Please confirm acceptance of the INR charge before continuing.";
+      setError(inrMsg);
+      showErrorModal(inrMsg, "general");
       return;
     }
     if (
@@ -451,7 +719,9 @@ export function LiveCheckout() {
       JSON.stringify(cart.items.map((i) => ({ variantId: i.variantId, ...(i.trialId ? { trialId: i.trialId } : {}), quantity: i.quantity }))) !== quotedItems.current
     ) {
       invalidate();
-      setError(t("expired"));
+      const expMsg = t("expired");
+      setError(expMsg);
+      showErrorModal(expMsg, "expired");
       return;
     }
 
@@ -510,7 +780,9 @@ export function LiveCheckout() {
       // Cash on Delivery must ALWAYS go directly to the confirmation order receipt, NEVER to YouPI or payment gateway!
       if (method === "cod" || p.preferredMethod === "cod" || p.paymentStatus === "cod_due" || p.paymentStatus === "paid") {
         if (method === "cod" && p.paymentStatus !== "cod_due" && p.paymentStatus !== "paid") {
-          setError("Cash on Delivery could not be confirmed for this order. Please check bag requirements or re-verify address.");
+          const codMsg = "Cash on Delivery could not be confirmed for this order. Please check bag requirements or re-verify address.";
+          setError(codMsg);
+          showErrorModal(codMsg, "general");
           setBusy(false);
           return;
         }
@@ -523,7 +795,11 @@ export function LiveCheckout() {
         return;
       }
 
-      if (Date.now() >= p.expires) throw new Error(t("expired"));
+      if (Date.now() >= p.expires) {
+        const expErr = t("expired");
+        showErrorModal(expErr, "expired");
+        throw new Error(expErr);
+      }
 
       const formFields = form.current ? new FormData(form.current) : null;
       const widget = new window.Razorpay!({
@@ -559,12 +835,16 @@ export function LiveCheckout() {
       });
 
       widget.on("payment.failed", () => {
-        setError("Payment was not completed. You can retry with another payment method.");
+        const failMsg = "Payment was not completed. You can retry with another payment method.";
+        setError(failMsg);
+        showErrorModal(failMsg, "payment");
         setBusy(false);
       });
       widget.open();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to initiate payment.");
+      const payErr = e instanceof Error ? e.message : "Unable to initiate payment.";
+      setError(payErr);
+      showErrorModal(payErr, "payment");
       setBusy(false);
     }
   }
@@ -1285,9 +1565,18 @@ export function LiveCheckout() {
 
           {/* Error Notice */}
           {error && (
-            <div role="alert" className="p-3 rounded-lg bg-[#faebeb] border border-[#f5c6cb] text-xs text-[#991b1b] flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-              <span>{error}</span>
+            <div role="alert" className="p-3.5 rounded-lg bg-[#faebeb] border border-[#f5c6cb] text-xs text-[#991b1b] flex items-start gap-2.5 shadow-2xs">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#991b1b]" />
+              <div className="flex-1 min-w-0">
+                <span className="font-medium leading-relaxed">{error}</span>
+                <button
+                  type="button"
+                  onClick={() => showErrorModal(error)}
+                  className="block mt-1.5 font-semibold underline text-[#7f1d1d] hover:text-[#991b1b] transition-colors"
+                >
+                  View Details &amp; Resolve →
+                </button>
+              </div>
             </div>
           )}
 
@@ -1458,8 +1747,178 @@ export function LiveCheckout() {
               )}
             </div>
           )}
+
+          {/* WhatsApp Live Checkout Assistance */}
+          <div className="pt-4 border-t border-[#e4dfd5] space-y-1.5">
+            <a
+              href={checkoutWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#f0f9f4] hover:bg-[#e1f5eb] text-[#128c7e] border border-[#c3ead4] text-xs font-semibold transition-colors shadow-2xs group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]"
+              aria-label="Ping on WhatsApp for live checkout help and order verification (opens in new tab)"
+            >
+              <WhatsAppIcon size={16} color="#25D366" />
+              <span>Need live help? Ping on WhatsApp →</span>
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+            <p className="text-[11px] text-center text-[#737067]">
+              Real-time checkout assistance from our Siliguri dispatch desk (+91 7001304853)
+            </p>
+          </div>
         </div>
       </aside>
+
+      {/* ===================================================================
+          Modern Web Guidance: Native <dialog> Modal Error Overlay
+          Supports: closedby="any", overscroll containment, @starting-style,
+          accessible naming (aria-labelledby, aria-describedby),
+          autofocus on primary action, and light-dismiss fallback.
+          =================================================================== */}
+      <dialog
+        ref={errorDialogRef}
+        id="checkout-error-dialog"
+        className="tf-checkout-error-dialog"
+        closedby="any"
+        aria-labelledby="checkout-error-title"
+        aria-describedby="checkout-error-desc"
+      >
+        <div className="p-6 sm:p-7 space-y-5 bg-[#fdfbf7]">
+          {/* Header row with badge and close button */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-2xs ${
+                  modalError?.type === "expired"
+                    ? "bg-[#faf0df] text-[#b39156] border border-[#f1dec1]"
+                    : modalError?.type === "address"
+                    ? "bg-[#e8f0eb] text-[#23483a] border border-[#cde0d3]"
+                    : modalError?.type === "cart"
+                    ? "bg-[#f5e6e8] text-[#8f2d24] border border-[#e8cdd1]"
+                    : "bg-[#faebeb] text-[#991b1b] border border-[#f5c6cb]"
+                }`}
+              >
+                {modalError?.type === "expired" ? (
+                  <Clock className="w-5 h-5 text-[#b39156]" />
+                ) : modalError?.type === "address" ? (
+                  <Truck className="w-5 h-5 text-[#23483a]" />
+                ) : modalError?.type === "cart" ? (
+                  <ShoppingBag className="w-5 h-5 text-[#8f2d24]" />
+                ) : modalError?.type === "payment" ? (
+                  <CreditCard className="w-5 h-5 text-[#991b1b]" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-[#991b1b]" />
+                )}
+              </div>
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-widest text-[#737067]">
+                  {modalError?.type === "expired"
+                    ? "Rate Guarantee"
+                    : modalError?.type === "address"
+                    ? "Address Verification"
+                    : modalError?.type === "cart"
+                    ? "Stock & Availability"
+                    : modalError?.type === "payment"
+                    ? "Payment Gateway"
+                    : "Checkout Notice"}
+                </span>
+                <h2
+                  id="checkout-error-title"
+                  className="text-lg sm:text-xl font-serif text-[#171713] font-normal leading-snug"
+                >
+                  {modalError?.title || "Checkout Notice"}
+                </h2>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={closeErrorModal}
+              aria-label="Close error notice"
+              className="p-1.5 rounded-md text-[#737067] hover:text-[#171713] hover:bg-[#ede7dd] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#23483a]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Error Message & Details */}
+          <div className="space-y-2 rounded-xl bg-[#ffffff] p-4 border border-[#e4dfd5] text-xs leading-relaxed shadow-2xs">
+            <p id="checkout-error-desc" className="font-semibold text-[#171713] text-sm">
+              {modalError?.message}
+            </p>
+            {modalError?.detail && (
+              <p className="text-[#63685e]">
+                {modalError.detail}
+              </p>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 pt-1">
+            <button
+              type="button"
+              onClick={closeErrorModal}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-lg border border-[#d9d4c8] text-xs font-semibold text-[#46524a] hover:bg-[#ede7dd] transition-colors text-center"
+            >
+              {modalError?.type === "expired" ? "Review Details" : "Dismiss"}
+            </button>
+
+            {modalError?.type === "expired" ? (
+              <button
+                type="button"
+                autoFocus
+                onClick={handleRecalculateFromModal}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-[#23483a] text-white text-xs font-semibold hover:bg-[#1a382d] transition-colors flex items-center justify-center gap-1.5 shadow-sm text-center"
+              >
+                <span>Recalculate Total Now</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            ) : modalError?.type === "address" ? (
+              <button
+                type="button"
+                autoFocus
+                onClick={() => {
+                  closeErrorModal();
+                  const firstErr = Object.keys(fieldErrors)[0];
+                  if (firstErr) {
+                    const el = document.querySelector(`[name="${firstErr}"]`) as HTMLElement | null;
+                    el?.focus();
+                  }
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-[#23483a] text-white text-xs font-semibold hover:bg-[#1a382d] transition-colors text-center"
+              >
+                Edit Address
+              </button>
+            ) : (
+              <button
+                type="button"
+                autoFocus
+                onClick={closeErrorModal}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-[#23483a] text-white text-xs font-semibold hover:bg-[#1a382d] transition-colors text-center"
+              >
+                Got It
+              </button>
+            )}
+          </div>
+
+          {/* WhatsApp Direct Help Link */}
+          <div className="pt-3 border-t border-[#e4dfd5] flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-[#526359]">
+            <span className="flex items-center gap-1.5 font-medium text-[11px] text-[#737067]">
+              <WhatsAppIcon size={14} color="#25D366" />
+              Need live help completing your order?
+            </span>
+            <a
+              href={checkoutWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#128c7e] hover:text-[#0b655b] font-semibold flex items-center gap-1 hover:underline text-xs"
+              aria-label="Ping TeaFloww on WhatsApp with full checkout details for live assistance (opens in new tab)"
+            >
+              <span>Ping on WhatsApp with order info →</span>
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 }

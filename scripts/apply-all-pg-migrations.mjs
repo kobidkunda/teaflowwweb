@@ -1371,6 +1371,23 @@ export async function runAllPgMigrations() {
       console.log("✓ Applied 054_wholesale_payment_settings");
     }
 
+    if (!applied.has("055_abandoned_cart_trials_and_address")) {
+      console.log("Applying 055_abandoned_cart_trials_and_address...");
+      await client.query("BEGIN");
+      await client.query(`
+        ALTER TABLE abandoned_carts ADD COLUMN IF NOT EXISTS shipping_city TEXT DEFAULT NULL;
+        ALTER TABLE abandoned_carts ADD COLUMN IF NOT EXISTS shipping_state TEXT DEFAULT NULL;
+        ALTER TABLE abandoned_carts ADD COLUMN IF NOT EXISTS shipping_postcode TEXT DEFAULT NULL;
+        ALTER TABLE abandoned_carts ADD COLUMN IF NOT EXISTS shipping_address TEXT DEFAULT NULL;
+        ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS trial_id TEXT DEFAULT NULL;
+        ALTER TABLE cart_items ALTER COLUMN variant_id DROP NOT NULL;
+        CREATE INDEX IF NOT EXISTS idx_cart_items_trial ON cart_items(trial_id);
+      `);
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["055_abandoned_cart_trials_and_address"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 055_abandoned_cart_trials_and_address");
+    }
+
     console.log("All PostgreSQL migrations are completely up to date!");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});

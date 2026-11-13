@@ -7682,6 +7682,88 @@ dialog.tf-pdf-dialog[open]::backdrop {
   }
 }
 
+/* ==========================================================================
+   Modern Web Guidance: Checkout Error Modal (<dialog>)
+   Features: Native top-layer transition, @starting-style, overscroll containment,
+   backdrop blur, light-dismiss support, and reduced motion respect.
+   ========================================================================== */
+
+dialog.tf-checkout-error-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog.tf-checkout-error-dialog {
+  padding: 0;
+  border: 1px solid #d9d4c8;
+  border-radius: 16px;
+  background-color: #fdfbf7;
+  color: #171713;
+  max-width: min(92vw, 490px);
+  width: 100%;
+  margin: auto;
+  box-shadow: 0 25px 70px -15px rgba(23, 23, 19, 0.35),
+              0 8px 24px -6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  outline: none;
+
+  /* Smooth exit state */
+  opacity: 0;
+  transform: scale(0.95) translateY(12px);
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.24s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-behavior: allow-discrete;
+}
+
+/* Open state & @starting-style entry */
+dialog.tf-checkout-error-dialog[open] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.95) translateY(12px);
+  }
+}
+
+/* Modal Backdrop */
+dialog.tf-checkout-error-dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(23, 23, 19, 0);
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition-property: background-color, backdrop-filter, -webkit-backdrop-filter, display, overlay;
+  transition-duration: 0.24s;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-behavior: allow-discrete;
+}
+
+dialog.tf-checkout-error-dialog[open]::backdrop {
+  background-color: rgba(23, 23, 19, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  @starting-style {
+    background-color: rgba(23, 23, 19, 0);
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  dialog.tf-checkout-error-dialog,
+  dialog.tf-checkout-error-dialog[open] {
+    transform: none !important;
+    transition-duration: 0.1s !important;
+  }
+  dialog.tf-checkout-error-dialog::backdrop,
+  dialog.tf-checkout-error-dialog[open]::backdrop {
+    transition-duration: 0.1s !important;
+  }
+}
+
 
 
 /* Tracking preferences remain keyboard accessible and fit narrow screens. */
