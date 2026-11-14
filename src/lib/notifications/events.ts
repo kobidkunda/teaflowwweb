@@ -1,4 +1,3 @@
-import { createHmac } from "node:crypto";
 import { z } from "zod";
 
 export const NOTIFICATION_EVENT_TYPES = [
@@ -71,9 +70,4 @@ export function isValidWebhookUrl(raw: string | null | undefined): boolean {
   } catch {
     return false;
   }
-}
-
-export function signWebhookPayload(secret: string, body: string): string {
-  const digest = createHmac("sha256", secret).update(body, "utf8").digest("hex");
-  return `sha256=${digest}`;
 }

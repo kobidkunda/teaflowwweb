@@ -5,19 +5,24 @@ import React, { useState } from "react";
 import type { TrialPublicDto } from "@/lib/trials/types";
 import { formatINR } from "@/lib/trials/storefront-helpers";
 import { useCart } from "@/components/CartProvider";
+import { useRouter } from "next/navigation";
+import { Zap } from "lucide-react";
 
 export interface TrialStickyActionBarProps {
   trial: TrialPublicDto;
 }
 
 export function TrialStickyActionBar({ trial }: TrialStickyActionBarProps) {
-  const { add } = useCart();
+  const { add, buyNow } = useCart();
+  const router = useRouter();
   const [added, setAdded] = useState(false);
 
   const priceRupees = formatINR(trial.price_paise, true);
 
-  const handleAddToCart = () => {
-    add({
+  const handleBuyNow = () => {
+    if (!trial.in_stock) return;
+    setAdded(true);
+    const item = {
       variantId: 0,
       trialId: trial.id,
       sku: trial.sku,
@@ -25,9 +30,14 @@ export function TrialStickyActionBar({ trial }: TrialStickyActionBarProps) {
       name: trial.title,
       grams: trial.net_weight_g || 200,
       pricePaise: trial.price_paise,
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2500);
+    };
+    if (typeof buyNow === "function") {
+      buyNow(item);
+    }
+    if (typeof add === "function") {
+      add(item);
+    }
+    router?.push?.("/checkout");
   };
 
   return (
@@ -47,7 +57,7 @@ export function TrialStickyActionBar({ trial }: TrialStickyActionBarProps) {
           <strong className="text-[20px] font-serif font-bold text-[#e5b869]">
             {priceRupees}
           </strong>
-          <small className="text-[10px] text-[#a89a8e]"><StorefrontText id="copy_379772f4bc0dfd07" fallback="+ delivery" /></small>
+          <small className="text-[10px] text-[#a89a8e]">· Free Delivery</small>
         </div>
       </div>
 
@@ -55,19 +65,22 @@ export function TrialStickyActionBar({ trial }: TrialStickyActionBarProps) {
         type="button"
         data-testid="sticky-add-to-cart-btn"
         disabled={!trial.in_stock}
-        onClick={handleAddToCart}
+        onClick={handleBuyNow}
         className={`sticky-buy-btn min-h-[44px] min-w-[130px] px-4 py-2.5 rounded-xl font-extrabold text-[12px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 active:scale-95 ${
           added
             ? "bg-[#287455] text-white border border-[#48a37d]"
             : trial.in_stock
-            ? "bg-gradient-to-r from-[#e4b56e] to-[#bb7c44] text-[#1d1b17] shadow-lg border border-[#f6ca86]"
+            ? "bg-gradient-to-r from-[#e4b56e] to-[#bb7c44] text-[#1d1b17] shadow-lg border border-[#f6ca86] cursor-pointer"
             : "bg-[#33261e] text-[#8c745f] border border-[#544537] cursor-not-allowed"
         }`}
       >
         {added ? (
           <span><StorefrontText id="copy_2a1082a97808ed6d" fallback="Added to Cart ✓" /></span>
         ) : trial.in_stock ? (
-          <span><StorefrontText id="copy_c67a07dce1662c20" fallback="Order Kit ↗" /></span>
+          <>
+            <Zap size={13} className="fill-[#1d1b17]" aria-hidden="true" />
+            <span>Buy Now · <StorefrontText id="copy_c67a07dce1662c20" fallback="Order Kit ↗" /></span>
+          </>
         ) : (
           <span><StorefrontText id="copy_5b92d3d791c59ae1" fallback="Sold Out" /></span>
         )}

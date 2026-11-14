@@ -4,9 +4,8 @@ import { getStoreSettings, updateStoreSettings } from "@/lib/storeSettings";
 import {
   isValidWebhookUrl,
   parseNotificationEmails,
-  signWebhookPayload,
 } from "@/lib/notifications/events";
-import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
+import { dispatchNotificationEvent, signWebhookPayload } from "@/lib/notifications/dispatch";
 import { listRecentDeliveries } from "@/lib/notifications/deliveries";
 import { processOneJob } from "@/lib/international/jobs";
 import { recordContactInquiry } from "@/lib/contact";

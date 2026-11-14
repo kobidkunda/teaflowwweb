@@ -113,7 +113,9 @@ function CartPageContent() {
           for (const item of data.items) {
             const isWholesale = Boolean(item.isWholesale || (typeof item.quantity === "number" && item.quantity > 20));
             add({
-              variantId: item.variantId,
+              variantId: item.variantId || 0,
+              trialId: item.trialId,
+              sku: item.sku,
               slug: item.slug,
               name: item.name,
               grams: item.grams,

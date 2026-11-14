@@ -1388,6 +1388,63 @@ export async function runAllPgMigrations() {
       console.log("✓ Applied 055_abandoned_cart_trials_and_address");
     }
 
+    if (!applied.has("056_webhook_deliveries")) {
+      console.log("Applying 056_webhook_deliveries...");
+      await client.query("BEGIN");
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS webhook_deliveries (
+          id TEXT PRIMARY KEY,
+          event_type TEXT NOT NULL,
+          channel TEXT NOT NULL CHECK(channel IN ('email', 'webhook')),
+          target TEXT NOT NULL,
+          status TEXT NOT NULL CHECK(status IN ('queued', 'sent', 'failed')),
+          http_status INTEGER DEFAULT NULL,
+          attempts INTEGER NOT NULL DEFAULT 0,
+          last_error TEXT DEFAULT NULL,
+          payload_preview TEXT DEFAULT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          delivered_at TIMESTAMPTZ DEFAULT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_created_at ON webhook_deliveries(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_webhook_deliveries_event ON webhook_deliveries(event_type, status);
+      `);
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["056_webhook_deliveries"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 056_webhook_deliveries");
+    }
+
+    if (!applied.has("057_admin_response_conversations")) {
+      console.log("Applying 057_admin_response_conversations...");
+      await client.query("BEGIN");
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS admin_conversation_entries (
+          id TEXT PRIMARY KEY,
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          entry_type TEXT NOT NULL CHECK(entry_type IN ('note', 'reply_email', 'customer_feedback', 'status_change')),
+          author TEXT NOT NULL,
+          message TEXT NOT NULL,
+          metadata_json TEXT DEFAULT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_admin_conv_entity ON admin_conversation_entries(entity_type, entity_id, created_at);
+
+        CREATE TABLE IF NOT EXISTS admin_response_statuses (
+          entity_type TEXT NOT NULL,
+          entity_id TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'new',
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (entity_type, entity_id)
+        );
+
+        ALTER TABLE captured_leads ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new';
+        ALTER TABLE newsletter_subscriptions ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'new';
+      `);
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["057_admin_response_conversations"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 057_admin_response_conversations");
+    }
+
     console.log("All PostgreSQL migrations are completely up to date!");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});

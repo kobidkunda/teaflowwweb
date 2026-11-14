@@ -50,6 +50,10 @@ type CartContextValue = {
     track?: boolean,
     notify?: boolean
   ) => void;
+  buyNow: (
+    line: Omit<CartLine, "quantity"> & { quantity?: number },
+    track?: boolean
+  ) => void;
   changeQuantity: (id: number | string, quantity: number, priceOverride?: number) => void;
   remove: (id: number | string) => void;
   clear: () => void;
@@ -428,6 +432,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     void trackCartDelta(newLine, clampedQty, "add");
   }, [displayItems]);
 
+  const buyNow = useCallback(
+    (
+      line: Omit<CartLine, "quantity"> & { quantity?: number },
+      track = true
+    ) => {
+      const qtyToAdd = Math.max(1, line.quantity || 1);
+      const resolvedImg = line.imageUrl || catalogImages[cartImageKey(line)] || null;
+      const directLine: CartLine = {
+        ...line,
+        quantity: qtyToAdd,
+        imageUrl: resolvedImg,
+      };
+      clearedRef.current = false;
+      setItems([directLine]);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("tea-house-cart", JSON.stringify([directLine]));
+        } catch {}
+      }
+      if (track) void trackCartDelta(directLine, qtyToAdd, "add");
+    },
+    [catalogImages]
+  );
+
   const clear = useCallback(() => {
     clearedRef.current = true;
     setItems([]);
@@ -451,6 +479,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       value={{
         items: displayItems,
         add,
+        buyNow,
         changeQuantity,
         remove,
         clear,

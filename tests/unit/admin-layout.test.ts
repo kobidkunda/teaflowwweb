@@ -47,6 +47,7 @@ describe("Admin Navigation Configuration & Helpers", () => {
     const salesGroup = NAV_GROUPS.find((g) => g.id === "sales")!;
     expect(salesGroup.title).toBe("Sales & Customers");
     expect(salesGroup.items.map((i) => i.href)).toEqual([
+      "/admin/responses",
       "/admin/subscriptions",
       "/admin/orders",
       "/admin/abandoned-carts",

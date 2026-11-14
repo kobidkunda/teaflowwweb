@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { getStoreSettings } from "@/lib/storeSettings";
 import { sendAdminAlertEmail } from "@/lib/email";
 import { logger } from "@/lib/logger";
@@ -9,10 +9,14 @@ import {
   EVENT_WEBHOOK_SETTING_KEYS,
   isValidWebhookUrl,
   parseNotificationEmails,
-  signWebhookPayload,
   type NotificationEnvelope,
   type NotificationEventType,
 } from "./events";
+
+export function signWebhookPayload(secret: string, body: string): string {
+  const digest = createHmac("sha256", secret).update(body, "utf8").digest("hex");
+  return `sha256=${digest}`;
+}
 import {
   markDeliveryFailed,
   markDeliverySent,

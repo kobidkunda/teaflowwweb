@@ -24,6 +24,7 @@ import {
   Boxes,
   Briefcase,
   FileText,
+  MessageSquare,
 } from "lucide-react";
 
 export type NavItem = {
@@ -105,6 +106,7 @@ export const NAV_GROUPS: NavGroup[] = [
     id: "sales",
     title: "Sales & Customers",
     items: [
+      { href: "/admin/responses", label: "Responses & Inbox", icon: MessageSquare, section: "Sales & Customers" },
       { href: "/admin/subscriptions", label: "Subscriptions", icon: ShoppingBag, section: "Sales & Customers" },
       { href: "/admin/orders", label: "Orders", icon: ShoppingBag, section: "Sales & Customers" },
       { href: "/admin/abandoned-carts", label: "Abandoned Carts", icon: ShoppingCart, section: "Sales & Customers" },

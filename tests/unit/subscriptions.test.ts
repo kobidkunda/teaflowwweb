@@ -265,8 +265,8 @@ describe('all products: tasting kits and edge cases', () => {
     const preview = await service.previewSubscription({ input: trialInput('upi'), intervalDays: 14, dispatchDate: istDate() }, customerId);
     expect(preview.subscriptionDiscountPaise).toBe(8000);
     expect(preview.paymentDiscountPaise).toBe(4000);
-    expect(preview.shippingPaise).toBe(9900);
-    expect(preview.totalPaise).toBe(77900);
+    expect(preview.shippingPaise).toBe(0);
+    expect(preview.totalPaise).toBe(68000);
 
     const enrollment = service.enrollSubscription({ quoteId: preview.id, idempotencyKey: randomUUID(), consent: true }, customerId);
     const plan = store.plan(enrollment.subscriptionId);
@@ -279,8 +279,8 @@ describe('all products: tasting kits and edge cases', () => {
     expect(db.prepare("SELECT COUNT(*) AS n FROM tea_trial_reservations WHERE trial_id=?").get(trialId)).toEqual({ n: 1 });
 
     const cod = await pay(c.id, 'cod');
-    // COD: 80000 - 8000 base discount = 72000 merchandise + 9900 shipping + 5000 COD fee = 86900
-    expect(cod.p.amount).toBe(86900);
+    // COD: 80000 - 8000 base discount = 72000 merchandise + 0 shipping (trials exempt) = 72000
+    expect(cod.p.amount).toBe(72000);
     expect(db.prepare("SELECT inventory_quantity FROM trials WHERE id=?").get(trialId)).toEqual({ inventory_quantity: 49 });
 
     await service.changeSubscription({ action: 'skip', id: plan.id, revision: store.plan(plan.id).revision }, customerId);

@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { LocalizedLink as Link, Text as StorefrontText, useDisplayMoney } from "@/components/international/InternationalProvider";
 import { useCart } from "@/components/CartProvider";
-import { ShoppingCart, ArrowRight, Heart, Sparkles, Package } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ShoppingCart, ArrowRight, Heart, Sparkles, Package, Zap } from "lucide-react";
 import type { RecommendationItem } from "@/lib/recommendations";
 
 export interface PDPRecommendationsProps {
@@ -13,12 +14,21 @@ export interface PDPRecommendationsProps {
   currentTeaName?: string;
 }
 
+function useSafeRouter() {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
+}
+
 export function PDPRecommendations({
   items = [],
   currentCategory = "Tea",
-  currentTeaName,
+  currentTeaName: _currentTeaName,
 }: PDPRecommendationsProps) {
-  const { add } = useCart();
+  const { add, buyNow } = useCart();
+  const router = useSafeRouter();
   const formatMoney = useDisplayMoney();
   const [filter, setFilter] = useState<"all" | "products" | "samples">("all");
   const [wishlist, setWishlist] = useState<Record<string, boolean>>({});
@@ -43,6 +53,36 @@ export function PDPRecommendations({
 
   const handleQuickAdd = (item: RecommendationItem) => {
     if (!item.cartPayload) return;
+    if (item.type === "sample") {
+      if (typeof buyNow === "function") {
+        buyNow({
+          variantId: item.cartPayload.variantId,
+          trialId: item.cartPayload.trialId,
+          sku: item.cartPayload.sku,
+          slug: item.cartPayload.slug,
+          name: item.cartPayload.name,
+          grams: item.cartPayload.grams,
+          pricePaise: item.cartPayload.pricePaise,
+          imageUrl: item.imageUrl || null,
+        });
+      } else {
+        add({
+          variantId: item.cartPayload.variantId,
+          trialId: item.cartPayload.trialId,
+          sku: item.cartPayload.sku,
+          slug: item.cartPayload.slug,
+          name: item.cartPayload.name,
+          grams: item.cartPayload.grams,
+          pricePaise: item.cartPayload.pricePaise,
+        });
+      }
+      if (router) {
+        router.push("/checkout");
+      } else if (typeof window !== "undefined") {
+        window.location.href = "/checkout";
+      }
+      return;
+    }
     add({
       variantId: item.cartPayload.variantId,
       trialId: item.cartPayload.trialId,
@@ -393,13 +433,13 @@ export function PDPRecommendations({
                         </>
                       ) : (
                         <>
-                          <ShoppingCart size={13} aria-hidden="true" />
+                          {isSample ? (
+                            <Zap size={13} className="fill-current" aria-hidden="true" />
+                          ) : (
+                            <ShoppingCart size={13} aria-hidden="true" />
+                          )}
                           <span>
-                            {isSample ? (
-                              <StorefrontText id="copy_btn_try_sample" fallback="Try Sample" />
-                            ) : (
-                              <StorefrontText id="copy_btn_add" fallback="Add" />
-                            )}
+                            {isSample ? "Buy Now ↗" : <StorefrontText id="copy_btn_add" fallback="Add" />}
                           </span>
                         </>
                       )}

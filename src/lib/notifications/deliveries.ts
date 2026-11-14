@@ -15,22 +15,30 @@ export interface WebhookDeliveryRow {
 }
 
 export function ensureWebhookDeliveriesTable() {
-  const db = getDb();
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS webhook_deliveries (
-      id TEXT PRIMARY KEY,
-      event_type TEXT NOT NULL,
-      channel TEXT NOT NULL CHECK(channel IN ('email', 'webhook')),
-      target TEXT NOT NULL,
-      status TEXT NOT NULL CHECK(status IN ('queued', 'sent', 'failed')),
-      http_status INTEGER DEFAULT NULL,
-      attempts INTEGER NOT NULL DEFAULT 0,
-      last_error TEXT DEFAULT NULL,
-      payload_preview TEXT DEFAULT NULL,
-      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      delivered_at TEXT DEFAULT NULL
-    );
-  `);
+  try {
+    const db = getDb();
+    const exists = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?")
+      .get("webhook_deliveries");
+    if (exists) return;
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS webhook_deliveries (
+        id TEXT PRIMARY KEY,
+        event_type TEXT NOT NULL,
+        channel TEXT NOT NULL CHECK(channel IN ('email', 'webhook')),
+        target TEXT NOT NULL,
+        status TEXT NOT NULL CHECK(status IN ('queued', 'sent', 'failed')),
+        http_status INTEGER DEFAULT NULL,
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT DEFAULT NULL,
+        payload_preview TEXT DEFAULT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        delivered_at TEXT DEFAULT NULL
+      );
+    `);
+  } catch {
+    // Table managed by migration in production
+  }
 }
 
 export function recordDeliveryQueued(input: {
@@ -97,7 +105,7 @@ export function listRecentDeliveries(limit = 30): WebhookDeliveryRow[] {
       .prepare(
         `SELECT id, event_type, channel, target, status, http_status, attempts, last_error, payload_preview, created_at, delivered_at
          FROM webhook_deliveries
-         ORDER BY created_at DESC, rowid DESC
+         ORDER BY created_at DESC
          LIMIT ?`
       )
       .all(safeLimit) as WebhookDeliveryRow[];

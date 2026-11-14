@@ -54,7 +54,7 @@ export function TrialCard({ trial }: TrialCardProps) {
       <div className={styles.cardBottom}>
         <div>
           <p className={styles.price}>{formatINR(trial.price_paise, true)}</p>
-          <p className={styles.delivery}><StorefrontText id="copy_d8cd83725ce103e5" fallback="+ delivery at checkout" /></p>
+          <p className={styles.delivery} style={{ color: "#2d6a4f", fontWeight: 600 }}>Free delivery across India</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
           {trial.in_stock && (

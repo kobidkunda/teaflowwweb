@@ -7,28 +7,32 @@ import Image from "next/image";
 import type { TrialPublicDto } from "@/lib/trials/types";
 import { formatINR } from "@/lib/trials/storefront-helpers";
 import { useCart } from "@/components/CartProvider";
-import { Check, AlertCircle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, AlertCircle, Loader2, Zap } from "lucide-react";
 
 export interface TrialBuyBoxProps {
   trial: TrialPublicDto;
 }
 
 export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
-  const { add } = useCart();
+  const { add, buyNow } = useCart();
+  const router = useRouter();
+  const [added, setAdded] = useState(false);
   const [pincode, setPincode] = useState("");
   const [pincodeStatus, setPincodeStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
   const [shippingMessage, setShippingMessage] = useState<string>("");
-  const [added, setAdded] = useState(false);
 
   const priceRupees = formatINR(trial.price_paise, true);
   const comparePrice = trial.compare_at_price_paise
     ? formatINR(trial.compare_at_price_paise, true)
     : null;
 
-  const handleAddToCart = () => {
-    add({
+  const handleBuyNow = () => {
+    if (!trial.in_stock) return;
+    setAdded(true);
+    const item = {
       variantId: 0,
       trialId: trial.id,
       sku: trial.sku,
@@ -36,9 +40,14 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
       name: trial.title,
       grams: trial.net_weight_g || 200,
       pricePaise: trial.price_paise,
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2500);
+    };
+    if (typeof buyNow === "function") {
+      buyNow(item);
+    }
+    if (typeof add === "function") {
+      add(item);
+    }
+    router?.push?.("/checkout");
   };
 
   const handleCheckPincode = async () => {
@@ -190,28 +199,36 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
         )}
       </div>
 
-      {/* Add To Cart CTA Button */}
+      {/* Buy Now CTA Button */}
       <button
         type="button"
         data-testid="add-to-cart-btn"
         disabled={!trial.in_stock}
-        onClick={handleAddToCart}
-        className={`w-full min-h-[50px] px-6 py-3.5 rounded-xl font-extrabold text-[13px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg active:scale-98 ${
+        onClick={handleBuyNow}
+        className={`w-full min-h-[50px] px-6 py-3.5 rounded-xl font-extrabold text-[14px] uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg active:scale-98 ${
           added
             ? "bg-[#287455] text-white border border-[#48a37d]"
             : trial.in_stock
-            ? "bg-gradient-to-r from-[#e4b56e] to-[#bb7c44] text-[#1d1b17] border border-[#f6ca86] hover:opacity-95"
+            ? "bg-gradient-to-r from-[#e4b56e] to-[#bb7c44] text-[#1d1b17] border border-[#f6ca86] hover:opacity-95 cursor-pointer shadow-[0_4px_20px_rgba(228,181,110,0.35)]"
             : "bg-[#33261e] text-[#8c745f] border border-[#544537] cursor-not-allowed"
         }`}
       >
         {added ? (
           <span><StorefrontText id="copy_2a1082a97808ed6d" fallback="Added to Cart ✓" /></span>
         ) : trial.in_stock ? (
-          <span><StorefrontText id="copy_f75bc46676cadf41" fallback="Order Discovery Kit (" />{priceRupees}) ↗</span>
+          <>
+            <Zap size={16} className="fill-[#1d1b17]" aria-hidden="true" />
+            <span>Buy Now · <StorefrontText id="copy_f75bc46676cadf41" fallback="Order Discovery Kit (" />{priceRupees}) ↗</span>
+          </>
         ) : (
           <span><StorefrontText id="copy_5b92d3d791c59ae1" fallback="Sold Out" /></span>
         )}
       </button>
+
+      <div className="mt-2.5 text-center text-[#edd09e] text-[11px] font-medium flex items-center justify-center gap-1.5">
+        <span aria-hidden="true">⚡</span>
+        <span>Direct Checkout · FREE Delivery across India · No minimum limit</span>
+      </div>
 
       <div className="mt-3 text-center text-[#bea88e] text-[11px]"><StorefrontText id="copy_3ceb8432ffe7ae87" fallback="Includes 4 nitrogen-flushed 50g pouches with estate invoice traceability." />
       </div>

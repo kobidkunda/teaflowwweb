@@ -25,9 +25,16 @@ export function recordContactInquiry(
   input: ContactInquiryInput,
   meta?: { ip_hash?: string; user_agent?: string }
 ): { id: number; referenceCode: string; whatsappUrl: string } {
-  // Generate distinct human-readable reference ticket
-  const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-  const referenceCode = `TF-CNT-${randomSuffix}`;
+  const db = getDb();
+  // Generate distinct human-readable reference ticket, ensuring no collision
+  let referenceCode = `TF-CNT-${Math.floor(100000 + Math.random() * 900000)}`;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const existing = db
+      .prepare("SELECT 1 FROM contact_inquiries WHERE reference_code = ?")
+      .get(referenceCode);
+    if (!existing) break;
+    referenceCode = `TF-CNT-${Math.floor(100000 + Math.random() * 900000)}`;
+  }
 
   const whatsappUrl = buildContactWhatsAppUrl({
     name: input.name,
@@ -42,7 +49,6 @@ export function recordContactInquiry(
     return { id: 0, referenceCode, whatsappUrl };
   }
 
-  const db = getDb();
   const stmt = db.prepare(`
     INSERT INTO contact_inquiries (
       reference_code, name, email, phone, topic, message, order_id, ip_hash, user_agent, status

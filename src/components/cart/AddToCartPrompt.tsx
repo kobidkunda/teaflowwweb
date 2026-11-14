@@ -50,11 +50,8 @@ export function AddToCartPrompt() {
         });
       })
       .catch(() => {});
-    const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
-  const codMinPaise = isTrialsOnly ? 0 : shippingConfig.codMinPaise;
-  const freeThresholdPaise = shippingConfig.freeThresholdPaise;
 
-  return () => {
+    return () => {
       active = false;
     };
   }, []);
@@ -70,11 +67,7 @@ export function AddToCartPrompt() {
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
-  const codMinPaise = isTrialsOnly ? 0 : shippingConfig.codMinPaise;
-  const freeThresholdPaise = shippingConfig.freeThresholdPaise;
-
-  return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isVisible, dismissLastAdded]);
 
   // Handle countdown & auto-dismiss with pause on hover/focus
@@ -109,11 +102,7 @@ export function AddToCartPrompt() {
       }
     }, interval);
 
-    const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
-  const codMinPaise = isTrialsOnly ? 0 : shippingConfig.codMinPaise;
-  const freeThresholdPaise = shippingConfig.freeThresholdPaise;
-
-  return () => {
+    return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [lastAddedItem?.id, isVisible, isPaused, dismissLastAdded]);
