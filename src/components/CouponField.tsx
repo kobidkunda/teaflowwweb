@@ -43,7 +43,7 @@ export function CouponField({
   // and remove stale savings while the current server calculation is pending.
   useEffect(() => {
     const clean = selectedCode.trim().toUpperCase();
-    if (!clean) { setBusy(false); return; }
+    if (!clean || subtotalPaise <= 0) { setBusy(false); return; }
     const controller = new AbortController();
     setBusy(true);
     setDiscount(0);

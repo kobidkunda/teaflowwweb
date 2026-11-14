@@ -173,8 +173,8 @@ export function getStoreSettings(): StoreSettings {
   const twitter = map.get("social_twitter") || "https://twitter.com/himalayantea";
   const facebook = map.get("social_facebook") || "https://www.facebook.com/himalayanteahouse";
   const youtube = map.get("social_youtube") || "https://www.youtube.com/@himalayanteahouse";
-  const annText = map.get("announcement_text") || "FREE SHIPPING ON ORDERS ABOVE ₹999";
-  const annHighlight = map.get("announcement_highlight") || "✨ FREE SHIPPING ON ORDERS ABOVE ₹999";
+  const annText = map.get("announcement_text") || "FREE SHIPPING ON ORDERS ABOVE ₹499";
+  const annHighlight = map.get("announcement_highlight") || "✨ FREE SHIPPING ON ORDERS ABOVE ₹499";
   const annLink = map.get("announcement_link") || "/shop";
   const annEnabled = map.get("announcement_enabled") !== "0";
 
