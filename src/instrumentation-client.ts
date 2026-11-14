@@ -7,10 +7,6 @@ Sentry.init({
   integrations: [
     // enables Session Replay
     Sentry.replayIntegration(),
-    // enables User Feedback
-    Sentry.feedbackIntegration({
-      colorScheme: "system",
-    }),
   ],
 
   // Enables Tracing: 100% in development for verification, 10% in production.
