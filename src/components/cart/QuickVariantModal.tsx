@@ -190,6 +190,7 @@ export function QuickVariantModal() {
       false
     );
     setAddedVariants((prev) => ({ ...prev, [activeVariant.id]: true }));
+    closeQuickModal();
   };
 
   // Buy Now: ensure selected variant is added, then navigate straight to checkout

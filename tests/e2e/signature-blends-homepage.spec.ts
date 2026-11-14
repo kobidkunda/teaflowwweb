@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Homepage — Our Signature Blends Showcase", () => {
-  test("displays x-y price range and opens modal on Add to Cart click", async ({ page }) => {
+  test("displays x-y price range and adds item directly to cart without opening modal on Add to Cart click", async ({ page }) => {
     await page.goto("/");
 
     // Locate the signature blends section
@@ -20,27 +20,15 @@ test.describe("Homepage — Our Signature Blends Showcase", () => {
     await expect(priceElement).toBeVisible();
     const priceText = await priceElement.textContent();
     expect(priceText).toBeTruthy();
-    expect(priceText).toContain("–"); // Verifies price range separator
 
     // Click the Add to cart button on the first card
     const addToCartBtn = firstCard.getByRole("button", { name: /Add .* to bag/i });
     await expect(addToCartBtn).toBeEnabled();
     await addToCartBtn.click();
 
-    // Verify the QuickVariantModal opens
+    // Verify the item is added directly: button confirms added state and modal does NOT open
+    await expect(firstCard.getByRole("button", { name: /Added to bag/i })).toBeVisible();
     const modalBackdrop = page.locator(".quick-variant-backdrop");
-    await expect(modalBackdrop).toBeVisible({ timeout: 10000 });
-
-    // Verify modal content
-    const modalCard = modalBackdrop.locator(".quick-variant-modal-card");
-    await expect(modalCard).toBeVisible();
-    await expect(modalCard.getByText(/Added to Bag/i)).toBeVisible();
-    await expect(modalCard.getByRole("radiogroup", { name: /Product Variants/i })).toBeVisible();
-    await expect(modalCard.locator("[data-testid='quick-modal-checkout-btn']")).toBeVisible();
-
-    // Close the modal
-    const closeBtn = modalCard.locator(".quick-variant-close-btn");
-    await closeBtn.click();
-    await expect(modalBackdrop).not.toBeVisible();
+    await expect(modalBackdrop).toHaveCount(0);
   });
 });

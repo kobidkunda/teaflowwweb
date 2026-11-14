@@ -1,5 +1,18 @@
 # Prioritized Development Checklist
 
+## Direct Add-to-Cart Flow & Modal Suppression — 2026-11-15
+- [x] Streamlined Add-to-Cart Action (`src/components/AddToCart.tsx`):
+  - Removed intrusive `openQuickModal` pop-up trigger from `handleQuickAdd`, ensuring that clicking "Add to Cart" directly adds the selected or lowest in-stock variant into the customer's shopping bag.
+  - Set default `disableModal = true` to preserve quiet, friction-free purchasing across all product cards (`ProductCard`, `SignatureBlendsCarousel`, `CtcShowcase`, `TasteTheCraftShowcase`).
+  - Preserved inline dynamic button feedback ("Added to Cart ✓" / "Added ✓ · Add another") and automatic cart count badge increment in the storefront header.
+- [x] Shop Card and Modal Clean Dismissal (`src/components/shop/ShopProductCard.tsx` & `src/components/cart/QuickVariantModal.tsx`):
+  - Cleaned up `handleAddToCart` in `ShopProductCard.tsx` to prevent accidental modal invocation.
+  - Added immediate `closeQuickModal()` invocation in `QuickVariantModal.tsx` when `addSelectedToCart` is clicked so that the modal cleanly dismisses once an item is added to the cart.
+- [x] Quality Assurance & Automated Tests:
+  - Updated end-to-end Playwright test in `tests/e2e/signature-blends-homepage.spec.ts` verifying that clicking Add to Cart adds the item directly to the shopping cart, updates button state to "Added to bag", and leaves modal backdrops closed (1/1 test passing).
+  - Verified Vitest unit test suite (`quick-variant-modal.test.ts`, `signature-blends-price-range.test.ts`, `add-to-cart-prompt.test.ts`) (19/19 tests passing).
+  - Verified TypeScript check passes cleanly (`npm run typecheck`).
+
 ## Checkout WhatsApp Support for Stuck Customers & International Phone Input Validation — 2026-11-14
 - [x] Checkout WhatsApp Live Assistance (`src/components/international/LiveCheckout.tsx` & `src/app/checkout/page.tsx`):
   - Added persistent floating WhatsApp help button docked at bottom-right (`fixed bottom-5 right-5 z-40 sm:bottom-6 sm:right-6`) with vivid brand WhatsApp green `#128C7E` / `#25D366`, pulsing live status beacon ("Online · Siliguri Desk"), and label "Need Help? Chat on WhatsApp".

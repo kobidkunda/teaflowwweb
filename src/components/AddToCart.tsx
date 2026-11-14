@@ -7,7 +7,7 @@ export function AddToCart({
   product,
   variant,
   accessibleLabel,
-  disableModal = false,
+  disableModal: _disableModal = true,
   label,
 }: {
   product: Product;
@@ -16,7 +16,7 @@ export function AddToCart({
   disableModal?: boolean;
   label?: React.ReactNode;
 }) {
-  const { add, openQuickModal } = useCart();
+  const { add } = useCart();
   const [added, setAdded] = useState(false);
 
   // Lowest in-stock variant, or fallback to lowest overall variant, or fallback to passed variant
@@ -32,11 +32,6 @@ export function AddToCart({
 
   const handleQuickAdd = () => {
     if (isOutOfStock) return;
-
-    if (!disableModal && openQuickModal) {
-      openQuickModal(product, target);
-      return;
-    }
 
     add({
       variantId: target.id,

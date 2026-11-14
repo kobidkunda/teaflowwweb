@@ -31,7 +31,7 @@ export function ShopProductCard({
 }: ShopProductCardProps) {
   const formatINR = useDisplayMoney();
 
-  const { add, openQuickModal } = useCart();
+  const { add } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState<number>(product.variants[0]?.id ?? 0);
   const [wishlisted, setWishlisted] = useState<boolean>(false);
   const [added, setAdded] = useState<boolean>(false);
@@ -111,9 +111,6 @@ export function ShopProductCard({
   const handleAddToCart = () => {
     const targetVariant = (activeVariant && activeVariant.stock > 0) ? activeVariant : (lowestVariant || activeVariant);
     if (isProductSoldOut || !targetVariant) {
-      if (openQuickModal && targetVariant) {
-        openQuickModal(product, targetVariant);
-      }
       return;
     }
     add({
