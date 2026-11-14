@@ -33,6 +33,7 @@ data/backups/
 .env*.local
 .env.production
 .env.staging
+.env.sentry-build-plugin
 
 # TypeScript cache
 *.tsbuildinfo

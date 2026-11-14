@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/db";
 import { getStoreSettings } from "@/lib/storeSettings";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 
 export interface WholesaleInquiry {
   id?: number;
@@ -95,8 +96,27 @@ export function recordWholesaleInquiry(inquiry: WholesaleInquiryInput): {
     inquiry,
   });
 
+  const insertedId = Number(result.lastInsertRowid);
+  dispatchNotificationEvent({
+    event: "bulk_order",
+    source: "/api/wholesale",
+    referenceId: `WHOLESALE-${insertedId}`,
+    summary: `${inquiry.business_name.trim()} (${inquiry.estimated_volume.trim()}) — ${inquiry.name.trim()}`,
+    data: {
+      id: insertedId,
+      name: inquiry.name.trim(),
+      businessName: inquiry.business_name.trim(),
+      email: inquiry.email.trim().toLowerCase(),
+      phone: inquiry.phone.trim(),
+      interest: inquiry.interest.trim(),
+      estimatedVolume: inquiry.estimated_volume.trim(),
+      location: (inquiry.location || "").trim() || null,
+      notes: (inquiry.notes || "").trim() || null,
+    },
+  });
+
   return {
-    id: Number(result.lastInsertRowid),
+    id: insertedId,
     whatsappUrl,
     whatsappNumber: settings.whatsapp_number,
   };

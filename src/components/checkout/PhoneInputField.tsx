@@ -103,13 +103,14 @@ export function PhoneInputField({
         name={name}
         international
         withCountryCallingCode
+        defaultCountry={phoneCountry}
         country={phoneCountry}
         onCountryChange={(newCountry) => {
           if (newCountry) {
             setPhoneCountry(newCountry);
           }
         }}
-        value={value || ""}
+        value={value || undefined}
         onChange={(val) => {
           onChange(val || "");
         }}

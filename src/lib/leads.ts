@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { cleanWhatsAppNumber } from "@/lib/wholesale";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 import type Database from "better-sqlite3";
 
 export const leadCaptureSchema = z.object({
@@ -143,7 +144,7 @@ export function captureLead(
       .get(input.sessionId) as { id: string; applied_coupon_code?: string } | undefined;
   }
 
-  return db.transaction(() => {
+  const result = db.transaction(() => {
     // 1. Record captured lead
     const leadInsert = db
       .prepare(`
@@ -188,6 +189,28 @@ export function captureLead(
       cartId: cart?.id,
     };
   })();
+
+  if (result.success) {
+    dispatchNotificationEvent({
+      event: "lead_modal",
+      source: "/api/leads/capture",
+      referenceId: `LEAD-${result.leadId}`,
+      summary: `Lead captured: ${cleanName || "Guest"} (${cleanPhone}) — ${source}`,
+      data: {
+        leadId: result.leadId,
+        phoneNumber: cleanPhone,
+        customerName: cleanName || null,
+        sessionId: input.sessionId,
+        cartId: result.cartId ?? null,
+        couponCode: result.couponCode,
+        discountPercent: result.discountPercent,
+        source,
+      },
+      dedupeKey: `lead:${result.leadId}`,
+    });
+  }
+
+  return result;
 }
 
 /**

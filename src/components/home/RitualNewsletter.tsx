@@ -21,8 +21,8 @@ export function RitualNewsletter({ content }: { content: NonNullable<HomepageCon
   }
   return <form className="ritual-newsletter-form" method="post" action="/api/newsletter" onSubmit={submit}>
     <label className="sr-only" htmlFor="tea-circle-email">{content.email_label}</label>
-    <div className="ritual-email-row"><input id="tea-circle-email" name="email" type="email" autoComplete="email" placeholder={content.placeholder} required maxLength={254} disabled={state === "pending"}/><button type="submit" disabled={!ready || state === "pending"}>{state === "pending" ? content.pending_label : content.button_label}<ArrowRight size={17} aria-hidden="true"/></button></div>
+    <div className="ritual-email-row"><input id="tea-circle-email" name="email" type="email" inputMode="email" autoComplete="email" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" aria-invalid={state === "error" ? "true" : "false"} aria-describedby={state === "error" ? "tea-circle-error" : undefined} placeholder={content.placeholder} required maxLength={254} disabled={state === "pending"}/><button type="submit" disabled={!ready || state === "pending"}>{state === "pending" ? content.pending_label : content.button_label}<ArrowRight size={17} aria-hidden="true"/></button></div>
     <div className="ritual-consent"><label><input type="checkbox" name="consent" required disabled={state === "pending"}/><span>{content.consent_label}</span></label>{content.privacy.href && <Link href={content.privacy.href}>{content.privacy.label}</Link>}</div>
-    {state === "success" && <p role="status">{content.success_message}</p>}{state === "error" && <p role="alert">{content.error_message}</p>}
+    {state === "success" && <p role="status">{content.success_message}</p>}{state === "error" && <p id="tea-circle-error" role="alert">{content.error_message}</p>}
   </form>;
 }

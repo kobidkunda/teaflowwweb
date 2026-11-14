@@ -373,7 +373,7 @@ export function getPublicOrderTrackingItems(orderId: string): TrackingItem[] {
     const rows = db
       .prepare(`
         SELECT 
-          COALESCE(v.sku, CAST(v.id AS TEXT)) AS item_id,
+          COALESCE(NULLIF(TRIM(v.sku), ''), 'HTH-' || p.id || '-' || v.id) AS item_id,
           p.name AS item_name,
           p.category AS item_category,
           oi.unit_price_paise,

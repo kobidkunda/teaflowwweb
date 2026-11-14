@@ -135,9 +135,11 @@ export function ConsultationLeadForm({
                     </label>
                     <input
                       id="lead-name"
-                      minLength={2} maxLength={100} autoComplete="name"
+                      name="name"
+                      minLength={2} maxLength={100} autoComplete="name" enterKeyHint="next"
                       type="text"
                       required
+                      aria-invalid={error ? "true" : "false"}
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       placeholder="e.g. Vikram Sen"
@@ -161,9 +163,11 @@ export function ConsultationLeadForm({
                     </label>
                     <input
                       id="lead-email"
-                      maxLength={100} autoComplete="email"
+                      name="email"
+                      maxLength={100} autoComplete="email" inputMode="email" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="next"
                       type="email"
                       required
+                      aria-invalid={error ? "true" : "false"}
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="vikram@brand.com"
@@ -189,7 +193,8 @@ export function ConsultationLeadForm({
                     </label>
                     <input
                       id="lead-brand"
-                      maxLength={100} autoComplete="organization"
+                      name="brandName"
+                      maxLength={100} autoComplete="organization" enterKeyHint="next"
                       type="text"
                       value={formData.brandName}
                       onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}

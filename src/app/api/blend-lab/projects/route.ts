@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { intakeDraftSchema } from "@/lib/blend-lab/validation";
 import { createProjectDraft } from "@/lib/blend-lab/projects";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,20 @@ export async function POST(req: NextRequest) {
     }
 
     const { project, reused } = createProjectDraft(parsed.data);
+
+    if (!reused) {
+      dispatchNotificationEvent({
+        event: "private_label",
+        source: "/api/blend-lab/projects",
+        referenceId: project.publicId,
+        summary: `New Blend Lab draft: ${project.publicId}`,
+        data: {
+          projectId: project.publicId,
+          payload: parsed.data,
+        },
+        dedupeKey: `blend:${project.publicId}`,
+      });
+    }
 
     return NextResponse.json(
       {

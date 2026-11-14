@@ -1925,6 +1925,10 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
   color: #ffffff;
   padding: 70px 0 30px;
 }
+.tf-shop-page-shell .tf-hero-wrapper {
+  min-height: 290px;
+  padding: 36px 0 28px;
+}
 .tf-hero-bg {
   position: absolute;
   inset: 0;
@@ -7706,8 +7710,31 @@ dialog.tf-pdf-dialog[open]::backdrop {
    backdrop blur, light-dismiss support, and reduced motion respect.
    ========================================================================== */
 
-dialog.tf-checkout-error-dialog:modal {
+dialog.tf-checkout-error-dialog:modal,
+dialog.tf-lead-dialog:modal {
   overscroll-behavior: contain;
+}
+
+dialog.tf-lead-dialog {
+  padding: 0;
+  border: 1px solid rgba(220, 215, 205, 0.8);
+  border-radius: 16px;
+  background-color: #ffffff;
+  color: #18231c;
+  max-width: min(92vw, 480px);
+  width: 100%;
+  margin: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  overflow: visible;
+  outline: none;
+}
+
+dialog.tf-lead-dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background-color: rgba(16, 26, 20, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 dialog.tf-checkout-error-dialog {
@@ -7846,9 +7873,11 @@ dialog.tf-checkout-error-dialog[open]::backdrop {
 
 .add-to-cart-prompt-card {
   background: #ffffff;
+  background-color: #ffffff;
+  isolation: isolate;
   border: 1px solid #e7e0d5;
   border-radius: 16px;
-  box-shadow: 0 20px 45px -10px rgba(20, 60, 49, 0.22), 0 8px 18px -6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 45px -10px rgba(20, 60, 49, 0.28), 0 8px 18px -6px rgba(0, 0, 0, 0.14);
   padding: 16px 18px;
   position: relative;
   overflow: hidden;

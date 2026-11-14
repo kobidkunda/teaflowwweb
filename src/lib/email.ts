@@ -183,6 +183,90 @@ export async function sendTemplatedMail(input: {
   return { sent: sent.sent, subject: rendered.subject };
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatAlertValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+export async function sendAdminAlertEmail(input: {
+  to: string;
+  eventLabel: string;
+  event: string;
+  summary: string;
+  referenceId?: string;
+  source: string;
+  occurredAt: string;
+  data: Record<string, unknown>;
+}): Promise<SmtpResult> {
+  const refBadge = input.referenceId ? ` [${input.referenceId}]` : "";
+  const subject = `[TeaFloww] ${input.eventLabel}${refBadge}: ${input.summary}`.slice(0, 180);
+
+  const entries = Object.entries(input.data);
+  const textLines = [
+    `TeaFloww Admin Notification`,
+    `Event: ${input.eventLabel} (${input.event})`,
+    `Summary: ${input.summary}`,
+    input.referenceId ? `Reference: ${input.referenceId}` : null,
+    `Source: ${input.source}`,
+    `Time: ${input.occurredAt}`,
+    "",
+    "Submitted Details:",
+    ...entries.map(([k, v]) => `- ${k}: ${formatAlertValue(v)}`),
+  ].filter((line): line is string => line !== null);
+
+  const rowsHtml = entries
+    .map(
+      ([k, v]) => `
+        <tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#143c31;vertical-align:top;width:32%;font-size:13px;">${escapeHtml(k)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#1f2937;font-size:13px;white-space:pre-wrap;word-break:break-word;">${escapeHtml(formatAlertValue(v))}</td>
+        </tr>`
+    )
+    .join("");
+
+  const html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#faf8f5;color:#1f2937;">
+      <div style="background:#143c31;color:#ffffff;padding:18px 22px;border-radius:10px 10px 0 0;">
+        <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.8;">TeaFloww Admin Alert</div>
+        <h1 style="margin:6px 0 0;font-size:18px;font-weight:600;">${escapeHtml(input.eventLabel)}</h1>
+      </div>
+      <div style="background:#ffffff;padding:20px 22px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;">
+        <p style="margin:0 0 12px;font-size:15px;font-weight:500;color:#111827;">${escapeHtml(input.summary)}</p>
+        <p style="margin:0 0 16px;font-size:12px;color:#6b7280;">
+          ${input.referenceId ? `<strong>Reference:</strong> ${escapeHtml(input.referenceId)} &middot; ` : ""}
+          <strong>Source:</strong> ${escapeHtml(input.source)} &middot;
+          <strong>At:</strong> ${escapeHtml(input.occurredAt)}
+        </p>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;">
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  return sendMailHtml({
+    to: input.to,
+    subject,
+    text: textLines.join("\n"),
+    html,
+  });
+}
+
 export async function sendMail(input: { to: string; subject: string; text: string }): Promise<SmtpResult> {
   const host = (process.env.SMTP_HOST || "").trim();
   if (!host) {

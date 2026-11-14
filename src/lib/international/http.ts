@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { guard } from "@/lib/adminHttp";
+import { logger } from "@/lib/logger";
 import { rateLimitResponse } from "@/lib/rateLimit";
 import { publishedTexts, UI_SOURCE } from "./translations";
 import { CommerceError } from "./models";
@@ -44,6 +45,13 @@ export function json(value: unknown, session?: string) {
   return response;
 }
 export function failure(e: unknown, request?: Request) {
+  if (!(e instanceof CommerceError) && !(e instanceof z.ZodError)) {
+    logger.error("commerce api unexpected failure", {
+      url: request?.url,
+      error: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    });
+  }
   let message =
     e instanceof CommerceError
       ? e.message

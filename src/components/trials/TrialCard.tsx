@@ -6,6 +6,7 @@ import { ArrowRight, ImageOff } from "lucide-react";
 import type { TrialPublicDto } from "@/lib/trials/types";
 import { formatINR } from "@/lib/trials/storefront-helpers";
 import { ProductImpression } from "@/components/analytics/ProductImpression";
+import { TrialQuickAddButton } from "./TrialQuickAddButton";
 import styles from "./TrialsCollection.module.css";
 
 export interface TrialCardProps { trial: TrialPublicDto }
@@ -55,9 +56,22 @@ export function TrialCard({ trial }: TrialCardProps) {
           <p className={styles.price}>{formatINR(trial.price_paise, true)}</p>
           <p className={styles.delivery}><StorefrontText id="copy_d8cd83725ce103e5" fallback="+ delivery at checkout" /></p>
         </div>
-        <Link href={href} className={styles.kitButton} aria-label={`Explore ${trial.title}`}>
-          {trial.in_stock ? "View kit" : "View details"}<ArrowRight size={17} aria-hidden="true" />
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {trial.in_stock && (
+            <TrialQuickAddButton
+              trialId={trial.id}
+              sku={trial.sku}
+              slug={trial.slug}
+              title={trial.title}
+              grams={trial.net_weight_g}
+              pricePaise={trial.price_paise}
+              imageUrl={imageUrl || null}
+            />
+          )}
+          <Link href={href} className={styles.kitButton} aria-label={`Explore ${trial.title}`}>
+            {trial.in_stock ? "View kit" : "View details"}<ArrowRight size={17} aria-hidden="true" />
+          </Link>
+        </div>
       </div>
       <p className={styles.stock} data-available={trial.in_stock}>
         {trial.in_stock ? "Available to order" : "Currently unavailable"}

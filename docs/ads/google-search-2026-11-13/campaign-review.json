@@ -1,0 +1,289 @@
+{
+  "artifact_type": "REVIEW_SPECIFICATION_NOT_API_PAYLOAD",
+  "status": "BLOCKED_NOT_CREATED",
+  "customer_id": "2869041039",
+  "connection_account": "googleads_besuit-singfo",
+  "campaign": {
+    "name": "TeaFloww | Tea Stall CTC | Search | GJ RJ UP MP MH | Test",
+    "creation_status": "PAUSED",
+    "channel": "SEARCH",
+    "daily_average_budget_inr": 500,
+    "bid_strategy": "MANUAL_CPC",
+    "max_cpc_inr": 3,
+    "google_search": true,
+    "search_partners": false,
+    "display_network": false,
+    "states": [
+      "Gujarat",
+      "Rajasthan",
+      "Uttar Pradesh",
+      "Madhya Pradesh",
+      "Maharashtra"
+    ],
+    "positive_geo_target": "PRESENCE",
+    "languages": [
+      "Hindi",
+      "English"
+    ],
+    "start_date": null,
+    "end_date": null,
+    "schedule_policy": "Set 14 inclusive calendar dates in Asia/Calcutta when all launch gates pass; do not backdate. Pause after test and read back status.",
+    "goals": [
+      "PURCHASE_WEBSITE"
+    ],
+    "conversion_action_id": "7896752784",
+    "final_url": "https://teafloww.com/tea/everyday-strong-milk-chai",
+    "final_url_suffix": "utm_source=google&utm_medium=cpc&utm_campaign=teafloww_stall_ctc_test&utm_id={campaignid}&utm_term={keyword}&utm_content={creative}",
+    "auto_tagging": "VERIFY_BEFORE_LAUNCH"
+  },
+  "ad_groups": [
+    {
+      "name": "Tea Stall Tea",
+      "default_max_cpc_inr": 3,
+      "keywords": [
+        {
+          "text": "tea for tea stall",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "tea for tea stall",
+          "match_type": "PHRASE"
+        },
+        {
+          "text": "tea stall tea online",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "tea stall tea online",
+          "match_type": "PHRASE"
+        },
+        {
+          "text": "buy tea for chai shop",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "buy tea for chai shop",
+          "match_type": "PHRASE"
+        },
+        {
+          "text": "चाय स्टॉल के लिए चाय",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "चाय स्टॉल के लिए चाय",
+          "match_type": "PHRASE"
+        }
+      ],
+      "responsive_search_ads": [
+        {
+          "language": "English",
+          "final_url": "https://teafloww.com/tea/everyday-strong-milk-chai",
+          "path1": "milk-chai",
+          "path2": "tea-packs",
+          "pinning": "NONE",
+          "headlines": [
+            "TeaFloww Milk Chai",
+            "Everyday Strong Milk Chai",
+            "Tea for Your Chai Stall",
+            "CTC Tea for Milk Chai",
+            "Choose Your Tea Pack",
+            "100 g to 35 kg Packs",
+            "1 kg Pack at Rs 280",
+            "5 kg Pack at Rs 1400",
+            "10 kg Pack at Rs 2800",
+            "Shop TeaFloww Online",
+            "Find Your Chai Pack",
+            "Order Tea Online",
+            "Milk Chai for Your Shop",
+            "Explore All Pack Sizes",
+            "Tea for Everyday Chai"
+          ],
+          "descriptions": [
+            "Shop Everyday Strong Milk Chai. Choose packs from 100 g to 35 kg online.",
+            "1 kg Rs 280. 5 kg Rs 1400. 10 kg Rs 2800. Select your pack before checkout.",
+            "Explore CTC tea for your tea stall. Check delivery availability at checkout.",
+            "Choose your pack size and see the final order total before payment."
+          ]
+        },
+        {
+          "language": "Hindi",
+          "final_url": "https://teafloww.com/tea/everyday-strong-milk-chai",
+          "path1": "milk-chai",
+          "path2": "tea-packs",
+          "pinning": "NONE",
+          "headlines": [
+            "TeaFloww दूध वाली चाय",
+            "रोजाना दूध वाली चाय",
+            "अपनी दुकान के लिए चाय",
+            "चाय स्टॉल के लिए चाय",
+            "दूध वाली CTC चाय",
+            "अपना पैक चुनें",
+            "100 ग्राम से 35 किलो",
+            "1 किलो पैक ₹280",
+            "5 किलो पैक ₹1400",
+            "10 किलो पैक ₹2800",
+            "TeaFloww से ऑनलाइन खरीदें",
+            "चाय के सभी पैक देखें",
+            "चाय ऑनलाइन मंगाएं",
+            "अपनी पसंद की चाय चुनें",
+            "रोज की चाय के लिए"
+          ],
+          "descriptions": [
+            "Everyday Strong Milk Chai के 100 ग्राम से 35 किलो तक के पैक ऑनलाइन देखें।",
+            "1 किलो ₹280, 5 किलो ₹1400, 10 किलो ₹2800। खरीदने से पहले अपना पैक चुनें।",
+            "अपने चाय स्टॉल के लिए CTC चाय देखें। डिलीवरी की उपलब्धता चेकआउट पर जांचें।",
+            "पैक चुनें और भुगतान से पहले ऑर्डर की अंतिम राशि देखें।"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Assam CTC Buying Intent",
+      "default_max_cpc_inr": 3,
+      "keywords": [
+        {
+          "text": "buy assam ctc tea",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "buy assam ctc tea",
+          "match_type": "PHRASE"
+        },
+        {
+          "text": "assam ctc tea online",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "assam ctc tea online",
+          "match_type": "PHRASE"
+        },
+        {
+          "text": "ctc tea 1 kg",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "ctc tea 1 kg",
+          "match_type": "PHRASE"
+        },
+        {
+          "text": "ctc tea 5 kg",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "ctc tea 5 kg",
+          "match_type": "PHRASE"
+        },
+        {
+          "text": "ctc tea 10 kg",
+          "match_type": "EXACT"
+        },
+        {
+          "text": "ctc tea 10 kg",
+          "match_type": "PHRASE"
+        }
+      ],
+      "responsive_search_ads": [
+        {
+          "language": "English",
+          "final_url": "https://teafloww.com/tea/everyday-strong-milk-chai",
+          "path1": "milk-chai",
+          "path2": "tea-packs",
+          "pinning": "NONE",
+          "headlines": [
+            "TeaFloww Milk Chai",
+            "Everyday Strong Milk Chai",
+            "Buy Assam CTC Tea",
+            "CTC Tea for Milk Chai",
+            "Choose Your Tea Pack",
+            "100 g to 35 kg Packs",
+            "1 kg Pack at Rs 280",
+            "5 kg Pack at Rs 1400",
+            "10 kg Pack at Rs 2800",
+            "Shop TeaFloww Online",
+            "Find Your Chai Pack",
+            "Order Tea Online",
+            "Milk Chai for Your Shop",
+            "Explore All Pack Sizes",
+            "Tea for Everyday Chai"
+          ],
+          "descriptions": [
+            "Shop Everyday Strong Milk Chai. Choose packs from 100 g to 35 kg online.",
+            "1 kg Rs 280. 5 kg Rs 1400. 10 kg Rs 2800. Select your pack before checkout.",
+            "Explore CTC tea for your tea stall. Check delivery availability at checkout.",
+            "Choose your pack size and see the final order total before payment."
+          ]
+        },
+        {
+          "language": "Hindi",
+          "final_url": "https://teafloww.com/tea/everyday-strong-milk-chai",
+          "path1": "milk-chai",
+          "path2": "tea-packs",
+          "pinning": "NONE",
+          "headlines": [
+            "TeaFloww दूध वाली चाय",
+            "रोजाना दूध वाली चाय",
+            "असम CTC चाय ऑनलाइन",
+            "चाय स्टॉल के लिए चाय",
+            "दूध वाली CTC चाय",
+            "अपना पैक चुनें",
+            "100 ग्राम से 35 किलो",
+            "1 किलो पैक ₹280",
+            "5 किलो पैक ₹1400",
+            "10 किलो पैक ₹2800",
+            "TeaFloww से ऑनलाइन खरीदें",
+            "चाय के सभी पैक देखें",
+            "चाय ऑनलाइन मंगाएं",
+            "अपनी पसंद की चाय चुनें",
+            "रोज की चाय के लिए"
+          ],
+          "descriptions": [
+            "Everyday Strong Milk Chai के 100 ग्राम से 35 किलो तक के पैक ऑनलाइन देखें।",
+            "1 किलो ₹280, 5 किलो ₹1400, 10 किलो ₹2800। खरीदने से पहले अपना पैक चुनें।",
+            "अपने चाय स्टॉल के लिए CTC चाय देखें। डिलीवरी की उपलब्धता चेकआउट पर जांचें।",
+            "पैक चुनें और भुगतान से पहले ऑर्डर की अंतिम राशि देखें।"
+          ]
+        }
+      ]
+    }
+  ],
+  "negative_keywords": [],
+  "negatives_policy": "No candidates without observed search terms and overblocking review.",
+  "economics": {
+    "margin_before_ads": 0.15,
+    "break_even_roas": 6.666666666666667,
+    "planning_roas": 10,
+    "scale_automatically": false,
+    "daily_revenue_at_break_even_inr": 3333.3333333333335,
+    "daily_revenue_at_planning_roas_inr": 5000,
+    "planned_14_day_spend_inr": 7000,
+    "planned_spend_is_hard_cap": false
+  },
+  "pack_prices_snapshot_inr": {
+    "100g": 40,
+    "250g": 80,
+    "500g": 150,
+    "1kg": 280,
+    "5kg": 1400,
+    "10kg": 2800,
+    "25kg": 7000,
+    "35kg": 9800
+  },
+  "launch_gates": {
+    "composio_keyword_creation_restriction_resolved": false,
+    "account_resources_revalidated": false,
+    "genuine_paid_purchase_value_currency_transaction_id_verified": false,
+    "duplicates_failed_unpaid_demo_excluded": false,
+    "refund_reconciliation_verified": false,
+    "mobile_checkout_verified": false,
+    "five_state_serviceability_and_shipping_verified": false,
+    "date_window_set_and_read_back": false
+  },
+  "restrictions": [
+    "GOOGLEADS_MUTATE_AD_GROUP_CRITERIA reported restricted; do not retry or use alternate APIs, accounts, CLI, browser, or import to bypass."
+  ],
+  "preserve_existing_campaign": {
+    "id": "24466397884",
+    "expected_status": "PAUSED",
+    "mutation_allowed": false
+  }
+}

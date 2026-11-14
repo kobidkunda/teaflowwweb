@@ -118,28 +118,33 @@ export function deleteContentBlock(key: string): boolean {
 
 /** Announcement Bar helper */
 export function getAnnouncementSettings(): AnnouncementSettings {
-  let defaultText = "FREE SHIPPING ON ORDERS ABOVE ₹499";
-  let defaultHighlight = "✨ FREE SHIPPING ON ORDERS ABOVE ₹499";
+  let rupees = 599;
+  let autoSync = true;
   try {
     const db = getDb();
-    const row = db.prepare("SELECT value FROM store_settings WHERE key = 'free_shipping_threshold_paise'").get() as { value?: string } | undefined;
-    if (row?.value) {
-      const rupees = Math.round(Number(row.value) / 100);
-      if (rupees > 0) {
-        defaultText = `FREE SHIPPING ON ORDERS ABOVE ₹${rupees}`;
-        defaultHighlight = `✨ FREE SHIPPING ON ORDERS ABOVE ₹${rupees}`;
-      }
+    const rows = db
+      .prepare("SELECT key, value FROM store_settings WHERE key IN ('free_shipping_threshold_paise', 'free_shipping_threshold', 'announcement_auto_sync')")
+      .all() as Array<{ key: string; value: string }>;
+    const map = new Map(rows.map((r) => [r.key, r.value]));
+    const rawThreshold = map.get("free_shipping_threshold_paise") || map.get("free_shipping_threshold");
+    if (rawThreshold) {
+      const parsed = Math.round(Number(rawThreshold) / 100);
+      if (parsed > 0) rupees = parsed;
     }
+    autoSync = map.get("announcement_auto_sync") !== "0";
   } catch {}
+
+  const defaultText = `FREE SHIPPING ON ORDERS ABOVE ₹${rupees}`;
+  const defaultHighlight = `✨ FREE SHIPPING ON ORDERS ABOVE ₹${rupees}`;
 
   let text = getContentBlock("announcement.text", defaultText);
   let highlight = getContentBlock("announcement.highlight", defaultHighlight);
 
-  // If content block has stale ₹999 notice, harmonize with the store shipping threshold (₹499)
-  if (text.includes("₹999")) {
+  // Harmonize any stale free-shipping threshold notice (e.g. ₹999 or ₹499) with the active delivery threshold
+  if (autoSync && /FREE SHIPPING ON ORDERS ABOVE ₹\d+/i.test(text)) {
     text = defaultText;
   }
-  if (highlight.includes("₹999")) {
+  if (autoSync && /FREE SHIPPING ON ORDERS ABOVE ₹\d+/i.test(highlight)) {
     highlight = defaultHighlight;
   }
 

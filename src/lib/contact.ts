@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/db";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 import {
   contactInquirySchema,
   type ContactInquiryInput,
@@ -60,8 +61,26 @@ export function recordContactInquiry(
     meta?.user_agent ? meta.user_agent.slice(0, 255) : null
   );
 
+  const insertedId = Number(info.lastInsertRowid);
+  dispatchNotificationEvent({
+    event: input.topic === "wholesale" ? "bulk_order" : "enquiry",
+    source: "/api/contact",
+    referenceId: referenceCode,
+    summary: `${input.name.trim()} (${input.topic}) — ${input.email.trim().toLowerCase()}`,
+    data: {
+      id: insertedId,
+      referenceCode,
+      name: input.name.trim(),
+      email: input.email.trim().toLowerCase(),
+      phone: input.phone?.trim() || null,
+      topic: input.topic,
+      orderId: input.order_id?.trim() || null,
+      message: input.message.trim(),
+    },
+  });
+
   return {
-    id: Number(info.lastInsertRowid),
+    id: insertedId,
     referenceCode,
     whatsappUrl,
   };

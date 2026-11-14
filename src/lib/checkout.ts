@@ -4,6 +4,7 @@ import { checkoutSchema, type CheckoutInput } from "@/lib/validation";
 import { quoteTotals, SHIPPING_METHOD } from "@/lib/money";
 import { validateCouponServer } from "@/lib/storefront";
 import { markCartConverted } from "@/lib/abandonedCarts";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 export { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, GST_RATE_PERCENT, calculateShipping, calculateTaxPaise, quoteTotals } from "@/lib/money";
 import { randomUUID } from "node:crypto";
 export class CheckoutError extends Error {}
@@ -177,6 +178,23 @@ export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPa
     });
 
     // Demo-only: do NOT decrement stock until a verified payment capture exists.
+    dispatchNotificationEvent({
+      event: "order",
+      source: "/api/checkout",
+      referenceId: id,
+      summary: `Checkout Order ${id.slice(0, 8)} — ${input.name} (INR ${(total / 100).toFixed(2)})`,
+      data: {
+        orderId: id,
+        totalPaise: total,
+        discountPaise: discount,
+        taxPaise: tax,
+        customerName: input.name,
+        customerEmail: input.email,
+        phone: phone ?? null,
+        lines,
+      },
+      dedupeKey: `checkout:${id}`,
+    });
     return { orderId: id, totalPaise: total, discountPaise: discount, taxPaise: tax, deduped: false };
   })();
 }

@@ -800,8 +800,8 @@ export function VariantPicker({
             <span> <StorefrontText id="copy_913a8849b60dd752" fallback="Adding..." /> </span>
           ) : (
             <>
-              <ShoppingCart size={16} aria-hidden="true" />
-              <span>{isWholesaleMode ? `Add to Bag (Wholesale) — ${formatINR(totalPricePaise)}` : `Add to Bag — ${formatINR(totalPricePaise)}`}</span>
+              <ShoppingCart size={16} aria-hidden="true" className="shrink-0" />
+              <span className="whitespace-nowrap">{isWholesaleMode ? `Add to Bag (Wholesale) — ${formatINR(totalPricePaise)}` : `Add to Bag — ${formatINR(totalPricePaise)}`}</span>
             </>
           )}
         </button>

@@ -3,6 +3,7 @@ import { getCustomerSession } from "@/lib/customerSessions";
 import { PrivateLabelService } from "@/lib/private-label/service";
 import { customerCreateSampleOrderSchema } from "@/lib/private-label/schemas";
 import { toPublicSampleOrderDto } from "@/lib/private-label/public-dto";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 import {
   PrivateLabelGateError,
   PrivateLabelNotFoundError,
@@ -116,6 +117,23 @@ export async function POST(request: Request) {
     const sample = PrivateLabelService.createSampleOrder(parseResult.data, customer.id, actor);
     const detailed = PrivateLabelService.getSampleOrder(sample.id, customer.id);
     const publicSample = toPublicSampleOrderDto(detailed, detailed.items);
+
+    dispatchNotificationEvent({
+      event: "private_label",
+      source: "/api/v1/private-label/samples",
+      referenceId: String(sample.id),
+      summary: `Private-label sample order (${parseResult.data.sample_type} x${parseResult.data.quantity})`,
+      data: {
+        sampleOrderId: sample.id,
+        customerId: customer.id,
+        customerEmail: customer.email,
+        sampleType: parseResult.data.sample_type,
+        quantity: parseResult.data.quantity,
+        couponCode: parseResult.data.coupon_code ?? null,
+        shippingAddress: parseResult.data.shipping_address,
+      },
+      dedupeKey: `sample:${sample.id}`,
+    });
 
     return NextResponse.json(
       {

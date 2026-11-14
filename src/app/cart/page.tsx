@@ -21,10 +21,71 @@ function CartPageContent() {
 
   const { items, subtotal, changeQuantity, remove, add, clear } = useCart();
   const hasWholesale = items.some((x) => x.isWholesale || x.quantity > 20);
+  const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [recoveryMessage, setRecoveryMessage] = useState<string | null>(null);
   const [isRecovering, setIsRecovering] = useState(false);
+
+  const [storeConfig, setStoreConfig] = useState({
+    freeShippingThresholdRupees: 599,
+    flatShippingRupees: 99,
+    codMinRupees: 299,
+    codEnabled: true,
+    onlinePaymentEnabled: true,
+    whatsappNumber: "+91 7001304853",
+  });
+  const [pinInput, setPinInput] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
+  const [pinEstimate, setPinEstimate] = useState<{
+    ok: boolean;
+    city?: string;
+    state?: string;
+    estimatedDays?: string;
+    serviceable?: boolean;
+    codAllowed?: boolean;
+    error?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/commerce/payment-methods")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data) return;
+        setStoreConfig({
+          freeShippingThresholdRupees: Number(data.shipping?.freeShippingThresholdRupees || 599),
+          flatShippingRupees: Number(data.shipping?.flatFeeRupees ?? 99),
+          codMinRupees: Number(data.discounts?.cod?.minRupees ?? 100),
+          codEnabled: data.discounts?.cod?.enabled !== false,
+          onlinePaymentEnabled: data.onlinePaymentEnabled !== false,
+          whatsappNumber: data.whatsappNumber || "+91 7001304853",
+        });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleCheckPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = pinInput.trim();
+    if (!/^[1-9][0-9]{5}$/.test(clean)) {
+      setPinEstimate({ ok: false, error: "Enter a valid 6-digit Indian PIN code." });
+      return;
+    }
+    setPinLoading(true);
+    try {
+      const res = await fetch(`/api/shipping/pincode-lookup?pincode=${encodeURIComponent(clean)}`);
+      const data = await res.json();
+      setPinEstimate(data);
+    } catch {
+      setPinEstimate({ ok: false, error: "Unable to check PIN right now. Shipping will calculate at checkout." });
+    } finally {
+      setPinLoading(false);
+    }
+  };
 
   const searchParams = useSearchParams();
   const recoveryToken = searchParams ? searchParams.get("recovery") : null;
@@ -255,6 +316,28 @@ function CartPageContent() {
 
             <p className="micro-note"> <StorefrontText id="copy_44209758ef5fbf82" fallback="Delivery, taxes and import charges are calculated for your address at checkout." /> </p>
 
+            {/* Free-Shipping Progress Bar (Exempt for trials-only & wholesale) */}
+            {!hasWholesale && !isTrialsOnly && (() => {
+              const freePaise = storeConfig.freeShippingThresholdRupees * 100;
+              const remainingPaise = Math.max(0, freePaise - subtotal);
+              const pct = Math.min(100, Math.round((subtotal / Math.max(1, freePaise)) * 100));
+              return (
+                <div className="p-3 rounded-lg bg-[#f4f7f2] border border-[#dce3d8] mb-4">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#23483a] mb-1.5">
+                    <span>
+                      {remainingPaise > 0
+                        ? `Add ₹${Math.ceil(remainingPaise / 100)} more for FREE Delivery across India!`
+                        : "🎉 You unlocked FREE Delivery across India!"}
+                    </span>
+                    <span className="text-[11px] text-[#526359]">₹{storeConfig.freeShippingThresholdRupees}</span>
+                  </div>
+                  <div className="w-full bg-[#e4dfd5] h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-[#23483a] h-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="cart-summary-calculations">
               <div className="summary-row">
                 <span> <StorefrontText id="copy_8c0f2cb34079ede4" fallback="Subtotal" /> </span>
@@ -272,7 +355,13 @@ function CartPageContent() {
               <div className="summary-row">
                 <span> <StorefrontText id="copy_20b84eb74315a1f7" fallback="Estimated Shipping" /> </span>
                 <strong>
-                  {hasWholesale ? "Transport Charges Extra (To-Pay)" : <StorefrontText id="copy_626d4180aa68fc5a" fallback="Calculated at checkout" />}
+                  {hasWholesale
+                    ? "Transport Charges Extra (To-Pay)"
+                    : isTrialsOnly
+                    ? "FREE (Included in Trial)"
+                    : subtotal >= storeConfig.freeShippingThresholdRupees * 100
+                    ? `FREE (₹${storeConfig.freeShippingThresholdRupees}+ unlocked)`
+                    : `₹${storeConfig.flatShippingRupees} (Free above ₹${storeConfig.freeShippingThresholdRupees})`}
                 </strong>
               </div>
 
@@ -288,6 +377,44 @@ function CartPageContent() {
                 </strong>
               </div>
             </div>
+
+            {/* PIN Code Delivery Estimator */}
+            {!hasWholesale && (
+              <form onSubmit={handleCheckPin} className="my-3 p-3 rounded-lg bg-[#fbf9f4] border border-[#e4dfd5] space-y-2">
+                <label htmlFor="cart-pin-estimator" className="block text-[11px] font-semibold text-[#171713]">
+                  Check Delivery &amp; COD by PIN Code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="cart-pin-estimator"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={pinInput}
+                    onChange={(e) => {
+                      setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      if (pinEstimate) setPinEstimate(null);
+                    }}
+                    placeholder="e.g. 734001"
+                    className="flex-1 min-h-[38px] px-2.5 py-1.5 text-xs border border-[#b8b5a8] rounded bg-white"
+                  />
+                  <button
+                    type="submit"
+                    disabled={pinLoading}
+                    className="px-3 py-1.5 min-h-[38px] rounded bg-[#23483a] text-white text-xs font-semibold hover:bg-[#1a382d] disabled:opacity-50"
+                  >
+                    {pinLoading ? "Checking…" : "Check"}
+                  </button>
+                </div>
+                {pinEstimate && (
+                  <p className={`text-[11px] font-medium ${pinEstimate.ok ? "text-[#166534]" : "text-[#991b1b]"}`}>
+                    {pinEstimate.ok
+                      ? `${[pinEstimate.city, pinEstimate.state].filter(Boolean).join(", ") || "India"} · Est. ${pinEstimate.estimatedDays}${pinEstimate.codAllowed ? " · COD available" : ""}`
+                      : pinEstimate.error || "Unable to verify PIN."}
+                  </p>
+                )}
+              </form>
+            )}
 
             {hasWholesale && (
               <div style={{ background: "#fff9ed", border: "1px solid #eedab2", borderRadius: 6, padding: "10px 12px", margin: "14px 0", fontSize: 12, color: "#7d5615", display: "flex", gap: 8, alignItems: "start" }}>
@@ -321,31 +448,69 @@ function CartPageContent() {
               />
             </div>
 
-            {!hasWholesale && subtotal < 29900 && (
-              <div className="p-3.5 rounded-lg bg-[#fff8eb] border border-[#f5dfb8] text-xs text-[#85570e] my-3 space-y-1.5">
-                <div className="flex items-center gap-1.5 font-bold text-[#684407]">
-                  <span>⚠️ Cash on Delivery Minimum Order Notice</span>
-                </div>
-                <p>
-                  Orders require a minimum order value of <strong>₹299</strong> for Cash on Delivery home dispatch. Add <strong>₹{Math.ceil((29900 - subtotal) / 100)}</strong> more to place your order.
-                </p>
-                <Link href="/shop" className="inline-block pt-1 text-[#23483a] font-bold underline hover:text-[#142d24]">
-                  + Browse &amp; add more teas to your bag →
-                </Link>
-              </div>
-            )}
+            {(() => {
+              const codMinPaise = storeConfig.codMinRupees * 100;
+              const isBlockedSubMinCod =
+                !hasWholesale &&
+                !isTrialsOnly &&
+                !storeConfig.onlinePaymentEnabled &&
+                storeConfig.codEnabled &&
+                codMinPaise > 0 &&
+                subtotal < codMinPaise;
 
-            <Link
-              href={
-                couponCode
-                  ? `/checkout?coupon=${encodeURIComponent(couponCode)}`
-                  : "/checkout"
+              if (isBlockedSubMinCod) {
+                const deficitRupees = Math.ceil((codMinPaise - subtotal) / 100);
+                const waDigits = storeConfig.whatsappNumber.replace(/\D/g, "") || "917001304853";
+                return (
+                  <>
+                    <div className="p-3.5 rounded-lg bg-[#fff8eb] border border-[#f5dfb8] text-xs text-[#85570e] my-3 space-y-2">
+                      <div className="flex items-center gap-1.5 font-bold text-[#684407]">
+                        <span>⚠️ Online Payments Temporarily Paused · COD Min ₹{storeConfig.codMinRupees}</span>
+                      </div>
+                      <p>
+                        Online payment gateways are temporarily offline. Cash on Delivery requires a minimum order of{" "}
+                        <strong>₹{storeConfig.codMinRupees}</strong>. Add <strong>₹{deficitRupees}</strong> more to unlock COD checkout.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 pt-1">
+                        <Link href="/shop" className="text-[#23483a] font-bold underline hover:text-[#142d24]">
+                          + Browse &amp; add more teas →
+                        </Link>
+                        <a
+                          href={`https://wa.me/${waDigits}?text=${encodeURIComponent(`Hi TeaFloww! My bag is ₹${Math.round(subtotal / 100)} and I'd like help placing my order.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#128c7e] font-semibold underline"
+                        >
+                          Order via WhatsApp →
+                        </a>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      className="button button-primary cart-checkout-button opacity-60 cursor-not-allowed"
+                    >
+                      <span>Add ₹{deficitRupees} more to unlock COD checkout</span>
+                    </button>
+                  </>
+                );
               }
-              className="button button-primary cart-checkout-button"
-            >
-              <span> <StorefrontText id="copy_5c91f1da3fd8bb91" fallback="Continue to checkout" /> </span>
-              <ArrowRight size={18} aria-hidden="true" />
-            </Link>
+
+              return (
+                <Link
+                  href={
+                    couponCode
+                      ? `/checkout?coupon=${encodeURIComponent(couponCode)}`
+                      : "/checkout"
+                  }
+                  className="button button-primary cart-checkout-button"
+                >
+                  <span> <StorefrontText id="copy_5c91f1da3fd8bb91" fallback="Continue to checkout" /> </span>
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+              );
+            })()}
 
             <SubscribeLink bag />
             <ul className="cart-trust-bullets" aria-label="Order perks">

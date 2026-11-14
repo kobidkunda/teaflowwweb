@@ -47,23 +47,21 @@ export function ShopProductCard({
   const isProductSoldOut = inStockVariants.length === 0;
   const retailPackOptions = sortedVariants.filter((v) => v.grams <= 1000).slice(0, 4);
   const packOptions = retailPackOptions.length > 0 ? retailPackOptions : sortedVariants.slice(0, 4);
-  const minGrams = sortedVariants[0]?.grams ?? (activeVariant?.grams || 100);
-  const maxGrams = sortedVariants[sortedVariants.length - 1]?.grams ?? (activeVariant?.grams || 100);
+  const minGrams = packOptions[0]?.grams ?? (activeVariant?.grams || 100);
+  const maxGrams = packOptions[packOptions.length - 1]?.grams ?? (activeVariant?.grams || 100);
 
-  const variantPrices = product.variants.map((v) => v.price_paise).filter((p) => typeof p === "number" && p > 0);
+  const variantPrices = packOptions.map((v) => v.price_paise).filter((p) => typeof p === "number" && p > 0);
   const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : (activeVariant?.price_paise ?? 0);
   const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : (activeVariant?.price_paise ?? 0);
   const hasMultiplePrices = minPrice !== maxPrice;
   const priceDisplay = hasMultiplePrices ? `${formatINR(minPrice)} – ${formatINR(maxPrice)}` : (activeVariant ? formatINR(activeVariant.price_paise) : "");
 
-  const allWholesaleSlabs = product.variants.flatMap((v) =>
-    (v.wholesale_slabs || []).map((s) => ({
-      ...s,
-      regularPricePaise: v.price_paise,
-    }))
-  );
-  const bestWholesaleSlab = allWholesaleSlabs.length > 0
-    ? [...allWholesaleSlabs].sort((a, b) => a.price_paise - b.price_paise)[0]
+  const activeVariantSlabs = (activeVariant?.wholesale_slabs || []).map((s) => ({
+    ...s,
+    regularPricePaise: activeVariant?.price_paise ?? 0,
+  }));
+  const bestWholesaleSlab = activeVariantSlabs.length > 0
+    ? [...activeVariantSlabs].sort((a, b) => a.price_paise - b.price_paise)[0]
     : null;
 
   if (!activeVariant) return null;
@@ -326,10 +324,10 @@ export function ShopProductCard({
 
             <div
               className="tf-mockup-rating-wrap"
-              aria-label={`Format: ${activeVariant.grams}g${product.elevation_display ? `, elevation ${product.elevation_display}` : ""}`}
+              aria-label={`Format: ${formatPackWeight(activeVariant.grams)}${product.elevation_display ? `, elevation ${product.elevation_display}` : ""}`}
             >
-              <span className="tf-mockup-review-count">
-                {activeVariant.grams}g{product.elevation_display ? ` • ${product.elevation_display}` : ""}
+              <span className="tf-mockup-review-count whitespace-nowrap">
+                {formatPackWeight(activeVariant.grams)}{product.elevation_display ? ` • ${product.elevation_display.replace(/\s*\/\s*m/g, "m")}` : ""}
               </span>
             </div>
           </div>

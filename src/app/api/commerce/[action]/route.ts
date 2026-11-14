@@ -150,7 +150,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
 
       if (p.currencyAcceptance !== quote.currency || (quote.input.address.country !== "IN" && quote.currency === "INR" && !p.inrAcceptance)) throw new CommerceError("Confirm the payable currency before continuing.");
       getDb().prepare("INSERT INTO commerce_events (id,kind,document,created_ms) VALUES (?,'currency_consent',?,?) ON CONFLICT(id) DO NOTHING").run(`currency-consent:${quote.id}`, JSON.stringify({ quoteId: quote.id, currency: quote.currency, totalMinor: quote.totalMinor, inrAcceptance: p.inrAcceptance }), Date.now());
-      return json(await startPayment(quote.id, session, p.idempotencyKey), session);
+      const paymentResult = await startPayment(quote.id, session, p.idempotencyKey);
+      try {
+        const cookieHeader = request.headers.get("cookie") || "";
+        const fbc = /(?:^|;\s*)_fbc=([^;]+)/.exec(cookieHeader)?.[1];
+        const fbp = /(?:^|;\s*)_fbp=([^;]+)/.exec(cookieHeader)?.[1];
+        const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || undefined;
+        const userAgent = request.headers.get("user-agent") || undefined;
+        const sourceUrl = request.headers.get("referer") || undefined;
+        if (fbc || fbp || clientIp || userAgent) {
+          const { saveOrderAttribution } = await import("@/lib/seo/metaCapi");
+          saveOrderAttribution(paymentResult.orderId, {
+            ...(fbc ? { fbc: decodeURIComponent(fbc) } : {}),
+            ...(fbp ? { fbp: decodeURIComponent(fbp) } : {}),
+            clientIp,
+            userAgent,
+            sourceUrl,
+          });
+        }
+      } catch {}
+      return json(paymentResult, session);
     }
     if (action === "change-to-cod") {
       const payload = typeof input === "object" && input !== null ? { ...(input as Record<string, unknown>) } : {};

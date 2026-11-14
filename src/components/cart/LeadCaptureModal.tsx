@@ -22,7 +22,7 @@ export function LeadCaptureModal() {
   const [copied, setCopied] = useState(false);
 
   const phoneInputRef = useRef<HTMLInputElement>(null);
-  const modalBoxRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
 
   const isSuppressed = useCallback(() => {
@@ -122,45 +122,20 @@ export function LeadCaptureModal() {
 
     previouslyFocusedElementRef.current = document.activeElement as HTMLElement | null;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        handleDismiss();
-      }
-      // Simple focus trap
-      if (e.key === "Tab" && modalBoxRef.current) {
-        const focusables = modalBoxRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusables.length > 0) {
-          const first = focusables[0];
-          const last = focusables[focusables.length - 1];
-          if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
-        }
-      }
-    };
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
 
-    document.addEventListener("keydown", handleKeyDown);
-
-    // Focus initial input
     const timer = setTimeout(() => {
       phoneInputRef.current?.focus();
     }, 50);
 
-    // Prevent background scrolling
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       clearTimeout(timer);
-      document.body.style.overflow = originalOverflow;
+      if (dialog?.open) {
+        dialog.close();
+      }
       if (previouslyFocusedElementRef.current) {
         previouslyFocusedElementRef.current.focus();
       }
@@ -238,40 +213,34 @@ export function LeadCaptureModal() {
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
+      className="tf-lead-dialog"
       aria-labelledby="lead-modal-title"
       aria-describedby="lead-modal-desc"
+      onCancel={(e) => {
+        e.preventDefault();
+        handleDismiss();
+      }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const rect = dialog.getBoundingClientRect();
+        const clickedOutside =
+          e.clientX < rect.left ||
+          e.clientX > rect.right ||
+          e.clientY < rect.top ||
+          e.clientY > rect.bottom;
+        if (clickedOutside) {
           handleDismiss();
         }
       }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        backgroundColor: "rgba(16, 26, 20, 0.72)",
-        backdropFilter: "blur(6px)",
-        WebkitBackdropFilter: "blur(6px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "16px",
-      }}
     >
       <div
-        ref={modalBoxRef}
         style={{
           position: "relative",
           width: "100%",
-          maxWidth: "480px",
-          backgroundColor: "#ffffff",
-          borderRadius: "16px",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.35)",
           padding: "32px 28px",
-          border: "1px solid rgba(220, 215, 205, 0.8)",
           fontFamily: "inherit",
           color: "#18231c",
         }}
@@ -315,6 +284,7 @@ export function LeadCaptureModal() {
 
             {errorMessage && (
               <div
+                id="lead-modal-error"
                 role="alert"
                 style={{
                   backgroundColor: "#fdf2f2",
@@ -330,27 +300,39 @@ export function LeadCaptureModal() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <form onSubmit={handleSubmit} noValidate style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
               <div>
                 <label
                   htmlFor="lead-phone-input"
                   style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#2b3b30", marginBottom: "6px" }}
                 > <StorefrontText id="copy_e6aead37a2cfc1ce" fallback="WhatsApp / Mobile Number" /> <span style={{ color: "#b91c1c" }}>*</span>
                 </label>
+                <span id="lead-phone-hint" style={{ display: "block", fontSize: "12px", color: "#556358", marginBottom: "6px" }}>
+                  10-15 digits with country code (e.g. +91 98320 12345)
+                </span>
                 <input
                   id="lead-phone-input"
+                  name="phoneNumber"
                   ref={phoneInputRef}
                   type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  enterKeyHint="next"
                   required
+                  aria-invalid={errorMessage ? "true" : "false"}
+                  aria-describedby={errorMessage ? "lead-phone-hint lead-modal-error" : "lead-phone-hint"}
                   placeholder="+91 98320 12345"
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onChange={(e) => {
+                    setPhoneNumber(e.target.value);
+                    if (errorMessage) setErrorMessage(null);
+                  }}
                   style={{
                     width: "100%",
                     padding: "12px 14px",
                     borderRadius: "8px",
                     border: "1px solid #c7d2ca",
-                    fontSize: "15px",
+                    fontSize: "16px",
                     outline: "none",
                     boxSizing: "border-box",
                   }}
@@ -365,7 +347,10 @@ export function LeadCaptureModal() {
                 </label>
                 <input
                   id="lead-name-input"
+                  name="customerName"
                   type="text"
+                  autoComplete="name"
+                  enterKeyHint="send"
                   placeholder="e.g. Tenzing"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
@@ -374,7 +359,7 @@ export function LeadCaptureModal() {
                     padding: "12px 14px",
                     borderRadius: "8px",
                     border: "1px solid #c7d2ca",
-                    fontSize: "15px",
+                    fontSize: "16px",
                     outline: "none",
                     boxSizing: "border-box",
                   }}
@@ -517,6 +502,6 @@ export function LeadCaptureModal() {
           </div>
         )}
       </div>
-    </div>
+    </dialog>
   );
 }

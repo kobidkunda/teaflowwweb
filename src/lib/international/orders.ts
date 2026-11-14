@@ -13,6 +13,7 @@ import { enqueue } from "./store";
 import { getActiveRazorpayCredentials, getPaymentSettings, resolveActiveGateway, type CommerceStream } from "@/lib/paymentSettings";
 import { getActiveShiprocketCredentials, getShippingSettings } from "@/lib/shippingSettings";
 import { getActiveYoupiClient } from "@/lib/youpi/config";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 import type { YoupiWebhookEvent } from "@/lib/youpi/client";
 import { markCartConverted } from "@/lib/abandonedCarts";
 export type LiveOrder = { id: string; owner: string; idempotency_key: string; quote_id: string; document: string; payment_status: string;
@@ -85,6 +86,31 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
     const isWholesaleBankTransfer = Boolean(q.wholesale?.isWholesale && (q.wholesale.advancePercent === 0 || q.input.method === "bank_transfer"));
     const status = q.input.method === "cod" ? "cod_due" : isWholesaleBankTransfer ? "pending_bank_transfer" : "creating";
     db.prepare("INSERT INTO commerce_orders (id,owner,idempotency_key,quote_id,document,payment_status,reserved_until,created_ms) VALUES (?,?,?,?,?,?,?,?)").run(id, owner, key, quoteId, JSON.stringify(q), status, q.expires, Date.now());
+    dispatchNotificationEvent({
+      event: "order",
+      source: "/api/international/orders",
+      referenceId: id,
+      summary: `Order ${id.slice(0, 8)} (${status}) — ${q.input.address.name} (${q.currency} ${(q.totalPaise / 100).toFixed(2)})`,
+      data: {
+        orderId: id,
+        quoteId,
+        paymentStatus: status,
+        paymentMethod: q.input.method ?? "online",
+        currency: q.currency,
+        totalPaise: q.totalPaise,
+        shippingPaise: q.shippingPaise,
+        taxPaise: q.taxPaise,
+        customer: q.input.address,
+        lines: q.lines.map((l) => ({
+          title: l.name,
+          variant: String(l.variantId),
+          quantity: l.quantity,
+          unitPaise: Math.round(l.pricePaise / (l.quantity || 1)),
+          trialId: l.trialId ?? null,
+        })),
+      },
+      dedupeKey: `order:${id}`,
+    });
     for (const l of q.lines) {
       if (l.trialId) {
         if (l.trialTracked) db.prepare("INSERT INTO tea_trial_reservations(order_id,trial_id,quantity) VALUES (?,?,?)").run(id, l.trialId, l.quantity);
@@ -111,6 +137,9 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
           }).catch(() => {});
         }
       } catch {}
+      import("@/lib/seo/metaCapi").then(({ sendMetaServerPurchaseEvent }) => {
+        sendMetaServerPurchaseEvent(id, q).catch(() => {});
+      }).catch(() => {});
     }
     return { row: liveOrder(id), created: true };
   })();
@@ -334,6 +363,9 @@ export function applyPaymentEvent(id: string, raw: unknown) {
                   }).catch(() => {});
                 }
               } catch {}
+              import("@/lib/seo/metaCapi").then(({ sendMetaServerPurchaseEvent }) => {
+                sendMetaServerPurchaseEvent(row.id, q).catch(() => {});
+              }).catch(() => {});
             }
           }
         } else if (currentRow.gateway_payment_id !== p.id) {
@@ -425,6 +457,9 @@ export function applyYoupiPaymentEvent(deliveryId: string, event: YoupiWebhookEv
                   .catch(() => {});
               }
             } catch {}
+            import("@/lib/seo/metaCapi").then(({ sendMetaServerPurchaseEvent }) => {
+              sendMetaServerPurchaseEvent(row.id, q).catch(() => {});
+            }).catch(() => {});
           }
         }
       }
@@ -545,15 +580,16 @@ export function switchOrderToCod(id: string, token: string): LiveOrder {
     if (!shipSettings.cod_enabled) {
       throw new CommerceError("Cash on delivery is currently disabled.");
     }
+    const isTrialsOnly = q.lines.length > 0 && q.lines.every((l) => Boolean(l.trialId));
     const subtotalRupees = Math.round(q.subtotalPaise / 100);
-    if (shipSettings.cod_min_rupees > 0 && subtotalRupees < shipSettings.cod_min_rupees) {
+    if (!isTrialsOnly && shipSettings.cod_min_rupees > 0 && subtotalRupees < shipSettings.cod_min_rupees) {
       throw new CommerceError(`Cash on delivery requires a minimum bag value of ₹${shipSettings.cod_min_rupees}.`);
     }
     if (shipSettings.cod_max_rupees > 0 && subtotalRupees > shipSettings.cod_max_rupees) {
       throw new CommerceError(`Cash on delivery is available for orders up to ₹${shipSettings.cod_max_rupees}.`);
     }
 
-    const codFeePaise = shipSettings.cod_fee_paise;
+    const codFeePaise = isTrialsOnly ? 0 : shipSettings.cod_fee_paise;
     const previousMethod = q.input.method;
     const updatedInput = { ...q.input, method: "cod" as const };
     
@@ -623,6 +659,9 @@ export function switchOrderToCod(id: string, token: string): LiveOrder {
         })
         .catch(() => {});
     }
+    import("@/lib/seo/metaCapi").then(({ sendMetaServerPurchaseEvent }) => {
+      sendMetaServerPurchaseEvent(id, updatedQuote).catch(() => {});
+    }).catch(() => {});
 
     return liveOrder(id);
   })();

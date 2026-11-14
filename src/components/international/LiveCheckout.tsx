@@ -6,7 +6,7 @@ import type { quoteAnalytics } from "@/lib/international/analytics";
 import type { CustomerAddress } from "@/lib/customerAddresses";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo } from "@/lib/seo/tracking";
+import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo, trackCheckoutDiagnostic } from "@/lib/seo/tracking";
 import { useCart } from "@/components/CartProvider";
 import { useInternational } from "./InternationalProvider";
 import { formatMoney } from "@/lib/international/money";
@@ -214,6 +214,7 @@ export function LiveCheckout() {
     return () => window.removeEventListener(CONSENT_EVENT, record);
   }, [cart.items, cart.subtotal]);
   const t = (id: string) => ctx?.texts[id] || id;
+  const CHECKOUT_DRAFT_KEY = "teafloww_checkout_draft_v1";
   const [country, setCountry] = useState(ctx?.country || "IN");
 
   const [customer, setCustomer] = useState<{ id: string; name?: string; email: string; phone?: string } | null>(null);
@@ -230,6 +231,67 @@ export function LiveCheckout() {
     state: "",
     postcode: "",
   });
+  const draftRestoredRef = useRef(false);
+  const lastAutoPinRef = useRef("");
+
+  // Restore saved checkout draft from sessionStorage (prevents data loss on Edit Bag Items)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { formData?: Partial<typeof formData>; country?: string };
+      if (parsed.formData && Object.values(parsed.formData).some((v) => typeof v === "string" && v.trim())) {
+        draftRestoredRef.current = true;
+        setFormData((prev) => ({ ...prev, ...parsed.formData }));
+      }
+      if (parsed.country && typeof parsed.country === "string") {
+        setCountry(parsed.country);
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  }, []);
+
+  // Persist checkout form data & country to sessionStorage as user types
+  useEffect(() => {
+    try {
+      const hasAny = Object.values(formData).some((v) => v.trim().length > 0);
+      if (hasAny) {
+        sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify({ formData, country }));
+      }
+    } catch {
+      // sessionStorage unavailable
+    }
+  }, [formData, country]);
+
+  // PIN-to-City/State auto-fill for 6-digit Indian PIN codes
+  useEffect(() => {
+    if (country !== "IN") return;
+    const pin = formData.postcode.trim();
+    if (!/^[1-9][0-9]{5}$/.test(pin) || lastAutoPinRef.current === pin) return;
+    lastAutoPinRef.current = pin;
+    let active = true;
+    fetch(`/api/shipping/pincode-lookup?pincode=${encodeURIComponent(pin)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data?.ok) return;
+        const matchedState = data.state
+          ? INDIAN_STATES.find((s) => s.toLowerCase() === String(data.state).trim().toLowerCase()) || ""
+          : "";
+        setFormData((prev) => ({
+          ...prev,
+          city: prev.city.trim() ? prev.city : data.city || prev.city,
+          state: prev.state.trim() ? prev.state : matchedState || prev.state,
+        }));
+        if (matchedState) {
+          setFieldErrors((prev) => ({ ...prev, state: "", ...(data.city ? { city: "" } : {}) }));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [country, formData.postcode]);
 
   // Fetch logged in customer and their saved addresses
   useEffect(() => {
@@ -251,7 +313,7 @@ export function LiveCheckout() {
             if (!active || !addrData?.addresses?.length) return;
             setSavedAddresses(addrData.addresses);
             const def = addrData.addresses.find((a: CustomerAddress) => a.is_default === 1) || addrData.addresses[0];
-            if (def) {
+            if (def && !draftRestoredRef.current) {
               setSelectedAddressId(def.id);
               const loadedAddr = {
                 name: def.name || data.customer.name || "",
@@ -583,7 +645,13 @@ export function LiveCheckout() {
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    const errorKeys = Object.keys(errors);
+    if (errorKeys.length > 0) {
+      trackCheckoutDiagnostic("address_validation", "validation_failed", errorKeys.join(","));
+      const firstField = form.current?.querySelector(`[name="${errorKeys[0]}"]`) as HTMLElement | null;
+      firstField?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    return errorKeys.length === 0;
   };
 
   // Auto-sync checkout contact & partial shipping details to abandoned cart as user types
@@ -786,6 +854,7 @@ export function LiveCheckout() {
     } catch (e) {
       if (sequence !== requestSequence.current || latestInput.current !== inputSnapshot) return;
       const calcMsg = e instanceof Error ? e.message : "Unable to calculate total.";
+      trackCheckoutDiagnostic("shipping_quote", "quote_failed", calcMsg.slice(0, 80));
       setError(calcMsg);
       if (!silent) {
         showErrorModal(calcMsg);
@@ -900,12 +969,14 @@ export function LiveCheckout() {
           return;
         }
         cart.clear();
+        try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch {}
         window.location.assign(resultUrl);
         return;
       }
 
       if (method === "bank_transfer" || p.preferredMethod === "bank_transfer" || p.paymentStatus === "pending_bank_transfer") {
         cart.clear();
+        try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch {}
         window.location.assign(resultUrl);
         return;
       }
@@ -931,6 +1002,7 @@ export function LiveCheckout() {
         description: "Direct-from-origin Himalayan orthodox teas",
         handler: () => {
           cart.clear();
+          try { sessionStorage.removeItem(CHECKOUT_DRAFT_KEY); } catch {}
           window.location.assign(resultUrl);
         },
         modal: { ondismiss: () => setBusy(false) },
@@ -974,21 +1046,22 @@ export function LiveCheckout() {
 
   // Minimum Delivery Order & Free shipping threshold calculations
   const cartSubtotalRupees = Math.round((cart.subtotal || 0) / 100);
-  const minDeliveryOrder = paymentConfig?.shipping.minDeliveryOrderRupees || 0;
+  const isTrialsOnly = cart.items.length > 0 && cart.items.every((i) => Boolean(i.trialId && String(i.trialId).trim()));
+  const minDeliveryOrder = isTrialsOnly ? 0 : (paymentConfig?.shipping.minDeliveryOrderRupees || 0);
   const isBelowMinDeliveryOrder = country === "IN" && minDeliveryOrder > 0 && cartSubtotalRupees < minDeliveryOrder;
   const minOrderDeficit = Math.max(0, minDeliveryOrder - cartSubtotalRupees);
 
   const freeThreshold = paymentConfig?.shipping.freeShippingThresholdRupees || 599;
-  const remainingForFree = Math.max(0, freeThreshold - cartSubtotalRupees);
-  const shippingProgressPercent = Math.min(100, Math.round((cartSubtotalRupees / freeThreshold) * 100));
+  const remainingForFree = isTrialsOnly ? 0 : Math.max(0, freeThreshold - cartSubtotalRupees);
+  const shippingProgressPercent = isTrialsOnly ? 100 : Math.min(100, Math.round((cartSubtotalRupees / freeThreshold) * 100));
 
   const upiValue = paymentConfig?.discounts.upi.value || 2;
   const cardValue = paymentConfig?.discounts.card.value || 1;
 
   const codConfig = paymentConfig?.discounts.cod;
   const codEnabled = country === "IN" && (codConfig?.enabled ?? true);
-  const codFee = codConfig?.feeRupees ?? Math.round((codConfig?.feePaise || 5000) / 100);
-  const codMin = codConfig?.minRupees ?? 100;
+  const codFee = isTrialsOnly ? 0 : (codConfig?.feeRupees ?? Math.round((codConfig?.feePaise || 5000) / 100));
+  const codMin = isTrialsOnly ? 0 : (codConfig?.minRupees ?? 100);
   const codMax = codConfig?.maxRupees ?? 5000;
   const isCodSubtotalValid = (!codMin || cartSubtotalRupees >= codMin) && (!codMax || cartSubtotalRupees <= codMax);
 
@@ -1142,7 +1215,7 @@ export function LiveCheckout() {
           </div>
         )}
 
-        <form ref={form} onSubmit={handleFormSubmit} className="tf-ops-card space-y-6">
+        <form ref={form} onSubmit={handleFormSubmit} noValidate className="tf-ops-card space-y-6">
           <div>
             <h2 className="text-2xl font-serif text-[#171713] font-normal mb-1">{t("checkout")}</h2>
             <p className="text-sm text-[#46524a]">1. Enter your delivery address details below.</p>
@@ -1356,7 +1429,8 @@ export function LiveCheckout() {
                   placeholder={country === "IN" ? "734005" : "ZIP / Postal"}
                   value={formData.postcode}
                   onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, postcode: e.target.value }));
+                    const nextVal = country === "IN" ? e.target.value.replace(/\D/g, "").slice(0, 6) : e.target.value;
+                    setFormData((prev) => ({ ...prev, postcode: nextVal }));
                     setFieldErrors((prev) => ({ ...prev, postcode: "" }));
                   }}
                   className={`w-full min-h-[46px] border ${fieldErrors.postcode ? "border-red-500 bg-red-50" : "border-[#b8b5a8] bg-[#fffefa]"} rounded-md px-3 py-2 text-sm`}
@@ -1622,7 +1696,7 @@ export function LiveCheckout() {
                         Cash on Delivery
                       </span>
                       <span className="text-[11px] font-semibold text-[#854d0e] bg-[#fef3c7] px-2 py-0.5 rounded-full">
-                        +₹{codFee} Fee {codMin > 0 || codMax < 100000 ? `· ₹${codMin}–₹${codMax}` : ""}
+                        {isTrialsOnly ? "Free · No Min Limit" : `+₹${codFee} Fee ${codMin > 0 || codMax < 100000 ? `· ₹${codMin}–₹${codMax}` : ""}`}
                       </span>
                     </div>
                     <p className="text-[#737067] leading-tight">
@@ -1643,7 +1717,7 @@ export function LiveCheckout() {
           {/* Coupon Code Input */}
           <div className="pt-4 border-t border-[#e4dfd5]">
             <label className="flex flex-col gap-1 text-xs font-semibold text-[#171713]">
-              {t("coupon")}
+              Coupon code
               <div className="flex gap-2">
                 <input
                   name="coupon"
@@ -1660,7 +1734,7 @@ export function LiveCheckout() {
                     } catch {}
                   }}
                   maxLength={24}
-                  placeholder="e.g. HARVEST10"
+                  placeholder="e.g. WELCOME10"
                   className="flex-1 min-h-[46px] border border-[#b8b5a8] rounded-md px-3 py-2 bg-[#fffefa] text-sm uppercase tracking-wider"
                 />
                 <button
@@ -1722,42 +1796,18 @@ export function LiveCheckout() {
             </div>
           )}
 
-          {/* Calculate Quote / Review Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={busy || !cart.items.length}
-              className="w-full min-h-[48px] rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              {busy ? "Calculating authoritative rates…" : quote ? "Update Order Total →" : "Review Order & Confirm Total →"}
-            </button>
-          </div>
-
-          {/* Stuck at Checkout Direct Assistance Callout */}
-          <div className="pt-3 border-t border-[#e4dfd5] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#23483a]">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-[#25D366]/20 flex items-center justify-center shrink-0">
-                <WhatsAppIcon size={16} color="#128C7E" />
-              </div>
-              <div>
-                <p className="font-semibold text-[#171713]">Stuck or prefer ordering via chat?</p>
-                <p className="text-[11px] text-[#526359]">
-                  Chat directly with our Siliguri dispatch desk on WhatsApp ({paymentConfig?.whatsappNumber || "+91 7001304853"})
-                </p>
-              </div>
+          {/* Calculate Quote / Validate Button (hidden once live quote is ready to avoid two-click confusion) */}
+          {!quote && (
+            <div>
+              <button
+                type="submit"
+                disabled={busy || !cart.items.length}
+                className="w-full min-h-[48px] rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {busy ? "Calculating authoritative rates…" : "Calculate Delivery & Total →"}
+              </button>
             </div>
-            <a
-              href={checkoutWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#f0f9f4] hover:bg-[#e1f5eb] text-[#128c7e] border border-[#c3ead4] font-semibold text-xs transition-colors shrink-0 shadow-2xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]"
-              aria-label="Open WhatsApp chat for live checkout assistance (opens in a new tab)"
-            >
-              <WhatsAppIcon size={15} color="#25D366" />
-              <span>Ping on WhatsApp →</span>
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-          </div>
+          )}
         </form>
       </div>
 
@@ -1830,29 +1880,6 @@ export function LiveCheckout() {
               </p>
             </div>
           </div>
-
-          {/* Upfront COD Minimum Order Warning */}
-          {!isWholesale && country === "IN" && !isCodSubtotalValid && (
-            <div className="p-3.5 rounded-lg bg-[#fff8eb] border border-[#f0c78a] text-xs text-[#8a5300] space-y-2">
-              <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-[#d97706] shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <strong className="block font-semibold text-[#8a5300]">
-                    Cash on Delivery Minimum: ₹{codMin}
-                  </strong>
-                  <p className="text-[11px] text-[#784300] mt-0.5">
-                    Your current bag is ₹{cartSubtotalRupees}. Add ₹{Math.max(0, codMin - cartSubtotalRupees)} more to place your Cash on Delivery order.
-                  </p>
-                </div>
-              </div>
-              <Link
-                href="/shop"
-                className="inline-flex items-center justify-center w-full py-2 px-3 bg-[#23483a] hover:bg-[#1a382d] text-white rounded-md text-xs font-semibold transition-colors"
-              >
-                Add More Teas to Bag →
-              </Link>
-            </div>
-          )}
 
           {/* Error Notice */}
           {error && (
@@ -2042,7 +2069,7 @@ export function LiveCheckout() {
                 <div className="flex justify-between items-center py-1">
                   <span>Estimated Delivery</span>
                   <strong className="text-[#23483a]">
-                    {remainingForFree === 0 ? "FREE (₹499+ unlocked)" : "Calculated after PIN entry"}
+                    {isTrialsOnly ? "FREE (Included in Trial)" : remainingForFree === 0 ? `FREE (₹${freeThreshold}+ unlocked)` : "Calculated after PIN entry"}
                   </strong>
                 </div>
                 {method === "cod" && codFee > 0 && (
@@ -2061,49 +2088,17 @@ export function LiveCheckout() {
                       Calculating live rates &amp; instant discounts…
                     </p>
                   </div>
-                ) : isAddressComplete(formData, country) ? (
-                  <div className="py-2 space-y-2.5">
-                    <Truck className="w-7 h-7 mx-auto text-[#23483a] opacity-75" />
-                    <p className="max-w-xs mx-auto font-medium text-[#171713]">
-                      Delivery details ready. Calculate your order total to proceed.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => computeQuote(method, formData, country, false)}
-                      className="px-4 py-2 bg-[#23483a] text-white rounded-md text-xs font-semibold hover:bg-[#1a382d] transition-colors"
-                    >
-                      Confirm Delivery &amp; Total →
-                    </button>
-                  </div>
                 ) : (
                   <>
                     <Truck className="w-7 h-7 mx-auto text-[#b39156] opacity-75" />
                     <p className="max-w-xs mx-auto">
-                      Enter your delivery address and 6-digit PIN code on the left to lock in your final delivery quote and place your order.
+                      Enter your delivery address and 6-digit PIN code on the left to automatically calculate your final delivery quote and place your order.
                     </p>
                   </>
                 )}
               </div>
             </div>
           )}
-
-          {/* WhatsApp Live Checkout Assistance */}
-          <div className="pt-4 border-t border-[#e4dfd5] space-y-1.5">
-            <a
-              href={checkoutWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full min-h-[44px] flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#f0f9f4] hover:bg-[#e1f5eb] text-[#128c7e] border border-[#c3ead4] text-xs font-semibold transition-colors shadow-2xs group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#25D366]"
-              aria-label="Ping on WhatsApp for live checkout help and order verification (opens in new tab)"
-            >
-              <WhatsAppIcon size={16} color="#25D366" />
-              <span>Need live help? Ping on WhatsApp →</span>
-              <span className="sr-only"> (opens in a new tab)</span>
-            </a>
-            <p className="text-[11px] text-center text-[#737067]">
-              Real-time checkout assistance from our Siliguri dispatch desk (+91 7001304853)
-            </p>
-          </div>
         </div>
       </aside>
 

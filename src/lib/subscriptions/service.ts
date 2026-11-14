@@ -10,6 +10,7 @@ import { shippingRequest } from '@/lib/international/providers';
 import { subscriptionPolicy, plan, cycle, openCycle, record } from './store';
 import { DAY, CONSENT, dispatchDate, nextDispatch, previewSchema, actionSchema, type PlanDocument, type Cycle } from './model';
 import { releaseSubscriptionInventory } from './guards';
+import { dispatchNotificationEvent } from '@/lib/notifications/dispatch';
 const owner = (id: string) => `subscription:${id}`;
 function futureDate(value: string) {
   let ms: number;
@@ -41,6 +42,22 @@ export function enrollSubscription(raw: unknown, customerId: string) {
     db.prepare('INSERT INTO tea_subscription_events(id,subscription_id,action,document,created_ms) VALUES (?,?,?,?,?)').run(`enroll:${q.id}`, id, 'consent', JSON.stringify({ version: ctx.policy.version, consent: CONSENT, totalPaise: q.totalPaise }), now);
     newCycle(plan(id));
     enqueue('subscription_tick', {}, `subscription:enroll:${id}`);
+    dispatchNotificationEvent({
+      event: 'subscription',
+      source: '/api/subscriptions/enroll',
+      referenceId: id,
+      summary: `New subscription enrolled (${ctx.intervalDays}d) — ${q.input.address.name}`,
+      data: {
+        action: 'enroll',
+        subscriptionId: id,
+        customerId,
+        intervalDays: ctx.intervalDays,
+        totalPaise: q.totalPaise,
+        currency: q.currency,
+        address: q.input.address,
+      },
+      dedupeKey: `sub:enroll:${id}`,
+    });
     return { subscriptionId: id };
   })();
 }
@@ -97,6 +114,22 @@ export async function commitCycle(raw: unknown, customerId: string) {
     record(sub.id, 'renewal.accepted', { quoteId: q.id, method: q.input.method, totalPaise: q.totalPaise });
     return { q, c: cycle(c.id) };
   })();
+  dispatchNotificationEvent({
+    event: 'subscription',
+    source: '/api/subscriptions/pay',
+    referenceId: info.c.id,
+    summary: `Subscription renewal committed (${info.q.input.method}) — ${info.q.input.address.name}`,
+    data: {
+      action: 'renewal_pay',
+      cycleId: info.c.id,
+      quoteId: info.q.id,
+      customerId,
+      method: info.q.input.method,
+      totalPaise: info.q.totalPaise,
+      currency: info.q.currency,
+    },
+    dedupeKey: `sub:pay:${info.c.id}:${info.q.id}`,
+  });
   return startPayment(info.q.id, owner(customerId), `subscription:${info.c.id}:${info.q.subscription!.generation}`);
 }
 export async function existingPayment(cycleId: string, customerId: string) {
@@ -148,6 +181,18 @@ export async function changeSubscription(raw: unknown, customerId: string) {
     if (action === 'skip') db.prepare('UPDATE tea_subscriptions SET next_ms=? WHERE id=?').run(nextDispatch(p.next_ms, doc.intervalDays), p.id);
     record(p.id, action); return { pending: false };
   })();
+  dispatchNotificationEvent({
+    event: 'subscription',
+    source: '/api/subscriptions/change',
+    referenceId: input.id,
+    summary: `Subscription ${input.action} by customer ${customerId}`,
+    data: {
+      action: input.action,
+      subscriptionId: input.id,
+      customerId,
+      pending: outcome.pending,
+    },
+  });
   return outcome;
 }
 /** Cancel provider booking first. A timeout keeps the cycle blocked for staff reconciliation. */

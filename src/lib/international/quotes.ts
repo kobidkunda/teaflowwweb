@@ -11,6 +11,7 @@ import { convertPaise, gatewayRoundingStep } from "./money";
 import { shippingRate } from "./providers";
 import { getPaymentSettings, calculatePaymentMethodDiscountPaise } from "@/lib/paymentSettings";
 import { getShippingSettings } from "@/lib/shippingSettings";
+import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 export function hash(value: unknown) { return createHash("sha256").update(JSON.stringify(value)).digest("hex"); }
 export async function createQuote(raw: unknown, owner: string, subscription?: SubscriptionQuote): Promise<Quote> {
   const input = quoteSchema.parse(raw);
@@ -35,7 +36,19 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
     }
     const id = Number(key.slice(8));
     const row = db.prepare(`SELECT v.id AS "variantId",v.product_id AS "productId",v.price_paise AS "pricePaise",v.grams,v.sku,v.stock,p.name FROM variants v JOIN products p ON p.id=v.product_id WHERE v.id=? AND ${enabledProductCondition("p")} AND p.status='published'`).get(id) as (QuoteLine & { stock: number; pricepaise?: number; variantid?: number; productId?: number; productid?: number }) | undefined;
-    if (!row || row.stock < quantity || m.blockedSkus.includes(row.sku)) throw new CommerceError("A selected tea is unavailable for this destination or quantity.");
+    if (!row) {
+      throw new CommerceError("A selected tea is unavailable for this destination or quantity. (This item may no longer be available — please remove it from your bag and re-add.)");
+    }
+    if (row.stock < quantity) {
+      throw new CommerceError(
+        row.stock <= 0
+          ? `A selected tea is unavailable for this destination or quantity. (${row.name} ${row.grams}g is currently out of stock.)`
+          : `A selected tea is unavailable for this destination or quantity. (${row.name} ${row.grams}g only has ${row.stock} left in stock; you have ${quantity} in your bag.)`
+      );
+    }
+    if (m.blockedSkus.includes(row.sku)) {
+      throw new CommerceError(`A selected tea is unavailable for this destination or quantity. (${row.name} ${row.grams}g is not available for delivery in ${m.name}.)`);
+    }
     const variantId = row.variantId ?? row.variantid ?? id;
     let unitPrice = row.pricePaise ?? row.pricepaise ?? 0;
     let isWholesale = false;
@@ -59,6 +72,7 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
     lines.push({ variantId, quantity, pricePaise: unitPrice, grams: row.grams, sku: row.sku?.trim() || `HTH-${row.productId ?? row.productid}-${variantId}`, name: row.name, isWholesale });
   }
   const hasWholesale = lines.some((l) => Boolean(l.isWholesale));
+  const isTrialsOnly = lines.length > 0 && lines.every((l) => Boolean(l.trialId));
   const subtotalPaise = lines.reduce((s, l) => s + l.pricePaise * l.quantity, 0);
   const coupon = input.coupon ? validateCouponServer(input.coupon, subtotalPaise) : null;
   if (coupon && !coupon.valid) throw new CommerceError(coupon.reason);
@@ -86,8 +100,8 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
     try {
       const shipSettings = getShippingSettings();
 
-      // Minimum delivery order enforcement
-      if (shipSettings.min_delivery_order_paise > 0 && shippingBasis < shipSettings.min_delivery_order_paise) {
+      // Minimum delivery order enforcement (trials-only orders are exempt)
+      if (!isTrialsOnly && shipSettings.min_delivery_order_paise > 0 && shippingBasis < shipSettings.min_delivery_order_paise) {
         const remainingPaise = shipSettings.min_delivery_order_paise - shippingBasis;
         const remainingRupees = Math.ceil(remainingPaise / 100);
         throw new CommerceError(
@@ -95,12 +109,12 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
         );
       }
 
-      // COD eligibility enforcement
+      // COD eligibility enforcement (trials-only orders do not require a minimum order value)
       if (input.method === "cod") {
         if (!shipSettings.cod_enabled) {
           throw new CommerceError("Cash on delivery is not available for this order. (Cash on delivery is currently disabled)");
         }
-        if (shipSettings.cod_min_paise > 0 && shippingBasis < shipSettings.cod_min_paise) {
+        if (!isTrialsOnly && shipSettings.cod_min_paise > 0 && shippingBasis < shipSettings.cod_min_paise) {
           throw new CommerceError(`Cash on delivery is not available for this order. (Requires a minimum order of ₹${shipSettings.cod_min_rupees})`);
         }
         if (shipSettings.cod_max_paise > 0 && shippingBasis > shipSettings.cod_max_paise) {
@@ -121,14 +135,15 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
         freeAbovePaise = null;
       }
       flatShippingPaise = shipSettings.shipping_flat_fee_paise;
-      codFeePaise = shipSettings.cod_fee_paise;
+      codFeePaise = isTrialsOnly ? 0 : shipSettings.cod_fee_paise;
     } catch (err) {
       if (err instanceof CommerceError) throw err;
     }
   } else {
-    if (input.method === "cod" && (!m.cod.enabled || (m.cod.postcodes.length > 0 && !m.cod.postcodes.includes(input.address.postcode)) || shippingBasis < m.cod.minPaise || shippingBasis > m.cod.maxPaise || lines.some(l => m.cod.blockedSkus.includes(l.sku)))) {
+    if (input.method === "cod" && (!m.cod.enabled || (m.cod.postcodes.length > 0 && !m.cod.postcodes.includes(input.address.postcode)) || (!isTrialsOnly && shippingBasis < m.cod.minPaise) || shippingBasis > m.cod.maxPaise || lines.some(l => m.cod.blockedSkus.includes(l.sku)))) {
       throw new CommerceError("Cash on delivery is not available for this order.");
     }
+    if (isTrialsOnly) codFeePaise = 0;
   }
 
   if (input.method === "cod" && input.currency !== "INR") throw new CommerceError("Cash on delivery is payable in INR.");
@@ -170,7 +185,7 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   const override = m.deliveryOverrides.find(r => r.postcodes.includes(input.address.postcode)) || m.deliveryOverrides.find(r => r.states.some(s => s.toLowerCase() === input.address.state.toLowerCase()));
   const threshold = override ? override.freeAbovePaise : freeAbovePaise;
   const baseShipping = override ? override.flatPaise : m.shipping === "flat" ? flatShippingPaise : rate.costPaise;
-  const shippingPaise = hasWholesale
+  const shippingPaise = hasWholesale || isTrialsOnly
     ? 0
     : (!override && m.shipping === "included") || (threshold !== null && shippingBasis >= threshold)
     ? 0
@@ -186,18 +201,20 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
   }
 
   const netMerchandisePaise = Math.max(0, merchandise - paymentDiscountPaise);
-  const taxPaise = Math.round(netMerchandisePaise * m.taxPercent / (m.taxInclusive ? 100 + m.taxPercent : 100));
+  const taxInclusiveEffective = m.taxInclusive || isTrialsOnly;
+  const effectiveDutiesPaise = isTrialsOnly ? 0 : rate.dutiesPaise;
+  const taxPaise = Math.round(netMerchandisePaise * m.taxPercent / (taxInclusiveEffective ? 100 + m.taxPercent : 100));
   const convert = (v: number) => convertPaise(v, fx.rate, input.currency, m.fxMarkupBps, gatewayRoundingStep(input.currency, m.roundingMinor));
-  const components = {
+  const components: Quote["components"] = {
     merchandise: convert(merchandise),
     ...(paymentDiscountPaise > 0 ? { paymentDiscount: -convert(paymentDiscountPaise) } : {}),
     shipping: convert(shippingPaise),
-    duties: convert(rate.dutiesPaise),
-    tax: m.taxInclusive ? 0 : convert(taxPaise),
+    duties: (m.code !== "IN" || effectiveDutiesPaise > 0) ? convert(effectiveDutiesPaise) : 0,
+    tax: taxInclusiveEffective ? 0 : convert(taxPaise),
     cod: input.method === "cod" ? convert(codFeePaise) : 0,
   };
 
-  const totalPaise = netMerchandisePaise + shippingPaise + rate.dutiesPaise + (m.taxInclusive ? 0 : taxPaise) + (input.method === "cod" ? codFeePaise : 0);
+  const totalPaise = netMerchandisePaise + shippingPaise + effectiveDutiesPaise + (taxInclusiveEffective ? 0 : taxPaise) + (input.method === "cod" ? codFeePaise : 0);
 
   let wholesaleMeta: import("./models").WholesaleQuoteMeta | undefined = undefined;
   if (hasWholesale) {
@@ -228,6 +245,31 @@ export async function createQuote(raw: unknown, owner: string, subscription?: Su
     analyticsTaxMinor: convert(taxPaise), components, totalMinor: Object.values(components).reduce((s, v) => s + v, 0), package: pack,
     wholesale: wholesaleMeta };
   db.prepare("INSERT INTO commerce_quotes (id,owner,document,expires_ms) VALUES (?,?,?,?)").run(q.id, owner, JSON.stringify(q), q.expires);
+  dispatchNotificationEvent({
+    event: "quote",
+    source: "/api/international/quotes",
+    referenceId: q.id,
+    summary: `Quote ${q.id.slice(0, 8)} — ${q.input.address.name} (${q.currency} ${(q.totalPaise / 100).toFixed(2)})`,
+    data: {
+      quoteId: q.id,
+      owner,
+      currency: q.currency,
+      subtotalPaise: q.subtotalPaise,
+      discountPaise: q.discountPaise,
+      shippingPaise: q.shippingPaise,
+      taxPaise: q.taxPaise,
+      totalPaise: q.totalPaise,
+      address: q.input.address,
+      lines: q.lines.map((l) => ({
+        title: l.name,
+        variant: String(l.variantId),
+        quantity: l.quantity,
+        unitPaise: Math.round(l.pricePaise / (l.quantity || 1)),
+        trialId: l.trialId ?? null,
+      })),
+    },
+    dedupeKey: `quote:${q.id}`,
+  });
   return q;
 }
 export function getQuote(id: string, owner: string): Quote {

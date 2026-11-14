@@ -21,10 +21,43 @@ export function AddToCartPrompt() {
 
   const [isPaused, setIsPaused] = useState(false);
   const [progress, setProgress] = useState(100);
+  const [shippingConfig, setShippingConfig] = useState<{
+    freeThresholdPaise: number;
+    codMinPaise: number;
+    onlinePaymentEnabled: boolean;
+  }>({
+    freeThresholdPaise: 59900,
+    codMinPaise: 29900,
+    onlinePaymentEnabled: true,
+  });
   const startTimeRef = useRef<number>(Date.now());
   const remainingTimeRef = useRef<number>(AUTO_DISMISS_MS);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const promptRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/commerce/payment-methods")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data) return;
+        const freeRupees = Number(data.shipping?.freeShippingThresholdRupees || 599);
+        const codMinRupees = Number(data.discounts?.cod?.minRupees ?? 100);
+        setShippingConfig({
+          freeThresholdPaise: freeRupees * 100,
+          codMinPaise: codMinRupees * 100,
+          onlinePaymentEnabled: data.onlinePaymentEnabled !== false,
+        });
+      })
+      .catch(() => {});
+    const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
+  const codMinPaise = isTrialsOnly ? 0 : shippingConfig.codMinPaise;
+  const freeThresholdPaise = shippingConfig.freeThresholdPaise;
+
+  return () => {
+      active = false;
+    };
+  }, []);
 
   const isVisible = Boolean(lastAddedItem && !pathname?.startsWith("/checkout"));
 
@@ -37,7 +70,11 @@ export function AddToCartPrompt() {
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
+  const codMinPaise = isTrialsOnly ? 0 : shippingConfig.codMinPaise;
+  const freeThresholdPaise = shippingConfig.freeThresholdPaise;
+
+  return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isVisible, dismissLastAdded]);
 
   // Handle countdown & auto-dismiss with pause on hover/focus
@@ -72,7 +109,11 @@ export function AddToCartPrompt() {
       }
     }, interval);
 
-    return () => {
+    const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
+  const codMinPaise = isTrialsOnly ? 0 : shippingConfig.codMinPaise;
+  const freeThresholdPaise = shippingConfig.freeThresholdPaise;
+
+  return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [lastAddedItem?.id, isVisible, isPaused, dismissLastAdded]);
@@ -86,6 +127,10 @@ export function AddToCartPrompt() {
   // Resolve image either from item, or from cart catalog image store
   const matchedItem = items.find((x) => cartImageKey(x) === cartImageKey(item));
   const imageUrl = item.imageUrl || matchedItem?.imageUrl || null;
+
+  const isTrialsOnly = items.length > 0 && items.every((x) => Boolean(x.trialId && String(x.trialId).trim()));
+  const codMinPaise = isTrialsOnly ? 0 : shippingConfig.codMinPaise;
+  const freeThresholdPaise = shippingConfig.freeThresholdPaise;
 
   return (
     <div
@@ -214,13 +259,20 @@ export function AddToCartPrompt() {
         </div>
 
         {/* Minimum Order / Free Shipping Notification */}
-        {subtotal < 29900 ? (
-          <div className="px-3 py-2 rounded-md bg-[#fff8eb] border border-[#f5dfb8] text-[11px] text-[#85570e] font-medium leading-tight mb-2">
-            <span>Minimum order for Cash on Delivery is ₹299. Add ₹{Math.ceil((29900 - subtotal) / 100)} more to checkout.</span>
+        {isTrialsOnly ? (
+          <div className="px-3 py-1.5 rounded-md bg-[#f0f9f4] border border-[#c3ead4] text-[11px] text-[#166534] font-semibold leading-tight mb-2 flex items-center gap-1.5">
+            <Check size={12} strokeWidth={2.5} />
+            <span>Trial kit qualifies for FREE Delivery &amp; Cash on Delivery!</span>
           </div>
-        ) : subtotal < 49900 ? (
+        ) : !shippingConfig.onlinePaymentEnabled && codMinPaise > 0 && subtotal < codMinPaise ? (
+          <div className="px-3 py-2 rounded-md bg-[#fff8eb] border border-[#f5dfb8] text-[11px] text-[#85570e] font-medium leading-tight mb-2">
+            <span>
+              Online payments are temporarily paused. Cash on Delivery requires a ₹{Math.round(codMinPaise / 100)} minimum — add ₹{Math.ceil((codMinPaise - subtotal) / 100)} more to checkout.
+            </span>
+          </div>
+        ) : subtotal < freeThresholdPaise ? (
           <div className="px-3 py-2 rounded-md bg-[#f0f9f4] border border-[#c3ead4] text-[11px] text-[#166534] font-medium leading-tight mb-2">
-            <span>Add ₹{Math.ceil((49900 - subtotal) / 100)} more for FREE Delivery across India!</span>
+            <span>Add ₹{Math.ceil((freeThresholdPaise - subtotal) / 100)} more for FREE Delivery across India!</span>
           </div>
         ) : (
           <div className="px-3 py-1.5 rounded-md bg-[#f0f9f4] border border-[#c3ead4] text-[11px] text-[#166534] font-semibold leading-tight mb-2 flex items-center gap-1.5">

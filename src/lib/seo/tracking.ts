@@ -87,7 +87,7 @@ export function catalogItem(product: { id: number; name: string; category?: stri
 export function pushDataLayerEvent(event: string, params: Record<string, unknown> = {}) {
   // Explicit property allowlist; callers cannot accidentally send contact fields or arbitrary URLs.
   const safe: Record<string, unknown> = {};
-  for (const key of ["lead_type", "interest", "estimated_volume", "search_term", "method", "page_path", "page_title", "page_location", "page_referrer"]) {
+  for (const key of ["lead_type", "interest", "estimated_volume", "search_term", "method", "page_path", "page_title", "page_location", "page_referrer", "checkout_step", "error_code", "error_field"]) {
     if (typeof params[key] === "string") safe[key] = String(params[key]).slice(0, 200);
   }
   return googleEvent(event, safe);
@@ -222,6 +222,13 @@ export function trackLead(leadType: string, meta: Record<string, unknown> = {}) 
   const sent = pushDataLayerEvent("generate_lead", { ...meta, lead_type: leadType });
   metaEvent("Lead", { content_name: leadType });
   return sent;
+}
+export function trackCheckoutDiagnostic(checkoutStep: string, errorCode: string, errorField?: string) {
+  return pushDataLayerEvent("checkout_error", {
+    checkout_step: checkoutStep,
+    error_code: errorCode,
+    ...(errorField ? { error_field: errorField } : {}),
+  });
 }
 
 /** Old bags/editorial cards may lack an SKU. Resolve it rather than sending numeric catalog mismatches. */

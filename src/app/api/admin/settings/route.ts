@@ -8,6 +8,35 @@ export const runtime = "nodejs";
 const optionalNumber = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((val) => (val === "" || val === null || val === undefined ? undefined : val), schema.optional());
 
+const optionalWebhookUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((val) => {
+    if (!val) return true;
+    try {
+      const parsed = new URL(val);
+      return parsed.protocol === "http:" || parsed.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "Webhook URL must be a valid http:// or https:// URL")
+  .optional();
+
+const commaSeparatedEmails = z
+  .string()
+  .trim()
+  .max(1000)
+  .refine((val) => {
+    if (!val) return true;
+    const parts = val
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return parts.every((p) => z.string().email().safeParse(p).success);
+  }, "Notification emails must be a comma-separated list of valid email addresses")
+  .optional();
+
 const settingsSchema = z.object({
   store_name: z.string().min(1, "Store name is required").max(100),
   currency: z.string().min(1, "Currency is required").max(10).default("INR"),
@@ -27,6 +56,16 @@ const settingsSchema = z.object({
   wholesale_bank_upi_id: z.string().max(100).optional(),
   contact_email: z.string().email("Please enter a valid email address"),
   whatsapp_number: z.string().max(30).optional(),
+  notification_emails: commaSeparatedEmails,
+  webhook_secret: z.string().trim().max(256).optional(),
+  webhook_url_enquiry: optionalWebhookUrl,
+  webhook_url_bulk_order: optionalWebhookUrl,
+  webhook_url_lead_modal: optionalWebhookUrl,
+  webhook_url_newsletter: optionalWebhookUrl,
+  webhook_url_private_label: optionalWebhookUrl,
+  webhook_url_quote: optionalWebhookUrl,
+  webhook_url_order: optionalWebhookUrl,
+  webhook_url_subscription: optionalWebhookUrl,
 });
 
 export type StoreSettingsPayload = StoreSettings;

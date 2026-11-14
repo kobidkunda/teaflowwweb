@@ -44,6 +44,17 @@ export interface StoreSettings {
   announcement_highlight: string;
   announcement_link: string;
   announcement_enabled: boolean;
+  // Admin notifications & per-event webhooks
+  notification_emails: string;
+  webhook_secret: string;
+  webhook_url_enquiry: string;
+  webhook_url_bulk_order: string;
+  webhook_url_lead_modal: string;
+  webhook_url_newsletter: string;
+  webhook_url_private_label: string;
+  webhook_url_quote: string;
+  webhook_url_order: string;
+  webhook_url_subscription: string;
 }
 
 export interface UpdateStoreSettingsInput {
@@ -127,6 +138,18 @@ export interface UpdateStoreSettingsInput {
   announcementLink?: string;
   announcement_enabled?: boolean;
   announcementEnabled?: boolean;
+  notification_emails?: string;
+  notificationEmails?: string;
+  webhook_secret?: string;
+  webhookSecret?: string;
+  webhook_url_enquiry?: string;
+  webhook_url_bulk_order?: string;
+  webhook_url_lead_modal?: string;
+  webhook_url_newsletter?: string;
+  webhook_url_private_label?: string;
+  webhook_url_quote?: string;
+  webhook_url_order?: string;
+  webhook_url_subscription?: string;
 }
 
 export function getStoreSettings(): StoreSettings {
@@ -173,8 +196,14 @@ export function getStoreSettings(): StoreSettings {
   const twitter = map.get("social_twitter") || "https://twitter.com/himalayantea";
   const facebook = map.get("social_facebook") || "https://www.facebook.com/himalayanteahouse";
   const youtube = map.get("social_youtube") || "https://www.youtube.com/@himalayanteahouse";
-  const annText = map.get("announcement_text") || "FREE SHIPPING ON ORDERS ABOVE ₹499";
-  const annHighlight = map.get("announcement_highlight") || "✨ FREE SHIPPING ON ORDERS ABOVE ₹499";
+  const freeThresholdRupees = Math.round(freeThreshold / 100) || 599;
+  const defaultAnnText = `FREE SHIPPING ON ORDERS ABOVE ₹${freeThresholdRupees}`;
+  const defaultAnnHighlight = `✨ FREE SHIPPING ON ORDERS ABOVE ₹${freeThresholdRupees}`;
+  const rawAnnText = map.get("announcement_text") || defaultAnnText;
+  const rawAnnHighlight = map.get("announcement_highlight") || defaultAnnHighlight;
+  const autoSync = map.get("announcement_auto_sync") !== "0";
+  const annText = autoSync && /FREE SHIPPING ON ORDERS ABOVE ₹\d+/i.test(rawAnnText) ? defaultAnnText : rawAnnText;
+  const annHighlight = autoSync && /FREE SHIPPING ON ORDERS ABOVE ₹\d+/i.test(rawAnnHighlight) ? defaultAnnHighlight : rawAnnHighlight;
   const annLink = map.get("announcement_link") || "/shop";
   const annEnabled = map.get("announcement_enabled") !== "0";
 
@@ -221,6 +250,16 @@ export function getStoreSettings(): StoreSettings {
     announcement_highlight: annHighlight,
     announcement_link: annLink,
     announcement_enabled: annEnabled,
+    notification_emails: map.get("notification_emails") || email || "",
+    webhook_secret: map.get("webhook_secret") || "",
+    webhook_url_enquiry: map.get("webhook_url_enquiry") || "",
+    webhook_url_bulk_order: map.get("webhook_url_bulk_order") || "",
+    webhook_url_lead_modal: map.get("webhook_url_lead_modal") || "",
+    webhook_url_newsletter: map.get("webhook_url_newsletter") || "",
+    webhook_url_private_label: map.get("webhook_url_private_label") || "",
+    webhook_url_quote: map.get("webhook_url_quote") || "",
+    webhook_url_order: map.get("webhook_url_order") || "",
+    webhook_url_subscription: map.get("webhook_url_subscription") || "",
   };
 }
 
@@ -344,6 +383,31 @@ export function updateStoreSettings(input: UpdateStoreSettingsInput): StoreSetti
     upsertStmt.run("announcement_highlight", annHighlight);
     upsertStmt.run("announcement_link", annLink);
     upsertStmt.run("announcement_enabled", annEnabled ? "1" : "0");
+
+    const notificationEmails = input.notification_emails ?? input.notificationEmails;
+    if (notificationEmails !== undefined) {
+      upsertStmt.run("notification_emails", notificationEmails.trim());
+    }
+    const webhookSecret = input.webhook_secret ?? input.webhookSecret;
+    if (webhookSecret !== undefined) {
+      upsertStmt.run("webhook_secret", webhookSecret.trim());
+    }
+    const webhookKeys = [
+      "webhook_url_enquiry",
+      "webhook_url_bulk_order",
+      "webhook_url_lead_modal",
+      "webhook_url_newsletter",
+      "webhook_url_private_label",
+      "webhook_url_quote",
+      "webhook_url_order",
+      "webhook_url_subscription",
+    ] as const;
+    for (const key of webhookKeys) {
+      const val = input[key];
+      if (val !== undefined) {
+        upsertStmt.run(key, val.trim());
+      }
+    }
 
     try {
       const inRow = db.prepare("SELECT document FROM commerce_markets WHERE code = 'IN'").get() as { document: string } | undefined;

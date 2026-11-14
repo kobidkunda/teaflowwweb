@@ -640,4 +640,98 @@ describe("Authoritative International Quotes & Checkout", () => {
     expect(payment.preferredMethod).toBe("cod");
     expect(payment.orderId).toBeDefined();
   });
+
+  it("exempts trials-only orders from COD minimum and delivery/COD fees (all-inclusive trial price)", async () => {
+    const { createQuote } = await import("@/lib/international/quotes");
+    const { updateShippingSettings } = await import("@/lib/shippingSettings");
+    const { getDb } = await import("@/lib/db");
+    const db = getDb();
+
+    // Configure strict storewide COD minimum (₹299), flat shipping (₹99), and COD fee (₹50)
+    updateShippingSettings({
+      cod_enabled: true,
+      cod_min_rupees: 299,
+      cod_max_rupees: 5000,
+      cod_fee_rupees: 50,
+      shipping_flat_fee_rupees: 99,
+      free_shipping_enabled: true,
+      free_shipping_threshold_rupees: 499,
+      min_delivery_order_rupees: 250,
+      cod_postcodes: [],
+    });
+
+    db.prepare(`
+      INSERT OR REPLACE INTO trials (
+        id, slug, title, status, pack_format, net_weight_g, price_paise, sku, inventory_quantity, inventory_policy
+      ) VALUES (
+        'trial-all-inclusive-200', 'trial-all-inclusive-200', 'All-Inclusive Trial Pack', 'draft',
+        '4x50g_sachets', 200, 20000, 'KIT-TRIAL-200', 10, 'track'
+      )
+    `).run();
+
+    db.prepare("DELETE FROM trial_components WHERE trial_id = 'trial-all-inclusive-200'").run();
+    for (let i = 0; i < 4; i++) {
+      db.prepare(`
+        INSERT INTO trial_components (id, trial_id, slot_index, name, regular_variant_id, weight_g, quantity)
+        VALUES (?, 'trial-all-inclusive-200', ?, ?, ?, 50, 1)
+      `).run(`comp-inc-${i}`, i, `Slot Tea ${i + 1}`, testVariantId);
+    }
+
+    db.prepare("UPDATE trials SET status = 'published' WHERE id = 'trial-all-inclusive-200'").run();
+
+    // 1. Trials-only COD order at ₹200 (< ₹299 COD min and < ₹250 min delivery order) succeeds with ₹0 shipping and ₹0 COD fee
+    const trialOnlyQuote = await createQuote(
+      {
+        address: {
+          name: "Trial Buyer",
+          email: "trial@teafloww.com",
+          phone: "+91 98765 43210",
+          line1: "Hill Cart Road",
+          city: "Siliguri",
+          state: "West Bengal",
+          postcode: "734005",
+          country: "IN",
+        },
+        currency: "INR",
+        locale: "en" as const,
+        method: "cod" as const,
+        items: [{ variantId: 0, trialId: "trial-all-inclusive-200", quantity: 1 }],
+      },
+      "session-trial-only"
+    );
+
+    expect(trialOnlyQuote.components.shipping).toBe(0);
+    expect(trialOnlyQuote.components.cod).toBe(0);
+    expect(trialOnlyQuote.components.tax).toBe(0);
+    expect(trialOnlyQuote.components.duties).toBe(0);
+    expect(trialOnlyQuote.totalMinor).toBe(20000);
+    expect(trialOnlyQuote.totalPaise).toBe(20000);
+
+    // 2. Mixed cart below ₹299 still enforces COD minimum
+    db.prepare("UPDATE variants SET price_paise = 6000 WHERE id = ?").run(testVariantId);
+    await expect(
+      createQuote(
+        {
+          address: {
+            name: "Mixed Buyer",
+            email: "mixed@teafloww.com",
+            phone: "+91 98765 43210",
+            line1: "Hill Cart Road",
+            city: "Siliguri",
+            state: "West Bengal",
+            postcode: "734005",
+            country: "IN",
+          },
+          currency: "INR",
+          locale: "en" as const,
+          method: "cod" as const,
+          items: [
+            { variantId: 0, trialId: "trial-all-inclusive-200", quantity: 1 },
+            { variantId: testVariantId, quantity: 1 },
+          ],
+        },
+        "session-mixed-cod"
+      )
+    ).rejects.toThrow("Requires a minimum order of ₹299");
+  });
 });

@@ -36,6 +36,14 @@ export async function processOneJob() {
         if (!sent.sent) throw new CommerceError("Renewal email delivery failed or is not configured.");
       }
     }
+    else if (job.kind === "admin_notification_email") {
+      const { executeAdminEmailJob } = await import("@/lib/notifications/dispatch");
+      await executeAdminEmailJob(data);
+    }
+    else if (job.kind === "admin_webhook") {
+      const { executeAdminWebhookJob } = await import("@/lib/notifications/dispatch");
+      await executeAdminWebhookJob(data);
+    }
     else if (job.kind === "translate") await generateTranslation(data);
     else if (job.kind === "fx") await refreshFx();
     else if (job.kind === "cleanup") releaseExpired();
@@ -79,5 +87,5 @@ export function scheduleMaintenance() {
   const rows = getDb().prepare("SELECT order_id FROM commerce_shipments WHERE status IN ('booked','labelled')").all() as { order_id: string }[];
   rows.forEach(r => enqueue("track", { orderId: r.order_id }, `track:${r.order_id}:${Math.floor(Date.now() / 3600000)}`));
 }
-export function retryJob(id: string) { getDb().prepare("UPDATE commerce_jobs SET status='queued',attempts=0,lease_ms=0,run_ms=? WHERE id=? AND status='failed' AND kind IN ('translate','fx','track','cleanup','payment_webhook','subscription_tick','subscription_email','subscription_change','subscription_refund')").run(Date.now(), id); }
+export function retryJob(id: string) { getDb().prepare("UPDATE commerce_jobs SET status='queued',attempts=0,lease_ms=0,run_ms=? WHERE id=? AND status='failed' AND kind IN ('translate','fx','track','cleanup','payment_webhook','subscription_tick','subscription_email','subscription_change','subscription_refund','admin_notification_email','admin_webhook')").run(Date.now(), id); }
 export function eventId() { return randomUUID(); }
