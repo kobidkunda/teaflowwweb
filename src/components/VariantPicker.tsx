@@ -16,7 +16,7 @@ import {
 } from "@/lib/productModels";
 import { SubscribeLink } from "@/components/subscriptions/SubscribeLink";
 import { formatPackWeight } from "@/lib/packSize";
-import { ShoppingCart, Share2, Check } from "lucide-react";
+import { ShoppingCart, Share2, Check, Zap, MapPin, Truck } from "lucide-react";
 import { catalogItem, trackViewItem } from "@/lib/seo/tracking";
 import { cupsFromGrams } from "@/lib/money";
 
@@ -44,7 +44,12 @@ export function VariantPicker({
   const formatINR = useDisplayMoney();
   const formatPerCup = (price: number, servings: number) => formatINR(servings > 0 ? Math.round(price / servings) : 0);
 
-  const { add } = useCart();
+  const { add, subtotal: cartSubtotal } = useCart();
+  const [pincode, setPincode] = useState("");
+  const [pincodeResult, setPincodeResult] = useState<{ status: "idle" | "ok" | "error"; text: string }>({
+    status: "idle",
+    text: "",
+  });
 
   const availableFormats = getAvailableFormats(product.variants);
   const formats: PackagingFormat[] =
@@ -90,7 +95,20 @@ export function VariantPicker({
 
   const [purchaseMode, setPurchaseMode] = useState<"retail" | "wholesale">("retail");
   const isWholesaleMode = purchaseMode === "wholesale";
-  const effectiveMoq = product.wholesale_moq || 50;
+  const isBulkSackSelected = (activeVariant?.grams ?? selectedGrams) >= 5000;
+  const effectiveMoq = isBulkSackSelected ? 1 : (product.wholesale_moq || 50);
+
+  const retailSizes = sizes.filter((g) => g <= 1000);
+  const bulkSizes = sizes.filter((g) => g >= 5000);
+  const visibleSizes =
+    !isWholesaleMode && retailSizes.length > 0
+      ? retailSizes
+      : isWholesaleMode && bulkSizes.length > 0
+      ? sizes.filter((g) => g >= 1000 || (resolveVariant(product.variants, selectedFormat, g)?.wholesale_slabs?.length ?? 0) > 0)
+      : sizes;
+
+  const oneKgVariant = resolveVariant(product.variants, selectedFormat, 1000) || product.variants.find((v) => v.grams === 1000);
+  const basePerKgPaise = oneKgVariant ? oneKgVariant.price_paise : 28000;
 
   const wholesaleSlabs = (activeVariant?.wholesale_slabs || [])
     .slice()
@@ -109,12 +127,22 @@ export function VariantPicker({
   const regularUnitPaise = activeVariant?.price_paise ?? 19900;
   const currentUnitPaise = isWholesaleMode ? activeWholesaleUnitPaise : regularUnitPaise;
   const totalPricePaise = currentUnitPaise * quantity;
-  const totalSavingsPaise = isWholesaleMode && regularUnitPaise > currentUnitPaise
-    ? (regularUnitPaise - currentUnitPaise) * quantity
-    : 0;
-  const savingsPercent = regularUnitPaise > 0
-    ? Math.round(((regularUnitPaise - currentUnitPaise) / regularUnitPaise) * 100)
-    : 0;
+  const bulkBenchmarkPaise =
+    isBulkSackSelected && activeVariant
+      ? Math.round((activeVariant.grams / 1000) * basePerKgPaise)
+      : regularUnitPaise;
+  const totalSavingsPaise =
+    isWholesaleMode && regularUnitPaise > currentUnitPaise
+      ? (regularUnitPaise - currentUnitPaise) * quantity
+      : isBulkSackSelected && bulkBenchmarkPaise > currentUnitPaise
+      ? (bulkBenchmarkPaise - currentUnitPaise) * quantity
+      : 0;
+  const savingsPercent =
+    isWholesaleMode && regularUnitPaise > currentUnitPaise && regularUnitPaise > 0
+      ? Math.round(((regularUnitPaise - currentUnitPaise) / regularUnitPaise) * 100)
+      : isBulkSackSelected && bulkBenchmarkPaise > currentUnitPaise && bulkBenchmarkPaise > 0
+      ? Math.round(((bulkBenchmarkPaise - currentUnitPaise) / bulkBenchmarkPaise) * 100)
+      : 0;
 
   // Notify listeners and StickyPurchaseBar whenever activeVariant changes
   useEffect(() => {
@@ -171,10 +199,18 @@ export function VariantPicker({
     [product.variants, selectedGrams]
   );
 
-  const handleSizeChange = useCallback((grams: number) => {
-    setSelectedGrams(grams);
-    setAdded(false);
-  }, []);
+  const handleSizeChange = useCallback(
+    (grams: number) => {
+      setSelectedGrams(grams);
+      setAdded(false);
+      if (grams >= 5000 && purchaseMode === "wholesale" && quantity >= 50) {
+        setQuantity(1);
+      } else if (grams < 5000 && purchaseMode === "wholesale" && quantity < (product.wholesale_moq || 50)) {
+        setQuantity(product.wholesale_moq || 50);
+      }
+    },
+    [purchaseMode, quantity, product.wholesale_moq]
+  );
 
   const switchMode = useCallback(
     (mode: "retail" | "wholesale") => {
@@ -182,21 +218,50 @@ export function VariantPicker({
       if (mode === "retail") {
         if (selectedGrams > 1000) {
           const retailCandidates = sizes.filter((g) => g <= 1000);
-          const target = retailCandidates[retailCandidates.length - 1] || 100;
+          const target = retailCandidates[0] || 100;
           setSelectedGrams(target);
         }
         if (quantity > 20) setQuantity(1);
       } else {
-        if (selectedGrams < 1000) {
-          const wholesaleCandidates = sizes.filter((g) => g >= 1000);
-          const target = wholesaleCandidates[0] || 1000;
-          setSelectedGrams(target);
+        const bulkCandidates = sizes.filter((g) => g >= 5000);
+        if (bulkCandidates.length > 0 && selectedGrams < 5000) {
+          setSelectedGrams(bulkCandidates[0]);
+          setQuantity(1);
+        } else if (selectedGrams < 5000) {
+          const moq = product.wholesale_moq || 50;
+          if (quantity < moq) setQuantity(moq);
         }
-        if (quantity < effectiveMoq) setQuantity(effectiveMoq);
       }
     },
-    [sizes, effectiveMoq, quantity, selectedGrams]
+    [sizes, product.wholesale_moq, quantity, selectedGrams]
   );
+
+  const handleCheckPincode = useCallback(() => {
+    const clean = pincode.trim();
+    if (!/^[1-9][0-9]{5}$/.test(clean)) {
+      setPincodeResult({
+        status: "error",
+        text: "Please enter a valid 6-digit Indian PIN code (e.g. 734001).",
+      });
+      return;
+    }
+    const prefix = Number(clean.slice(0, 2));
+    const isEastOrNorthEast = prefix >= 70 && prefix <= 79;
+    const days = isEastOrNorthEast ? "2–3 business days" : "3–5 business days";
+    const combinedPaise = cartSubtotal + totalPricePaise;
+    const freeShipText =
+      combinedPaise >= 49900
+        ? "FREE Delivery unlocked (orders ₹499+)"
+        : `Add ${formatINR(49900 - combinedPaise)} more for FREE Delivery (₹499+ threshold)`;
+    const codText =
+      combinedPaise >= 29900 || isWholesaleMode
+        ? "Cash on Delivery available"
+        : `COD available on orders ₹299+`;
+    setPincodeResult({
+      status: "ok",
+      text: `✓ Deliverable to PIN ${clean} in ${days} from Siliguri origin · ${freeShipText} · ${codText}.`,
+    });
+  }, [pincode, cartSubtotal, totalPricePaise, formatINR, isWholesaleMode]);
 
   const handleShare = async () => {
     if (typeof window === "undefined") return;
@@ -270,6 +335,14 @@ export function VariantPicker({
     } catch {
       setAddError("Unable to add this tea. Please try again.");
       setIsAdding(false);
+    }
+  };
+
+  const handleBuyNow = () => {
+    if (isSoldOut || isAdding) return;
+    handleAddToBag();
+    if (typeof window !== "undefined") {
+      window.location.assign("/checkout");
     }
   };
 
@@ -508,14 +581,30 @@ export function VariantPicker({
         role="group"
         aria-label={`Choose a size for ${product.name}`}
       >
-        <p className="eyebrow text-xs font-bold text-[#555f50] uppercase tracking-wider mb-2"> <StorefrontText id="copy_65357f21fdcb965e" fallback="Select Pack Size" /> </p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="eyebrow text-xs font-bold text-[#555f50] uppercase tracking-wider m-0">
+            <StorefrontText
+              id="copy_65357f21fdcb965e"
+              fallback={isWholesaleMode ? "Select Bulk Sack or Wholesale Pack" : "Select Retail Pack Size"}
+            />
+          </p>
+          {!isWholesaleMode && bulkSizes.length > 0 && (
+            <button
+              type="button"
+              onClick={() => switchMode("wholesale")}
+              className="text-[11px] font-semibold text-[#23483a] hover:underline cursor-pointer"
+            >
+              Need 5kg–35kg Bulk Sacks? Save up to 21% →
+            </button>
+          )}
+        </div>
         <div
           className="variant-grid grid grid-cols-2 sm:grid-cols-4 gap-2.5"
           role="group"
           aria-label={`Available sizes for ${FORMAT_LABELS[selectedFormat]}`}
           style={{ marginBottom: "16px" }}
         >
-          {sizes.map((grams) => {
+          {visibleSizes.map((grams) => {
             const v = resolveVariant(product.variants, selectedFormat, grams);
             const sizeSoldOut = !v || v.stock < 1;
             const isSelected = activeVariant.grams === grams;
@@ -533,6 +622,12 @@ export function VariantPicker({
                 ? `${cups || 25} Bags (${formatPackWeight(grams)})`
                 : formatPackWeight(grams);
 
+            const perKgPaise = v && grams >= 1000 ? Math.round((v.price_paise * 1000) / grams) : null;
+            const bulkSavePct =
+              perKgPaise && basePerKgPaise > perKgPaise
+                ? Math.round(((basePerKgPaise - perKgPaise) / basePerKgPaise) * 100)
+                : 0;
+
             return (
               <button
                 key={grams}
@@ -549,7 +644,7 @@ export function VariantPicker({
                 aria-pressed={isSelected}
                 onClick={() => handleSizeChange(grams)}
                 style={{
-                  minHeight: "74px",
+                  minHeight: "78px",
                 }}
               >
                 <div className="flex items-center justify-between w-full">
@@ -563,11 +658,15 @@ export function VariantPicker({
                       <span className="text-[10px] text-[#854d0e] font-semibold">Bulk Pack</span>
                     ) : null}
                   </div>
-                  {isSelected && (
+                  {isSelected ? (
                     <span className="w-4 h-4 rounded-full bg-[#1b3022] text-white flex items-center justify-center shrink-0">
                       <Check size={10} strokeWidth={3} />
                     </span>
-                  )}
+                  ) : bulkSavePct > 0 ? (
+                    <span className="text-[10px] bg-[#eaf3e9] text-[#2e683f] font-bold px-1.5 py-0.5 rounded">
+                      Save {bulkSavePct}%
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="mt-1">
@@ -575,7 +674,11 @@ export function VariantPicker({
                     {v ? formatINR(v.price_paise) : ""}
                   </span>
                   <span className="text-[11px] text-[#6b7367] mt-0.5 block">
-                    {sizeSoldOut ? "Sold Out" : `~${cups.toLocaleString("en-IN")} cups`}
+                    {sizeSoldOut
+                      ? "Sold Out"
+                      : perKgPaise && grams >= 5000
+                      ? `${formatINR(perKgPaise)}/kg${bulkSavePct > 0 ? ` · ${bulkSavePct}% off` : ""}`
+                      : `~${cups.toLocaleString("en-IN")} cups`}
                   </span>
                 </div>
               </button>
@@ -597,10 +700,10 @@ export function VariantPicker({
       >
         {sizeLabel} <StorefrontText id="copy_93b65c1b11181916" fallback="· Approximately" /> {servings} <StorefrontText id="copy_5fc790d0e5ad6d37" fallback="cups ·" /> {perCupDisplay} <StorefrontText id="copy_fb02ea9db1a972dc" fallback="per cup" /> </p>
 
-      {/* 6. Quantity Stepper & Add to Cart Button Row */}
-      <div className="flex items-center flex-wrap sm:flex-nowrap gap-3 mb-4">
+      {/* 6. Quantity Stepper, Add to Bag & Buy Now Row */}
+      <div className="flex items-center flex-wrap sm:flex-nowrap gap-2.5 mb-3">
         {/* Accessible Quantity Selector Stepper */}
-        {isWholesaleMode ? (
+        {isWholesaleMode && !isBulkSackSelected ? (
           <div className="flex items-center gap-1.5 flex-wrap">
             <div
               className="quantity-stepper flex items-center border border-[#bcd2bf] bg-white rounded-md shrink-0 overflow-hidden"
@@ -666,8 +769,8 @@ export function VariantPicker({
             <button
               type="button"
               aria-label="Increase quantity"
-              disabled={quantity >= 20 || isSoldOut}
-              onClick={() => setQuantity(Math.min(20, quantity + 1))}
+              disabled={quantity >= 50 || isSoldOut}
+              onClick={() => setQuantity(Math.min(50, quantity + 1))}
               className="w-11 h-full flex items-center justify-center text-lg font-semibold text-[#1b3022] hover:bg-[#f6f2e9] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
               +
@@ -679,7 +782,7 @@ export function VariantPicker({
         <button
           type="button"
           data-testid="add-to-bag-button"
-          className="button button-primary add-main flex-grow flex items-center justify-center gap-2.5 rounded-md font-sans text-sm font-semibold tracking-wide transition-all shadow-sm"
+          className="button button-primary add-main flex-grow flex items-center justify-center gap-2 rounded-md font-sans text-sm font-semibold tracking-wide transition-all shadow-sm px-4"
           disabled={isSoldOut || isAdding}
           aria-disabled={isSoldOut || isAdding}
           onClick={handleAddToBag}
@@ -697,14 +800,51 @@ export function VariantPicker({
             <span> <StorefrontText id="copy_913a8849b60dd752" fallback="Adding..." /> </span>
           ) : (
             <>
-              <ShoppingCart size={17} aria-hidden="true" />
+              <ShoppingCart size={16} aria-hidden="true" />
               <span>{isWholesaleMode ? `Add to Bag (Wholesale) — ${formatINR(totalPricePaise)}` : `Add to Bag — ${formatINR(totalPricePaise)}`}</span>
             </>
           )}
         </button>
+
+        {/* Direct Buy Now Button */}
+        {!isSoldOut && (
+          <button
+            type="button"
+            data-testid="buy-now-button"
+            onClick={handleBuyNow}
+            disabled={isAdding}
+            className="inline-flex items-center justify-center gap-1.5 rounded-md border-2 border-[#1b3022] bg-[#fbf8f1] hover:bg-[#1b3022] text-[#1b3022] hover:text-white font-sans text-sm font-bold px-4 transition-colors shrink-0 cursor-pointer"
+            style={{ minHeight: "52px" }}
+          >
+            <Zap size={15} aria-hidden="true" />
+            <span>Buy Now</span>
+          </button>
+        )}
       </div>
 
-      {isWholesaleMode && (
+      {/* Upfront Minimum COD Order Helper when selected pack + current bag is under ₹299 */}
+      {!isWholesaleMode && !isSoldOut && cartSubtotal + totalPricePaise < 29900 && (
+        <div className="mb-3 p-2.5 rounded-lg bg-[#fff8eb] border border-[#f2d6a2] text-xs text-[#7c4d0b] flex flex-wrap items-center justify-between gap-2">
+          <span>
+            <strong>Cash on Delivery minimum is ₹299:</strong> Add{" "}
+            <strong>{formatINR(29900 - (cartSubtotal + totalPricePaise))}</strong> more (or choose{" "}
+            <strong>1kg at {formatINR(basePerKgPaise)}</strong>) to qualify for COD dispatch.
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const neededPaise = Math.max(0, 29900 - cartSubtotal);
+              const targetQty = Math.max(1, Math.ceil(neededPaise / Math.max(1, currentUnitPaise)));
+              setQuantity(Math.min(20, targetQty));
+            }}
+            className="px-2.5 py-1 rounded bg-[#1b3022] text-white font-semibold text-[11px] hover:bg-[#2a4734] transition-colors shrink-0 cursor-pointer"
+          >
+            Set qty to {Math.max(1, Math.ceil(Math.max(0, 29900 - cartSubtotal) / Math.max(1, currentUnitPaise)))} ({formatINR(Math.max(1, Math.ceil(Math.max(0, 29900 - cartSubtotal) / Math.max(1, currentUnitPaise))) * currentUnitPaise)}) →
+          </button>
+        </div>
+      )}
+
+      {isWholesaleMode && !isBulkSackSelected && (
         <div className="flex items-center gap-2 mb-4 text-xs text-[#525e4f]">
           <span className="font-semibold text-[#1b3022]"><StorefrontText id="copy_b38da506e5346f1b" fallback="Quick Units:" /></span>
           {[effectiveMoq, 100, 250, 500].filter((q) => q >= effectiveMoq).map((q) => (
@@ -730,10 +870,60 @@ export function VariantPicker({
       </p>
       {addError && <p role="alert" className="micro-note text-[#8f2f2a]">{addError}</p>}
 
+      {/* 7. PIN-Code Delivery & COD Estimator */}
+      <div className="mt-3 p-3 rounded-lg bg-[#f7f4ec] border border-[#e3ddd0]">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <label htmlFor="pdp-pincode-check" className="text-xs font-bold text-[#1b3022] flex items-center gap-1.5">
+            <MapPin size={13} className="text-[#23483a]" aria-hidden="true" />
+            <span>Check Delivery &amp; COD Availability</span>
+          </label>
+          <span className="text-[11px] text-[#556358] flex items-center gap-1">
+            <Truck size={12} aria-hidden="true" /> Free delivery ₹499+
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            id="pdp-pincode-check"
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            value={pincode}
+            onChange={(e) => {
+              setPincode(e.target.value.replace(/\D/g, "").slice(0, 6));
+              if (pincodeResult.status !== "idle") setPincodeResult({ status: "idle", text: "" });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleCheckPincode();
+              }
+            }}
+            placeholder="Enter 6-digit PIN code (e.g. 734001)"
+            className="flex-1 min-h-[38px] px-3 py-1.5 rounded border border-[#cfc8b8] bg-white text-xs text-[#171713] focus:outline-none focus:border-[#1b3022]"
+          />
+          <button
+            type="button"
+            onClick={handleCheckPincode}
+            className="min-h-[38px] px-3.5 py-1.5 rounded bg-[#1b3022] text-white text-xs font-semibold hover:bg-[#2a4734] transition-colors cursor-pointer"
+          >
+            Check
+          </button>
+        </div>
+        {pincodeResult.status !== "idle" && (
+          <p
+            role="status"
+            className={`mt-1.5 text-[11px] font-medium ${
+              pincodeResult.status === "ok" ? "text-[#1e5631]" : "text-[#8f2f2a]"
+            }`}
+          >
+            {pincodeResult.text}
+          </p>
+        )}
+      </div>
+
       {/* 8. Genuine Provenance Assurance & COD / B2B Inquiries */}
       <div className="mt-3 pt-2.5 border-t border-[#ede7dc] flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#556358]">
         <span className="font-medium text-[#2d4d38]">✓ 100% Genuine Direct from Origin · Cash on Delivery available (₹299+)</span>
-        <span className="sr-only">No real payment is collected</span>
         <Link
           href="/wholesale"
           className="text-[#1b3022] hover:underline font-semibold inline-flex items-center gap-1"

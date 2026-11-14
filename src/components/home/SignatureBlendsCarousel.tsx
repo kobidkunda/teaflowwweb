@@ -34,6 +34,7 @@ export function SignatureBlendsCarousel({
   const touchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [wishlist, setWishlist] = useState<Record<number, boolean>>({});
+  const [selectedVariantByProduct, setSelectedVariantByProduct] = useState<Record<number, number>>({});
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(products.length > 1);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -300,14 +301,23 @@ export function SignatureBlendsCarousel({
             const inStockVariants = (product.variants || []).filter((v) => v.stock > 0);
             const sortedInStock = [...inStockVariants].sort((a, b) => a.price_paise - b.price_paise);
             const sortedVariants = [...(product.variants || [])].sort((a, b) => a.price_paise - b.price_paise);
-            const activeVariant: Variant | undefined = sortedInStock[0] || sortedVariants[0] || product.variants?.[0];
+            const defaultVariant: Variant | undefined = sortedInStock[0] || sortedVariants[0] || product.variants?.[0];
+            const chosenId = selectedVariantByProduct[product.id];
+            const activeVariant: Variant | undefined =
+              (chosenId ? (product.variants || []).find((v) => v.id === chosenId) : undefined) ||
+              defaultVariant;
             if (!activeVariant) return null;
+
+            const retailPackOptions = sortedVariants.filter((v) => v.grams <= 1000).slice(0, 4);
+            const packOptions = retailPackOptions.length > 0 ? retailPackOptions : sortedVariants.slice(0, 4);
+            const minGrams = sortedVariants[0]?.grams ?? activeVariant.grams;
+            const maxGrams = sortedVariants[sortedVariants.length - 1]?.grams ?? activeVariant.grams;
 
             const isWished = !!wishlist[product.id];
             const imageUrl =
+              activeVariant.product_image_url ||
               product.primary_image?.url ||
-              product.primary_image_url ||
-              activeVariant.product_image_url;
+              product.primary_image_url;
             const imageAlt =
               product.primary_image?.alt_text ||
               `Artisan tea canister for ${product.name}`;
@@ -318,9 +328,9 @@ export function SignatureBlendsCarousel({
             const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : activeVariant.price_paise;
             const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : activeVariant.price_paise;
             const hasMultiplePrices = minPrice !== maxPrice;
-            const priceDisplay = hasMultiplePrices
-              ? `${formatINR(minPrice)} – ${formatINR(maxPrice)}`
-              : formatINR(activeVariant.price_paise);
+            const rangeSummary = hasMultiplePrices
+              ? `${formatPackWeight(minGrams)} – ${formatPackWeight(maxGrams)} (${formatINR(minPrice)} – ${formatINR(maxPrice)})`
+              : formatPackWeight(activeVariant.grams);
 
             return (
               <article
@@ -377,10 +387,52 @@ export function SignatureBlendsCarousel({
                   </div>
 
                   <div className="tf-card-price-row flex flex-col items-start">
-                    <span className="tf-card-price">{priceDisplay}</span>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="tf-card-price">{formatINR(activeVariant.price_paise)}</span>
+                      <span className="text-xs font-semibold text-[#23483a]">
+                        · {formatPackWeight(activeVariant.grams)}
+                      </span>
+                    </div>
                     <span className="text-[11px] text-[#737067] font-medium block mt-0.5">
-                      100g pouch up to 35kg bulk sack
+                      Range: {rangeSummary}
                     </span>
+                    {packOptions.length > 1 && (
+                      <div
+                        className="flex flex-wrap items-center gap-1.5 mt-2"
+                        role="group"
+                        aria-label={`Select pack size for ${product.name}`}
+                      >
+                        {packOptions.map((v) => {
+                          const isCurrent = v.id === activeVariant.id;
+                          return (
+                            <button
+                              key={v.id}
+                              type="button"
+                              onClick={() =>
+                                setSelectedVariantByProduct((prev) => ({
+                                  ...prev,
+                                  [product.id]: v.id,
+                                }))
+                              }
+                              aria-pressed={isCurrent}
+                              className={`px-2 py-0.5 rounded text-[11px] font-semibold border transition-colors cursor-pointer ${
+                                isCurrent
+                                  ? "bg-[#1b3022] text-white border-[#1b3022]"
+                                  : "bg-[#faf7f0] text-[#2c3329] border-[#d6cfc0] hover:border-[#1b3022]"
+                              }`}
+                            >
+                              {formatPackWeight(v.grams)}
+                            </button>
+                          );
+                        })}
+                        <Link
+                          href={`/tea/${product.slug}`}
+                          className="text-[11px] font-semibold text-[#23483a] hover:underline ml-0.5"
+                        >
+                          + Bulk (5–35kg)
+                        </Link>
+                      </div>
+                    )}
                     {activeVariant.compare_at_price_paise &&
                     activeVariant.compare_at_price_paise > activeVariant.price_paise &&
                     !hasMultiplePrices ? (
@@ -397,6 +449,7 @@ export function SignatureBlendsCarousel({
                     <AddToCart
                       product={product}
                       variant={activeVariant}
+                      disableModal={true}
                       label={
                         <>
                           <ShoppingBag
@@ -405,11 +458,11 @@ export function SignatureBlendsCarousel({
                             style={{ display: "inline-block", marginRight: "6px", verticalAlign: "middle" }}
                           />
                           <span>
-                            <StorefrontText id="shop.add_to_cart" fallback="Add to cart" />
+                            Add {formatPackWeight(activeVariant.grams)} · {formatINR(activeVariant.price_paise)}
                           </span>
                         </>
                       }
-                      accessibleLabel={`Add ${product.name} to bag`}
+                      accessibleLabel={`Add ${formatPackWeight(activeVariant.grams)} of ${product.name} to bag`}
                     />
                   </div>
                 </div>

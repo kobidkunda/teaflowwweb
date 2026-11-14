@@ -8,6 +8,7 @@ import React, { useState } from "react";
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
 import Image from "next/image";
 import type { Product, Variant } from "@/lib/products";
+import { formatPackWeight } from "@/lib/packSize";
 
 import { useCart } from "@/components/CartProvider";
 import {
@@ -31,7 +32,7 @@ export function ShopProductCard({
   const formatINR = useDisplayMoney();
 
   const { add, openQuickModal } = useCart();
-  const selectedVariantId = product.variants[0]?.id ?? 0;
+  const [selectedVariantId, setSelectedVariantId] = useState<number>(product.variants[0]?.id ?? 0);
   const [wishlisted, setWishlisted] = useState<boolean>(false);
   const [added, setAdded] = useState<boolean>(false);
 
@@ -44,6 +45,10 @@ export function ShopProductCard({
   const sortedVariants = [...product.variants].sort((a, b) => a.price_paise - b.price_paise);
   const lowestVariant = sortedInStock[0] || sortedVariants[0] || activeVariant;
   const isProductSoldOut = inStockVariants.length === 0;
+  const retailPackOptions = sortedVariants.filter((v) => v.grams <= 1000).slice(0, 4);
+  const packOptions = retailPackOptions.length > 0 ? retailPackOptions : sortedVariants.slice(0, 4);
+  const minGrams = sortedVariants[0]?.grams ?? (activeVariant?.grams || 100);
+  const maxGrams = sortedVariants[sortedVariants.length - 1]?.grams ?? (activeVariant?.grams || 100);
 
   const variantPrices = product.variants.map((v) => v.price_paise).filter((p) => typeof p === "number" && p > 0);
   const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : (activeVariant?.price_paise ?? 0);
@@ -106,7 +111,7 @@ export function ShopProductCard({
     `Single estate tea caddy for ${product.name} from ${product.estate}`;
 
   const handleAddToCart = () => {
-    const targetVariant = lowestVariant || activeVariant;
+    const targetVariant = (activeVariant && activeVariant.stock > 0) ? activeVariant : (lowestVariant || activeVariant);
     if (isProductSoldOut || !targetVariant) {
       if (openQuickModal && targetVariant) {
         openQuickModal(product, targetVariant);
@@ -124,9 +129,6 @@ export function ShopProductCard({
     }, true, false);
     setAdded(true);
     setTimeout(() => setAdded(false), 2400);
-    if (openQuickModal) {
-      openQuickModal(product, targetVariant);
-    }
   };
 
   return (
@@ -238,8 +240,11 @@ export function ShopProductCard({
             <div className="tf-mockup-price-stack" style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: "6px", flexWrap: "wrap" }}>
                 <strong className="tf-mockup-price">
-                  {priceDisplay}
+                  {formatINR(activeVariant.price_paise)}
                 </strong>
+                <span style={{ fontSize: "12px", fontWeight: 600, color: "#23483a" }}>
+                  · {formatPackWeight(activeVariant.grams)}
+                </span>
                 {activeVariant.compare_at_price_paise && activeVariant.compare_at_price_paise > activeVariant.price_paise && !hasMultiplePrices ? (
                   <div className="tf-mockup-discount-wrap">
                     <del
@@ -256,6 +261,38 @@ export function ShopProductCard({
                   </div>
                 ) : null}
               </div>
+              {hasMultiplePrices && (
+                <span style={{ fontSize: "11px", color: "#6b7367" }}>
+                  Range: {formatPackWeight(minGrams)} – {formatPackWeight(maxGrams)} ({priceDisplay})
+                </span>
+              )}
+              {packOptions.length > 1 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "4px" }} role="group" aria-label={`Select pack size for ${product.name}`}>
+                  {packOptions.map((v) => {
+                    const isCurrent = v.id === activeVariant.id;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVariantId(v.id)}
+                        aria-pressed={isCurrent}
+                        style={{
+                          padding: "2px 7px",
+                          borderRadius: "4px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          border: isCurrent ? "1px solid #1b3022" : "1px solid #d5cfc1",
+                          background: isCurrent ? "#1b3022" : "#faf7f0",
+                          color: isCurrent ? "#ffffff" : "#2c3329",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {formatPackWeight(v.grams)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {bestWholesaleSlab && (
                 <div
@@ -318,7 +355,7 @@ export function ShopProductCard({
                     ? "Sold out"
                     : added
                     ? "Added to Cart ✓"
-                    : "Add to Cart"}
+                    : `Add ${formatPackWeight(activeVariant.grams)} · ${formatINR(activeVariant.price_paise)}`}
                 </span>
               </span>
               <span className="tf-mockup-btn-arrow-circle" aria-hidden="true">

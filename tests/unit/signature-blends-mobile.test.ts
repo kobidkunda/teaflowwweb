@@ -115,7 +115,7 @@ describe("SignatureBlendsCarousel — Auto-Swiped Carousel & View All Products C
     const product = createMockProduct(9, "assam-breakfast", "Assam Golden Breakfast");
     product.variants[0].stock = 0;
     const markup = renderToStaticMarkup(React.createElement(SignatureBlendsCarousel, { products: [product] }));
-    expect(markup).toContain('aria-label="Add Assam Golden Breakfast to bag"');
+    expect(markup).toContain('aria-label="Add 100g of Assam Golden Breakfast to bag"');
     expect(markup).toContain('disabled=""');
     expect(markup).toContain("Unavailable");
     expect(markup).not.toContain("POPULAR");

@@ -996,13 +996,34 @@ export function LiveCheckout() {
     <div className="tf-live-checkout-v2 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       {/* LEFT COLUMN: Customer Info, Shipping Address, Payment Method */}
       <div className="lg:col-span-7 space-y-6">
-        {/* Minimum Delivery Order Requirement Alert */}
-        {isBelowMinDeliveryOrder && (
-          <div className="p-4 rounded-xl border border-[#fca5a5] bg-[#fef2f2] text-xs sm:text-sm text-[#991b1b] flex items-center gap-3 shadow-sm">
-            <span className="text-base font-bold flex-shrink-0">⚠️</span>
-            <div>
-              <strong>Minimum Delivery Order Required:</strong> The minimum order value for delivery is{" "}
-              <strong>₹{minDeliveryOrder}</strong>. Please add <strong>₹{minOrderDeficit}</strong> more to your bag to complete checkout.
+        {/* Minimum Delivery / COD Order Requirement Alert (Shown upfront before form entry) */}
+        {(isBelowMinDeliveryOrder || (!isWholesale && country === "IN" && !isCodSubtotalValid)) && (
+          <div className="p-4 rounded-xl border border-[#f0c78a] bg-[#fff8eb] text-xs sm:text-sm text-[#8a5300] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-5 h-5 text-[#d97706] shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-bold text-[#684407]">
+                  Minimum Order Value Required: ₹{Math.max(minDeliveryOrder, codMin)}
+                </strong>
+                <p className="text-xs text-[#784300] mt-0.5">
+                  Your current bag is <strong>₹{cartSubtotalRupees}</strong>. Please add{" "}
+                  <strong>₹{Math.max(minOrderDeficit, codMin - cartSubtotalRupees)}</strong> more to place your Cash on Delivery order.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/shop"
+                className="px-3.5 py-2 rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white text-xs font-semibold transition-colors whitespace-nowrap"
+              >
+                + Add More Teas →
+              </Link>
+              <Link
+                href="/cart"
+                className="px-3 py-2 rounded-lg border border-[#c8b99e] bg-white hover:bg-[#faf6ee] text-[#23483a] text-xs font-semibold transition-colors whitespace-nowrap"
+              >
+                Edit Bag
+              </Link>
             </div>
           </div>
         )}
@@ -2003,36 +2024,66 @@ export function LiveCheckout() {
               </div>
             </div>
           ) : (
-            <div className="py-8 text-center text-xs text-[#737067] space-y-3">
-              {busy ? (
-                <div className="py-4 space-y-3">
-                  <div className="w-8 h-8 mx-auto border-2 border-[#23483a] border-t-transparent rounded-full animate-spin" />
-                  <p className="max-w-xs mx-auto font-medium text-[#23483a]">
-                    Calculating live rates &amp; instant discounts…
-                  </p>
+            <div className="space-y-4">
+              {/* Pre-Quote Itemized Subtotal Breakdown (Always visible before address entry) */}
+              <div className="space-y-2 text-xs text-[#46524a] border-b border-[#e4dfd5] pb-3">
+                <div className="flex justify-between items-center py-1">
+                  <span>Teas Subtotal ({cart.count} {cart.count === 1 ? "item" : "items"})</span>
+                  <strong className="text-[#171713]">
+                    ₹{cartSubtotalRupees.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </strong>
                 </div>
-              ) : isAddressComplete(formData, country) ? (
-                <div className="py-4 space-y-3">
-                  <Truck className="w-8 h-8 mx-auto text-[#23483a] opacity-75" />
-                  <p className="max-w-xs mx-auto font-medium text-[#171713]">
-                    Delivery details ready. Calculate your order total to proceed.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => computeQuote(method, formData, country, false)}
-                    className="px-4 py-2 bg-[#23483a] text-white rounded-md text-xs font-semibold hover:bg-[#1a382d] transition-colors"
-                  >
-                    Confirm Delivery &amp; Total →
-                  </button>
+                {couponCode && (
+                  <div className="flex justify-between items-center py-1 text-[#166534] font-semibold">
+                    <span>Promo Code ({couponCode})</span>
+                    <span>Applied at quote</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center py-1">
+                  <span>Estimated Delivery</span>
+                  <strong className="text-[#23483a]">
+                    {remainingForFree === 0 ? "FREE (₹499+ unlocked)" : "Calculated after PIN entry"}
+                  </strong>
                 </div>
-              ) : (
-                <>
-                  <Truck className="w-8 h-8 mx-auto text-[#b39156] opacity-75" />
-                  <p className="max-w-xs mx-auto">
-                    Fill your delivery address on the left to see the final delivery quote, instant payment discount, and payable amount.
-                  </p>
-                </>
-              )}
+                {method === "cod" && codFee > 0 && (
+                  <div className="flex justify-between items-center py-1">
+                    <span>Cash on delivery fee</span>
+                    <strong className="text-[#171713]">₹{codFee.toFixed(2)}</strong>
+                  </div>
+                )}
+              </div>
+
+              <div className="py-3 text-center text-xs text-[#737067] space-y-2.5">
+                {busy ? (
+                  <div className="py-2 space-y-2">
+                    <div className="w-7 h-7 mx-auto border-2 border-[#23483a] border-t-transparent rounded-full animate-spin" />
+                    <p className="max-w-xs mx-auto font-medium text-[#23483a]">
+                      Calculating live rates &amp; instant discounts…
+                    </p>
+                  </div>
+                ) : isAddressComplete(formData, country) ? (
+                  <div className="py-2 space-y-2.5">
+                    <Truck className="w-7 h-7 mx-auto text-[#23483a] opacity-75" />
+                    <p className="max-w-xs mx-auto font-medium text-[#171713]">
+                      Delivery details ready. Calculate your order total to proceed.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => computeQuote(method, formData, country, false)}
+                      className="px-4 py-2 bg-[#23483a] text-white rounded-md text-xs font-semibold hover:bg-[#1a382d] transition-colors"
+                    >
+                      Confirm Delivery &amp; Total →
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Truck className="w-7 h-7 mx-auto text-[#b39156] opacity-75" />
+                    <p className="max-w-xs mx-auto">
+                      Enter your delivery address and 6-digit PIN code on the left to lock in your final delivery quote and place your order.
+                    </p>
+                  </>
+                )}
+              </div>
             </div>
           )}
 

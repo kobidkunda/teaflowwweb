@@ -166,10 +166,10 @@ describe("Shop Redesign — Contemporary Himalayan Connoisseurship", () => {
 
   it("renders HomeHero with default collection title and LCP priority image", () => {
     const html = renderToStaticMarkup(React.createElement(HomeHero, {}));
-    expect(html).toContain("Single-Estate Flushes &amp; Mountain Terroirs.");
+    expect(html).toContain("Signature Milk Chai Blends &amp; Origin Harvests.");
     expect(html).toContain("THE TEAFLOWW COLLECTION");
-    expect(html).toContain("Authentic Single Estates");
-    expect(html).toContain("High-Altitude Gardens");
+    expect(html).toContain("Everyday Strong Milk Chai");
+    expect(html).toContain("Fresh Siliguri Batch");
     expect(html).toContain("From<br/>Our Gardens<br/>to Your Cup");
     expect(html.toLowerCase()).toContain('fetchpriority="high"');
   });

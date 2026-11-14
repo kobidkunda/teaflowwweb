@@ -3070,8 +3070,13 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
 /* Trust Badges Bar */
 .tf-footer-trust-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
+}
+@media (max-width: 900px) {
+  .tf-footer-trust-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 600px) {
   .tf-footer-trust-grid {
@@ -8939,4 +8944,36 @@ dialog.tf-checkout-error-dialog[open]::backdrop {
     transition: none !important;
     transform: none !important;
   }
+}
+
+/* Prevent duplicate browser native clear 'x' overlapping custom clear buttons in search inputs */
+input[type="search"]::-webkit-search-cancel-button,
+input[type="search"]::-webkit-search-decoration,
+input[type="search"]::-webkit-search-results-button,
+input[type="search"]::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+/* Ensure desktop navigation is always visible inline on >= 1024px */
+@media (min-width: 1024px) {
+  .ritual-menu {
+    display: none !important;
+  }
+  .ritual-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    position: static !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+}
+
+/* Prevent clipping on editorial story captions */
+.ritual-story-visual p {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }

@@ -202,7 +202,7 @@ describe("QuickVariantModal & Add-To-Cart Architecture", () => {
 
     expect(markup).toContain("Darjeeling Muscatel Second Flush");
     expect(markup).toContain("tf-mockup-add-to-cart-btn");
-    expect(markup).toContain("Add to Cart");
+    expect(markup).toContain("Add 100g · ₹450");
   });
 
   it("AddToCart component defaults to lowest variant and supports modal invocation", () => {

@@ -7,6 +7,7 @@ import { LocalizedLink as Link } from "@/components/international/InternationalP
 import Image from "next/image";
 import type { Product } from "@/lib/products";
 import { cupsFromGrams } from "@/lib/money";
+import { formatPackWeight } from "@/lib/packSize";
 import { AddToCart } from "@/components/AddToCart";
 export function ProductCard({ product }: { product: Product }) {
   const formatINR = useDisplayMoney();
@@ -83,7 +84,11 @@ export function ProductCard({ product }: { product: Product }) {
               {Math.round(((variant.compare_at_price_paise - variant.price_paise) / variant.compare_at_price_paise) * 100)}<StorefrontText id="copy_d892cb05720ec3ad" fallback="% OFF" /> </span>
           </>
         ) : null}
-        <span>{variant.grams} <StorefrontText id="copy_6b8e375784466001" fallback="g · ~" /> {cupsFromGrams(variant.grams)} <StorefrontText id="copy_43b69e82bee632b3" fallback="cups" /> </span>
+        <span>
+          {hasMultiplePrices && product.variants.length > 1
+            ? `${formatPackWeight(product.variants[0]?.grams ?? 100)} – ${formatPackWeight(product.variants[product.variants.length - 1]?.grams ?? 100)}`
+            : `${variant.grams}g · ~${cupsFromGrams(variant.grams)} cups`}
+        </span>
         {bestWholesaleSlab && (
           <div
             style={{

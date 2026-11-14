@@ -41,12 +41,12 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       </Link> <StorefrontText id="copy_971514f7e8109f50" fallback="/ Order /" /> <span aria-current="page">{reference}</span>
     </nav>
     <CheckoutSteps currentStep={3} />
-    <p className="eyebrow"> <StorefrontText id="copy_7a604f08af1a4fed" fallback="Demo order recorded" /> </p><h1> <StorefrontText id="copy_3c472af9d4791f1b" fallback="Thank you for exploring." /> </h1>
+    <p className="eyebrow"> <StorefrontText id="copy_7a604f08af1a4fed" fallback="Order confirmed" /> </p><h1> <StorefrontText id="copy_3c472af9d4791f1b" fallback="Thank you for your order." /> </h1>
     <div className="order-success" role="status">
       <CheckCircle2 size={30} aria-hidden="true" />
       <div>
-        <strong> <StorefrontText id="copy_42bcdf5003c8ff18" fallback="Your demo order is confirmed." /> </strong>
-        <p> <StorefrontText id="copy_71bf90935fc231d2" fallback="Reference" /> <strong>{reference}</strong> <StorefrontText id="copy_ffcfbba40b9f1adb" fallback="— keep it to track this order. No payment was taken and no delivery will be arranged." /> </p>
+        <strong> <StorefrontText id="copy_42bcdf5003c8ff18" fallback="Your order is confirmed." /> </strong>
+        <p> <StorefrontText id="copy_71bf90935fc231d2" fallback="Reference" /> <strong>{reference}</strong> <StorefrontText id="copy_ffcfbba40b9f1adb" fallback="— keep it to track this order. We will notify you once your teas are dispatched." /> </p>
       </div>
     </div>
     <div className="order-card" aria-label="Order summary">
@@ -54,7 +54,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       <p> <StorefrontText id="copy_755c8b2a9fb11446" fallback="Status:" /> {order.status}{order.payment_status ? ` · Payment: ${order.payment_status}` : ""}</p>
       {order.discount_paise ? <p> <StorefrontText id="copy_8d06326227308793" fallback="Coupon savings: −" /> {formatINR(order.discount_paise)}</p> : null}
       {order.tax_paise ? <p> <StorefrontText id="copy_5efcbea1ebc2e3f6" fallback="Includes GST:" /> {formatINR(order.tax_paise)}</p> : null}
-      <p> <StorefrontText id="copy_321d8f967b7634ba" fallback="Demo total:" /> {formatINR(order.total_paise)} · {order.item_count} {order.item_count === 1 ? "item" : "items"}</p>
+      <p> <StorefrontText id="copy_321d8f967b7634ba" fallback="Order total:" /> {formatINR(order.total_paise)} · {order.item_count} {order.item_count === 1 ? "item" : "items"}</p>
       {order.shipping_method === "wholesale_transport_topay" ? (
         <div style={{ background: "#f0f7f2", border: "1px solid #c2e0cb", borderRadius: 8, padding: "10px 14px", marginTop: 12 }}>
           <strong style={{ color: "#1b3022", display: "block", fontSize: "13px", marginBottom: 3 }}><StorefrontText id="copy_e916c808ac54745d" fallback="📦 Commercial Surface Transport (To-Pay Bilty)" />
@@ -69,7 +69,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
       <section className="dispatch-tracker" aria-label="Dispatch progress">
         <h2> <StorefrontText id="copy_bfad28ea77684f6c" fallback="Where is your order?" /> </h2>
         {cancelled ? (
-          <p role="status"> <StorefrontText id="copy_c2fbdb9001df93dc" fallback="This order is" /> <strong>{order.dispatch_status}</strong> <StorefrontText id="copy_1dc6b70948890635" fallback=". No delivery will be arranged for demo orders." /> </p>
+          <p role="status"> <StorefrontText id="copy_c2fbdb9001df93dc" fallback="This order is" /> <strong>{order.dispatch_status}</strong> <StorefrontText id="copy_1dc6b70948890635" fallback="." /> </p>
         ) : (
           <ol className="dispatch-steps">
             {DISPATCH_STEPS.map((s, i) => (
@@ -79,7 +79,7 @@ export default async function OrderPage({ params }: { params: Promise<{ id: stri
             ))}
           </ol>
         )}
-        <p className="micro-note"> <StorefrontText id="copy_7af109ab0606b793" fallback="Dispatch updates appear here after the store prepares your teas. Demo orders stay unfulfilled." /> </p>
+        <p className="micro-note"> <StorefrontText id="copy_7af109ab0606b793" fallback="Dispatch updates appear here as our origin facility prepares and ships your teas." /> </p>
       </section>
     ) : null}
     <div className="button-row">

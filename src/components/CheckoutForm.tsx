@@ -318,7 +318,7 @@ export function CheckoutForm() {
                 <span><StorefrontText id="copy_d46903366e5f6981" fallback="Wholesale Transport: Dispatched via surface cargo. Freight charges are extra and to-pay on delivery." /></span>
               </li>
             )}
-            <li><ShieldCheck size={18} aria-hidden="true" /> <StorefrontText id="copy_bf5e3040c5d5d3a2" fallback="No real payment collected — this records a complimentary demo order." /> </li>
+            <li><ShieldCheck size={18} aria-hidden="true" /> <StorefrontText id="copy_bf5e3040c5d5d3a2" fallback="Secure COD checkout · Dispatched within 24–48 hours." /> </li>
             <li><Truck size={18} aria-hidden="true" /> <StorefrontText id="copy_a0aab610f08ce212" fallback="Complimentary shipping unlocked for orders above ₹1,500 (flat ₹99 under)." /> </li>
             <li><Lock size={18} aria-hidden="true" /> <StorefrontText id="copy_1fbd4be4b23b933a" fallback="GST included in quoted prices. The server re-verifies every line." /> </li>
           </ul>
@@ -349,7 +349,7 @@ export function CheckoutForm() {
                       <span className="checkout-line-name">{x.name}</span>
                       <strong className="checkout-line-price">{formatINR(x.pricePaise * x.quantity)}</strong>
                     </div>
-                    <p className="checkout-line-variant">{x.grams} <StorefrontText id="copy_f6d17905794e3132" fallback="g tin" /> </p>
+                    <p className="checkout-line-variant">{x.grams >= 1000 ? `${x.grams / 1000}kg` : `${x.grams}g`} · qty {x.quantity}</p>
                     <div className="checkout-line-controls">
                       <div className="quantity-control quantity-compact">
                         <button
@@ -434,7 +434,7 @@ export function CheckoutForm() {
                 </div>
               ) : null}
               <div className="total">
-                <span> <StorefrontText id="copy_483d677295901380" fallback="Demo total" /> </span>
+                <span> <StorefrontText id="copy_483d677295901380" fallback="Order total" /> </span>
                 <strong>{formatINR(quote.totalPaise)}</strong>
               </div>
             </div>
@@ -445,15 +445,15 @@ export function CheckoutForm() {
               disabled={loading || !items.length}
             >
               {loading ? (
-                "Placing demo order…"
+                "Placing order…"
               ) : (
-                `Place demo order · ${formatINR(quote.totalPaise)}`
+                `Place Cash on Delivery Order · ${formatINR(quote.totalPaise)}`
               )}
             </button>
 
             <p className="micro-note checkout-secure-note">
               <Lock size={13} aria-hidden="true" />
-              <span> <StorefrontText id="copy_c93f29f77a0ed2d4" fallback="Demo checkout — no charge, no dispatch." /> </span>
+              <span> <StorefrontText id="copy_c93f29f77a0ed2d4" fallback="Secure COD checkout · GST included." /> </span>
             </p>
           </div>
         </aside>

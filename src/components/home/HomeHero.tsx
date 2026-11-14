@@ -135,77 +135,77 @@ export const CATEGORY_HERO_CONTENT: Record<string, CategoryHeroInfo> = {
 const DEFAULT_HERO_SLIDES: HeroSlideData[] = [
   {
     id: 1,
-    overline: "THE TEAFLOWW COLLECTION",
-    title: "Single-Estate Flushes & Mountain Terroirs.",
+    overline: "THE TEAFLOWW COLLECTION · DIRECT FROM SILIGURI",
+    title: "Signature Milk Chai Blends & Origin Harvests.",
     subtitle:
-      "Single-garden harvests, seasonal flushes, and micro-lots curated for those who seek purity, provenance and a deeper connection to tea.",
-    bgImage: "/uploads/upload_1791894845311_49cf0062f51c_teafloww_homepage_hero_1920x800.webp",
-    bgAlt: "Himalayan mountain tea estate at sunrise with terraced gardens and misty peaks",
-    cardImage: "/uploads/darjeeling-spring-hero-v2.webp",
-    cardAlt: "TeaFloww Darjeeling First Flush Luxury Green Caddy",
+      "Rich, full-bodied Assam & Dooars CTC chai blends crafted for thick milk decoctions, vibrant golden colour, and fragrant natural spices.",
+    bgImage: "/uploads/upload_1794127160190_9ce93f18c0b3_teafloww-trial-pack-slider-1920x800.webp",
+    bgAlt: "TeaFloww 4-Tea Tasting Trial Pack and signature milk chai collection",
+    cardImage: "/uploads/upload_1794092440981_3e3b5833b1e5_rozana-kadak-100g-sunrise.webp",
+    cardAlt: "TeaFloww Everyday Strong Milk Chai (Rozana Kadak) Pouch",
     cardTitle: "From\nOur Gardens\nto Your Cup",
-    cardHref: "/shop",
-    chapterLabel: "01. Darjeeling First Flush",
-    chapterLabelShort: "01. First Flush",
-    harvestLot: "2026 First Flush · Margaret's Hope",
-    teaName: "Darjeeling First Flush",
-    elevationPrice: "₹850 · Single Estate · 6,800 ft",
-    tastingNotes: "Muscatel • Wild Orchid • Crisp Finish",
+    cardHref: "/tea/everyday-strong-milk-chai",
+    chapterLabel: "01. Rozana Kadak Chai",
+    chapterLabelShort: "01. Kadak Chai",
+    harvestLot: "Fresh Siliguri Batch · Dooars & Assam CTC",
+    teaName: "Everyday Strong Milk Chai",
+    elevationPrice: "From ₹40 (100g) · Up to 35kg Bulk",
+    tastingNotes: "Bold Malt • Rich Colour • Kadak Finish",
     pillars: [
-      { icon: "leaf", text: "Authentic Single Estates" },
-      { icon: "mountain", text: "High-Altitude Gardens" },
+      { icon: "leaf", text: "Direct from Siliguri Hub" },
+      { icon: "mountain", text: "Assam & Dooars Gardens" },
       { icon: "heart", text: "Small Batch & Fresh" },
-      { icon: "sprout", text: "No Artificial Flavours" },
+      { icon: "sprout", text: "100% Natural Ingredients" },
     ],
   },
   {
     id: 2,
-    overline: "SPRING 2026 HARVEST",
-    title: "Fresh Harvest, Rich Flavour — Tea Inspiration",
+    overline: "AROMATIC CARDAMOM BLEND",
+    title: "Elaichi Tea — Rich Chai, Beautiful Cardamom Aroma",
     subtitle:
-      "Tender downy buds plucked at dawn in misty Himalayan heights above 6,500 ft. Crisp muscatel notes with vibrant golden amber liquor.",
+      "Brisk, full-bodied milk chai infused with fragrant green cardamom pods. Sealed fresh at origin in 100g pouches up to 35kg bulk sacks.",
     bgImage: "/uploads/upload_1791839388474_c26b4f4ddb2d_teafloww-fresh-harvest-1920x800.webp",
     bgAlt: "Sunrise panoramic view of Himalayan tea slopes bathed in golden dawn light",
-    cardImage: "/uploads/product-darjeeling-tin.jpg",
-    cardAlt: "Himalayan High-Altitude Reserve Oolong Tea Caddy",
-    cardTitle: "Origin Cupping\n& Ceremony",
-    cardHref: "/shop?category=Black%20Tea",
-    chapterLabel: "02. High-Altitude Oolong",
-    chapterLabelShort: "02. Oolong",
-    harvestLot: "Reserve Lot 04 · Giddapahar Estate",
-    teaName: "High-Altitude Oolong",
-    elevationPrice: "₹920 · 7,200 ft Elevation",
-    tastingNotes: "Roasted Walnut • Peach Blossom • Honeyed",
+    cardImage: "/uploads/upload_1794179443953_39651bfeff58_teafloww-elaichi-bronze-100g-front-20261109.webp",
+    cardAlt: "TeaFloww Elaichi Tea Bronze Pouch",
+    cardTitle: "Aromatic\nCardamom\nChai",
+    cardHref: "/tea/elaichi-milk-chai",
+    chapterLabel: "02. Elaichi Milk Chai",
+    chapterLabelShort: "02. Elaichi Chai",
+    harvestLot: "Signature Blend · Green Cardamom",
+    teaName: "Elaichi Tea (Cardamom Chai)",
+    elevationPrice: "From ₹40 (100g) · Retail & Bulk Sacks",
+    tastingNotes: "Sweet Cardamom • Creamy Malt • Warm Finish",
     pillars: [
-      { icon: "leaf", text: "Authentic Single Estates" },
-      { icon: "mountain", text: "High-Altitude Gardens" },
+      { icon: "leaf", text: "Direct from Siliguri Hub" },
+      { icon: "mountain", text: "Assam & Dooars Gardens" },
       { icon: "heart", text: "Small Batch & Fresh" },
-      { icon: "sprout", text: "No Artificial Flavours" },
+      { icon: "sprout", text: "100% Natural Ingredients" },
     ],
   },
   {
     id: 3,
-    overline: "EXCLUSIVE HARVEST LOTS",
-    title: "From Leaf to Cup — Discover the Tea Journey",
+    overline: "SPICED & GINGER CHAI COLLECTION",
+    title: "Balanced Masala & Zesty Adrak Milk Chai",
     subtitle:
-      "Century-old clonal gardens along mist-shrouded mountain valleys. Deep honeyed malt, rich cocoa, and sweet vegetative vitality.",
+      "Warm whole-spice Masala Chai and brisk Ginger Adrak Chai crafted for restorative morning and evening tea rituals.",
     bgImage: "/uploads/upload_1791839391093_8156e48d5836_teafloww-leaf-to-cup-1920x800.webp",
     bgAlt: "Rolling terraced green tea hills under morning fog in the Himalayan foothills",
-    cardImage: "/uploads/product-assam-tin.jpg",
-    cardAlt: "TeaFloww Artisanal Assam Orthodox Whole Leaf Caddy",
-    cardTitle: "Crafted by\nMaster Planters",
-    cardHref: "/shop?category=Green%20Tea",
-    chapterLabel: "03. Himalayan Gold Black",
-    chapterLabelShort: "03. Gold Black",
-    harvestLot: "Heritage Clonal · Upper Assam",
-    teaName: "Himalayan Gold Black",
-    elevationPrice: "₹780 · Heritage Garden Orthodox",
-    tastingNotes: "Malty Cocoa • Sweet Raisin • Deep Amber",
+    cardImage: "/uploads/upload_1794092852372_dffd02c26f95_teafloww-masala-100g-front-20261108.webp",
+    cardAlt: "TeaFloww Balanced Masala Milk Chai Pouch",
+    cardTitle: "Warm Spices\n& Fresh\nGinger",
+    cardHref: "/tea/balanced-masala-milk-chai",
+    chapterLabel: "03. Masala & Ginger Chai",
+    chapterLabelShort: "03. Masala Chai",
+    harvestLot: "Artisan Spice Blend · Siliguri Origin",
+    teaName: "Masala & Ginger Milk Chai",
+    elevationPrice: "From ₹40 (100g) · Free Shipping ₹499+",
+    tastingNotes: "Cinnamon & Clove • Zesty Ginger • Rich Body",
     pillars: [
-      { icon: "leaf", text: "Authentic Single Estates" },
-      { icon: "mountain", text: "High-Altitude Gardens" },
+      { icon: "leaf", text: "Direct from Siliguri Hub" },
+      { icon: "mountain", text: "Assam & Dooars Gardens" },
       { icon: "heart", text: "Small Batch & Fresh" },
-      { icon: "sprout", text: "No Artificial Flavours" },
+      { icon: "sprout", text: "100% Natural Ingredients" },
     ],
   },
 ];
@@ -252,16 +252,31 @@ export function HomeHero({
   const categoryData = matchedKey ? CATEGORY_HERO_CONTENT[matchedKey] : null;
 
   // Build the effective slides array
+  const normalizeHeroHref = (href?: string | null, fallback = "/shop"): string => {
+    if (!href) return fallback;
+    if (href.startsWith("/shop/") && !href.includes("?")) {
+      return href.replace(/^\/shop\//, "/tea/");
+    }
+    return href;
+  };
+
   const effectiveSlides: HeroSlideData[] = useMemo(() => {
     if (sliders && sliders.length > 0) {
       return sliders.map((s, idx) => {
         const def = DEFAULT_HERO_SLIDES[idx % DEFAULT_HERO_SLIDES.length];
+        const isStaleGreenElaichiSlider = Boolean(
+          s.image_url && s.image_url.includes("teafloww-elaichi-tea-slider-1920x800")
+        );
         const isCardEnabled = s.card_enabled !== undefined ? s.card_enabled === 1 : Boolean(s.fg_image_url && s.fg_image_url.trim() !== "");
         const hasFg = Boolean(s.fg_image_url && s.fg_image_url.trim() !== "");
         // If card is disabled, cardImage is undefined (banner switches to full-width editorial layout)
-        const cardImg = isCardEnabled ? (hasFg ? s.fg_image_url : (idx === 0 ? def.cardImage : undefined)) : undefined;
+        const cardImg = isStaleGreenElaichiSlider
+          ? "/uploads/upload_1794179443953_39651bfeff58_teafloww-elaichi-bronze-100g-front-20261109.webp"
+          : isCardEnabled
+          ? (hasFg ? s.fg_image_url : (idx === 0 ? def.cardImage : undefined))
+          : undefined;
         const cardTitle = s.card_quote || (s.cta_label && s.cta_label !== s.title ? s.cta_label.replace(" / ", "\n") : def.cardTitle);
-        const cardHref = s.card_cta_href || s.cta_href || def.cardHref;
+        const cardHref = normalizeHeroHref(s.card_cta_href || s.cta_href, def.cardHref);
         const catKey = s.category_slug ? s.category_slug.toLowerCase().replace(/-tea$/, "") : "";
         const catOverline = catKey && CATEGORY_HERO_CONTENT[catKey] ? CATEGORY_HERO_CONTENT[catKey].overline : null;
 
@@ -270,10 +285,11 @@ export function HomeHero({
           overline: catOverline || (categoryData ? categoryData.overline : def.overline),
           title: s.title || def.title,
           subtitle: s.subtitle || def.subtitle,
-          bgImage:
-            s.image_url && s.image_url !== ""
-              ? s.image_url
-              : (categoryCoverImage || def.bgImage),
+          bgImage: isStaleGreenElaichiSlider
+            ? "/uploads/upload_1791839388474_c26b4f4ddb2d_teafloww-fresh-harvest-1920x800.webp"
+            : s.image_url && s.image_url !== ""
+            ? s.image_url
+            : (categoryCoverImage || def.bgImage),
           bgAlt: def.bgAlt,
           cardImage: cardImg,
           cardAlt: def.cardAlt,
@@ -282,7 +298,7 @@ export function HomeHero({
           cardBadge: s.card_badge || "ESTATE HARVEST",
           cardCtaLabel: s.card_cta_label || "View Harvest",
           ctaLabel: s.cta_label || "",
-          ctaHref: s.cta_href || "/shop",
+          ctaHref: normalizeHeroHref(s.cta_href, "/shop"),
           chapterLabel:
             s.chapter_label ||
             (s.card_title ? `0${idx + 1}. ${s.card_title}` : (s.title ? `0${idx + 1}. ${s.title.split("—")[0].split("&")[0].trim()}` : def.chapterLabel)),

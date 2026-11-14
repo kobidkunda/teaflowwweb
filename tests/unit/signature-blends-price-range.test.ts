@@ -164,9 +164,9 @@ describe("SignatureBlendsCarousel — Price Range & Modal Trigger", () => {
       React.createElement(SignatureBlendsCarousel, { products: [product] })
     );
 
-    // Button should be ENABLED with 'Add to cart' label, not disabled
-    expect(markup).toContain("Add to cart");
-    expect(markup).toContain('class="button button-outline quick-add" aria-live="polite" aria-label="Add Darjeeling Spring Clonal First Flush to bag"><svg');
+    // Button should be ENABLED with explicit pack + price label, not disabled
+    expect(markup).toContain("Add 100g · ₹399");
+    expect(markup).toContain('class="button button-outline quick-add" aria-live="polite" aria-label="Add 100g of Darjeeling Spring Clonal First Flush to bag"><svg');
     expect(markup).not.toContain("Unavailable");
   });
 

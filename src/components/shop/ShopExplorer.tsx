@@ -76,6 +76,20 @@ export function ShopExplorer({
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
+  // Sync filters when initialParams change via client navigation (e.g. header QuickSearchModal)
+  useEffect(() => {
+    if (initialParams.q !== undefined) {
+      setFilters((prev) => (prev.q === (initialParams.q || "") ? prev : { ...prev, q: initialParams.q || "" }));
+    }
+    if (initialParams.category !== undefined) {
+      setFilters((prev) =>
+        prev.category === (initialParams.category || "")
+          ? prev
+          : { ...prev, category: initialParams.category || "" }
+      );
+    }
+  }, [initialParams.q, initialParams.category]);
+
   // Available facet options derived from products
   const regionOptions = useMemo(() => [
     "Darjeeling",
