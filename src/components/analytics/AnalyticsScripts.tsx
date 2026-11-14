@@ -7,6 +7,7 @@ import Script from "next/script";
 import type { PublicTrackingConfig } from "@/lib/trackingSettings";
 import { CONSENT_EVENT, CONSENT_KEY, gtmLoaderScript, DENIED_CONSENT, readTrackingConsent, trackingRouteAllowed, updateTrackingConsent, type TrackingConsent } from "@/lib/seo/consent";
 import { ensureMetaQueue, trackPageView } from "@/lib/seo/tracking";
+import { X } from "lucide-react";
 
 export function AnalyticsHeadScripts({ config }: { config: PublicTrackingConfig }) {
   const pathname = usePathname();
@@ -58,13 +59,23 @@ export function AnalyticsHeadScripts({ config }: { config: PublicTrackingConfig 
     {consent.marketing && !gtm && config.customHeadScript && <Script id="custom-head-tracking" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: config.customHeadScript }} />}
     {consent.marketing && !gtm && config.customBodyScript && <div id="custom-body-tracking" dangerouslySetInnerHTML={{ __html: config.customBodyScript }} />}
     {(!chosen || settings) ? <section aria-label="Cookie preferences" className="tracking-consent-panel">
-      <h2><StorefrontText id="copy_27fed2a49a73923d" fallback="Choose your cookies" /></h2>
-      <p><StorefrontText id="copy_c919c4b974125043" fallback="Essential cookies keep your bag and checkout working. Optional analytics help us improve TeaFloww; marketing cookies help Google and Meta show relevant ads." /> <a href="/privacy"><StorefrontText id="copy_ba445cff3898a3f2" fallback="Privacy policy" /></a></p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px", marginBottom: "4px" }}>
+        <h2 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}><StorefrontText id="copy_27fed2a49a73923d" fallback="Choose your cookies" /></h2>
+        <button
+          type="button"
+          onClick={() => choose(DENIED_CONSENT)}
+          aria-label="Dismiss cookie notice"
+          style={{ background: "none", border: "none", padding: "4px", cursor: "pointer", color: "#526359", display: "inline-flex" }}
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <p style={{ fontSize: "0.8125rem", margin: "0 0 0.75rem", lineHeight: 1.4 }}><StorefrontText id="copy_c919c4b974125043" fallback="Essential cookies keep your bag and checkout working. Optional analytics help us improve TeaFloww; marketing cookies help Google and Meta show relevant ads." /> <a href="/privacy"><StorefrontText id="copy_ba445cff3898a3f2" fallback="Privacy policy" /></a></p>
       <div className="tracking-consent-actions">
-        <button type="button" className="button button-outline" onClick={() => choose(DENIED_CONSENT)}><StorefrontText id="copy_99468ef7474b8794" fallback="Essential only" /></button>
-        <button type="button" className="button button-outline" onClick={() => choose({ analytics: true, marketing: false })}><StorefrontText id="copy_ab9e3e3f6b320ffa" fallback="Analytics only" /></button>
-        <button type="button" className="button button-primary" onClick={() => choose({ analytics: true, marketing: true })}><StorefrontText id="copy_f55ee86234087579" fallback="Accept all" /></button>
-        {settings && <button type="button" className="button button-outline" onClick={() => setSettings(false)}><StorefrontText id="copy_7d9eb7acb13e2462" fallback="Close" /></button>}
+        <button type="button" className="button button-outline" style={{ fontSize: "12px", minHeight: "38px", padding: "6px 12px" }} onClick={() => choose(DENIED_CONSENT)}><StorefrontText id="copy_99468ef7474b8794" fallback="Essential only" /></button>
+        <button type="button" className="button button-outline" style={{ fontSize: "12px", minHeight: "38px", padding: "6px 12px" }} onClick={() => choose({ analytics: true, marketing: false })}><StorefrontText id="copy_ab9e3e3f6b320ffa" fallback="Analytics only" /></button>
+        <button type="button" className="button button-primary" style={{ fontSize: "12px", minHeight: "38px", padding: "6px 12px" }} onClick={() => choose({ analytics: true, marketing: true })}><StorefrontText id="copy_f55ee86234087579" fallback="Accept all" /></button>
+        {settings && <button type="button" className="button button-outline" style={{ fontSize: "12px", minHeight: "38px", padding: "6px 12px" }} onClick={() => setSettings(false)}><StorefrontText id="copy_7d9eb7acb13e2462" fallback="Close" /></button>}
       </div>
     </section> : null}
   </>;

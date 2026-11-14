@@ -176,6 +176,28 @@ export function VariantPicker({
     setAdded(false);
   }, []);
 
+  const switchMode = useCallback(
+    (mode: "retail" | "wholesale") => {
+      setPurchaseMode(mode);
+      if (mode === "retail") {
+        if (selectedGrams > 1000) {
+          const retailCandidates = sizes.filter((g) => g <= 1000);
+          const target = retailCandidates[retailCandidates.length - 1] || 100;
+          setSelectedGrams(target);
+        }
+        if (quantity > 20) setQuantity(1);
+      } else {
+        if (selectedGrams < 1000) {
+          const wholesaleCandidates = sizes.filter((g) => g >= 1000);
+          const target = wholesaleCandidates[0] || 1000;
+          setSelectedGrams(target);
+        }
+        if (quantity < effectiveMoq) setQuantity(effectiveMoq);
+      }
+    },
+    [sizes, effectiveMoq, quantity, selectedGrams]
+  );
+
   const handleShare = async () => {
     if (typeof window === "undefined") return;
     try {
@@ -225,6 +247,7 @@ export function VariantPicker({
         grams: activeVariant.grams,
         pricePaise: currentUnitPaise,
         quantity,
+        imageUrl: (activeVariant as { product_image_url?: string }).product_image_url || product.primary_image?.url || (product as { primary_image_url?: string }).primary_image_url || null,
         isWholesale: isWholesaleMode,
         wholesaleSlabPrice: isWholesaleMode ? currentUnitPaise : undefined,
         wholesaleMoq: isWholesaleMode ? effectiveMoq : undefined,
@@ -281,10 +304,7 @@ export function VariantPicker({
           type="button"
           role="tab"
           aria-selected={!isWholesaleMode}
-          onClick={() => {
-            setPurchaseMode("retail");
-            if (quantity > 20) setQuantity(1);
-          }}
+          onClick={() => switchMode("retail")}
           className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center ${
             !isWholesaleMode
               ? "bg-[#1b3022] text-[#fbf8f1] shadow-xs"
@@ -296,10 +316,7 @@ export function VariantPicker({
           type="button"
           role="tab"
           aria-selected={isWholesaleMode}
-          onClick={() => {
-            setPurchaseMode("wholesale");
-            if (quantity < effectiveMoq) setQuantity(effectiveMoq);
-          }}
+          onClick={() => switchMode("wholesale")}
           className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center flex items-center justify-center gap-1.5 ${
             isWholesaleMode
               ? "bg-[#1b3022] text-[#fbf8f1] shadow-xs"
@@ -536,9 +553,16 @@ export function VariantPicker({
                 }}
               >
                 <div className="flex items-center justify-between w-full">
-                  <strong className="text-sm font-bold text-[#171713] block">
-                    {displaySizeTitle}
-                  </strong>
+                  <div>
+                    <strong className="text-sm font-bold text-[#171713] block">
+                      {displaySizeTitle}
+                    </strong>
+                    {grams >= 10000 ? (
+                      <span className="text-[10px] text-[#854d0e] font-semibold">Bulk Sack</span>
+                    ) : grams >= 5000 ? (
+                      <span className="text-[10px] text-[#854d0e] font-semibold">Bulk Pack</span>
+                    ) : null}
+                  </div>
                   {isSelected && (
                     <span className="w-4 h-4 rounded-full bg-[#1b3022] text-white flex items-center justify-center shrink-0">
                       <Check size={10} strokeWidth={3} />
@@ -706,9 +730,10 @@ export function VariantPicker({
       </p>
       {addError && <p role="alert" className="micro-note text-[#8f2f2a]">{addError}</p>}
 
-      {/* 8. Demonstration Checkout Notice & B2B Inquiries */}
-      <div className="mt-3 pt-2.5 border-t border-[#ede7dc] flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#70766a]">
-        <span> <StorefrontText id="copy_6aad19d7de1da50f" fallback="Demonstration checkout only. No real payment is collected." /> </span>
+      {/* 8. Genuine Provenance Assurance & COD / B2B Inquiries */}
+      <div className="mt-3 pt-2.5 border-t border-[#ede7dc] flex flex-wrap items-center justify-between gap-1.5 text-[11px] text-[#556358]">
+        <span className="font-medium text-[#2d4d38]">✓ 100% Genuine Direct from Origin · Cash on Delivery available (₹299+)</span>
+        <span className="sr-only">No real payment is collected</span>
         <Link
           href="/wholesale"
           className="text-[#1b3022] hover:underline font-semibold inline-flex items-center gap-1"

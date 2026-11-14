@@ -118,8 +118,31 @@ export function deleteContentBlock(key: string): boolean {
 
 /** Announcement Bar helper */
 export function getAnnouncementSettings(): AnnouncementSettings {
-  const text = getContentBlock("announcement.text", "FREE SHIPPING ON ORDERS ABOVE ₹999");
-  const highlight = getContentBlock("announcement.highlight", "✨ FREE SHIPPING ON ORDERS ABOVE ₹999");
+  let defaultText = "FREE SHIPPING ON ORDERS ABOVE ₹499";
+  let defaultHighlight = "✨ FREE SHIPPING ON ORDERS ABOVE ₹499";
+  try {
+    const db = getDb();
+    const row = db.prepare("SELECT value FROM store_settings WHERE key = 'free_shipping_threshold_paise'").get() as { value?: string } | undefined;
+    if (row?.value) {
+      const rupees = Math.round(Number(row.value) / 100);
+      if (rupees > 0) {
+        defaultText = `FREE SHIPPING ON ORDERS ABOVE ₹${rupees}`;
+        defaultHighlight = `✨ FREE SHIPPING ON ORDERS ABOVE ₹${rupees}`;
+      }
+    }
+  } catch {}
+
+  let text = getContentBlock("announcement.text", defaultText);
+  let highlight = getContentBlock("announcement.highlight", defaultHighlight);
+
+  // If content block has stale ₹999 notice, harmonize with the store shipping threshold (₹499)
+  if (text.includes("₹999")) {
+    text = defaultText;
+  }
+  if (highlight.includes("₹999")) {
+    highlight = defaultHighlight;
+  }
+
   const link_url = getContentBlock("announcement.link_url", "/shop");
   const link_label = getContentBlock("announcement.link_label", "Shop Now");
   const wholesale_label = getContentBlock("announcement.wholesale_label", "🌿 Wholesale & Bulk Orders");

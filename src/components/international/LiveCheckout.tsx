@@ -28,6 +28,47 @@ import {
 } from "lucide-react";
 import { WhatsAppIcon } from "@/components/wholesale/WholesaleForm";
 import { PhoneInputField, validatePhoneNumber } from "@/components/checkout/PhoneInputField";
+import { CartItemImage } from "@/components/CartItemImage";
+import { formatPackWeight } from "@/lib/packSize";
+
+const INDIAN_STATES = [
+  "Andaman and Nicobar Islands",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Delhi",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Ladakh",
+  "Lakshadweep",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Puducherry",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+];
 
 type QuoteView = {
   id: string;
@@ -124,7 +165,16 @@ export function LiveCheckout() {
 
   const [quoteResult, setQuoteResult] = useState<{ view: QuoteView; input: string } | null>(null);
   const requestSequence = useRef(0);
-  const [couponCode, setCouponCode] = useState(initialCoupon);
+  const [couponCode, setCouponCode] = useState(() => {
+    if (initialCoupon) return initialCoupon;
+    if (typeof window !== "undefined") {
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)hth_applied_coupon=([^;]*)/);
+        if (match?.[1]) return decodeURIComponent(match[1]).trim().toUpperCase();
+      } catch {}
+    }
+    return "";
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -496,6 +546,46 @@ export function LiveCheckout() {
     );
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    const name = formData.name.trim();
+    const phone = formData.phone.trim();
+    const email = formData.email.trim();
+    const line1 = formData.line1.trim();
+    const city = formData.city.trim();
+    const state = formData.state.trim();
+    const postcode = formData.postcode.trim().replace(/\s+/g, "");
+
+    if (!name || name.length < 2) {
+      errors.name = "Please enter your full name (at least 2 letters).";
+    }
+    if (!phone || !validatePhoneNumber(phone, country)) {
+      errors.phone = country === "IN" ? "Please enter a valid 10-digit mobile number." : "Please enter a valid phone number with country code.";
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Please enter a valid email address for order tracking.";
+    }
+    if (!line1 || line1.length < 5) {
+      errors.line1 = "Please enter your flat, house number, or street address.";
+    }
+    if (!city) {
+      errors.city = "Please enter your city or town.";
+    }
+    if (!state) {
+      errors.state = country === "IN" ? "Please select your state or union territory." : "Please enter your state / province.";
+    }
+    if (country === "IN") {
+      if (!postcode || !/^\d{6}$/.test(postcode)) {
+        errors.postcode = "Please enter a valid 6-digit Indian PIN code.";
+      }
+    } else if (!postcode) {
+      errors.postcode = "Please enter your postal or ZIP code.";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   // Auto-sync checkout contact & partial shipping details to abandoned cart as user types
   const syncCustomerDetails = cart.syncCustomerDetails;
   useEffect(() => {
@@ -707,6 +797,12 @@ export function LiveCheckout() {
 
   function handleFormSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!validateForm()) {
+      const valMsg = "Please check and complete all required fields highlighted in red.";
+      setError(valMsg);
+      showErrorModal(valMsg, "address");
+      return;
+    }
     computeQuote(method, formData, country, false);
   }
 
@@ -718,6 +814,12 @@ export function LiveCheckout() {
   }
 
   async function pay() {
+    if (!validateForm()) {
+      const valMsg = "Please verify your delivery details before placing your order.";
+      setError(valMsg);
+      showErrorModal(valMsg, "address");
+      return;
+    }
     if (!quote) return;
     if (country !== "IN" && quote.currency === "INR" && !inrAccepted) {
       const inrMsg = "Please confirm acceptance of the INR charge before continuing.";
@@ -1182,20 +1284,40 @@ export function LiveCheckout() {
 
               <label className="flex flex-col gap-1 text-xs font-semibold text-[#171713]">
                 {t("state")} *
-                <input
-                  name="state"
-                  type="text"
-                  required
-                  maxLength={100}
-                  autoComplete="address-level1"
-                  placeholder="e.g. West Bengal"
-                  value={formData.state}
-                  onChange={(e) => {
-                    setFormData((prev) => ({ ...prev, state: e.target.value }));
-                    setFieldErrors((prev) => ({ ...prev, state: "" }));
-                  }}
-                  className={`w-full min-h-[46px] border ${fieldErrors.state ? "border-red-500 bg-red-50" : "border-[#b8b5a8] bg-[#fffefa]"} rounded-md px-3 py-2 text-sm`}
-                />
+                {country === "IN" ? (
+                  <select
+                    name="state"
+                    required
+                    value={formData.state}
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, state: e.target.value }));
+                      setFieldErrors((prev) => ({ ...prev, state: "" }));
+                    }}
+                    className={`w-full min-h-[46px] border ${fieldErrors.state ? "border-red-500 bg-red-50" : "border-[#b8b5a8] bg-[#fffefa]"} rounded-md px-3 py-2 text-sm`}
+                  >
+                    <option value="">Select State / UT</option>
+                    {INDIAN_STATES.map((st) => (
+                      <option key={st} value={st}>
+                        {st}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    name="state"
+                    type="text"
+                    required
+                    maxLength={100}
+                    autoComplete="address-level1"
+                    placeholder="e.g. West Bengal"
+                    value={formData.state}
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, state: e.target.value }));
+                      setFieldErrors((prev) => ({ ...prev, state: "" }));
+                    }}
+                    className={`w-full min-h-[46px] border ${fieldErrors.state ? "border-red-500 bg-red-50" : "border-[#b8b5a8] bg-[#fffefa]"} rounded-md px-3 py-2 text-sm`}
+                  />
+                )}
                 {fieldErrors.state && <span className="text-[11px] text-red-600 font-medium">{fieldErrors.state}</span>}
               </label>
 
@@ -1505,7 +1627,17 @@ export function LiveCheckout() {
                 <input
                   name="coupon"
                   value={couponCode}
-                  onChange={e => setCouponCode(e.target.value)}
+                  onChange={(e) => {
+                    const clean = e.target.value.toUpperCase();
+                    setCouponCode(clean);
+                    try {
+                      if (clean) {
+                        document.cookie = `hth_applied_coupon=${encodeURIComponent(clean)}; path=/; max-age=604800; SameSite=Lax`;
+                      } else {
+                        document.cookie = "hth_applied_coupon=; path=/; max-age=0";
+                      }
+                    } catch {}
+                  }}
                   maxLength={24}
                   placeholder="e.g. HARVEST10"
                   className="flex-1 min-h-[46px] border border-[#b8b5a8] rounded-md px-3 py-2 bg-[#fffefa] text-sm uppercase tracking-wider"
@@ -1612,11 +1744,94 @@ export function LiveCheckout() {
       <aside className="lg:col-span-5 sticky top-6 space-y-4" aria-live="polite">
         <div className="tf-ops-card p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-[#e4dfd5] pb-4">
-            <h2 className="text-xl font-serif text-[#171713] font-normal">{t("total")}</h2>
+            <h2 className="text-xl font-serif text-[#171713] font-normal">
+              Order Summary ({cart.count} {cart.count === 1 ? "item" : "items"})
+            </h2>
             <div className="text-xs text-[#737067] flex items-center gap-1">
               <Lock className="w-3.5 h-3.5 text-[#23483a]" /> Secure checkout
             </div>
           </div>
+
+          {/* Bag Items Preview */}
+          <div className="space-y-3 max-h-64 overflow-y-auto pr-1 divide-y divide-[#f0ece1]">
+            {cart.items.map((line) => {
+              const packLabel = line.trialId
+                ? "Sample Kit"
+                : `${formatPackWeight(line.grams)} ${line.grams >= 10000 ? "Sack" : "Pouch"}`;
+              const lineTotal = (line.pricePaise * line.quantity) / 100;
+              return (
+                <div key={line.variantId || line.trialId || line.sku} className="pt-2.5 first:pt-0 flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-md overflow-hidden bg-[#f6f1e7] shrink-0 border border-[#e8e4d8]">
+                    <CartItemImage
+                      src={line.imageUrl || null}
+                      name={line.name}
+                      size={48}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute -top-1 -right-1 bg-[#23483a] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                      {line.quantity}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-[#171713] truncate">{line.name}</p>
+                    <p className="text-[11px] text-[#737067]">{packLabel}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-semibold text-[#171713]">
+                      ₹{lineTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    {line.quantity > 1 && (
+                      <p className="text-[10px] text-[#737067]">
+                        ₹{(line.pricePaise / 100).toFixed(2)} each
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-end pb-2 border-b border-[#e4dfd5]">
+            <Link href="/cart" className="text-[11px] text-[#23483a] hover:underline font-semibold flex items-center gap-1">
+              <span>Edit Bag Items</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Dispatch & Delivery Timeline */}
+          <div className="p-3 rounded-lg bg-[#fbf9f4] border border-[#e8e3d5] text-xs text-[#526359] flex items-start gap-2.5">
+            <Truck className="w-4 h-4 text-[#23483a] shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-[#171713]">
+                Dispatches within 24–48 hours from Siliguri hub
+              </p>
+              <p className="text-[11px] text-[#737067] mt-0.5">
+                Estimated delivery in 2–5 business days across India via express courier.
+              </p>
+            </div>
+          </div>
+
+          {/* Upfront COD Minimum Order Warning */}
+          {!isWholesale && country === "IN" && !isCodSubtotalValid && (
+            <div className="p-3.5 rounded-lg bg-[#fff8eb] border border-[#f0c78a] text-xs text-[#8a5300] space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-[#d97706] shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <strong className="block font-semibold text-[#8a5300]">
+                    Cash on Delivery Minimum: ₹{codMin}
+                  </strong>
+                  <p className="text-[11px] text-[#784300] mt-0.5">
+                    Your current bag is ₹{cartSubtotalRupees}. Add ₹{Math.max(0, codMin - cartSubtotalRupees)} more to place your Cash on Delivery order.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/shop"
+                className="inline-flex items-center justify-center w-full py-2 px-3 bg-[#23483a] hover:bg-[#1a382d] text-white rounded-md text-xs font-semibold transition-colors"
+              >
+                Add More Teas to Bag →
+              </Link>
+            </div>
+          )}
 
           {/* Error Notice */}
           {error && (
@@ -1624,13 +1839,23 @@ export function LiveCheckout() {
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#991b1b]" />
               <div className="flex-1 min-w-0">
                 <span className="font-medium leading-relaxed">{error}</span>
-                <button
-                  type="button"
-                  onClick={() => showErrorModal(error)}
-                  className="block mt-1.5 font-semibold underline text-[#7f1d1d] hover:text-[#991b1b] transition-colors"
-                >
-                  View Details &amp; Resolve →
-                </button>
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => showErrorModal(error)}
+                    className="font-semibold underline text-[#7f1d1d] hover:text-[#991b1b] transition-colors"
+                  >
+                    View Details &amp; Resolve →
+                  </button>
+                  {(!isCodSubtotalValid || error.toLowerCase().includes("minimum") || error.toLowerCase().includes("cod")) && (
+                    <Link
+                      href="/shop"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#23483a] text-white rounded text-[11px] font-semibold hover:bg-[#1a382d] transition-colors"
+                    >
+                      Add Teas to Bag →
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1755,6 +1980,14 @@ export function LiveCheckout() {
                     `Pay ${formatMoney(quote.totalMinor, quote.currency, ctx?.locale)} Online →`
                   )}
                 </button>
+                {method === "cod" && !isCodSubtotalValid && (
+                  <Link
+                    href="/shop"
+                    className="w-full min-h-[44px] rounded-lg bg-[#23483a] hover:bg-[#1a382d] text-white font-semibold text-xs transition-all flex items-center justify-center gap-1.5 mt-2.5 shadow-xs text-center"
+                  >
+                    <span>Add ₹{Math.max(0, codMin - cartSubtotalRupees)} more to Bag to Place COD Order →</span>
+                  </Link>
+                )}
               </div>
 
               <div className="flex items-center justify-center gap-4 text-[11px] text-[#737067] pt-2">

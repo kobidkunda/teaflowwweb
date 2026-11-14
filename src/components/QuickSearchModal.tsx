@@ -19,12 +19,12 @@ interface ProductPreview {
 }
 
 const POPULAR_SEARCHES = [
-  "Darjeeling First Flush",
-  "Assam Golden Malty",
-  "Nilgiri Mist",
-  "White Peony",
+  "Kadak Chai",
+  "Elaichi Chai",
   "Masala Chai",
-  "Spring Harvest",
+  "Ginger Chai",
+  "Daily Milk Chai",
+  "Trial Pack",
 ];
 
 export interface QuickSearchModalProps {
@@ -140,7 +140,8 @@ export function QuickSearchModal({ isOpen, onClose }: QuickSearchModalProps) {
             <Search size={20} className="tf-quick-search-icon" aria-hidden="true" />
             <input
               ref={inputRef}
-              type="search"
+              type="text"
+              inputMode="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by harvest flush, terroir, tasting note..."

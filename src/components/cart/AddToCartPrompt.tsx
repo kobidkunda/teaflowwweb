@@ -9,13 +9,13 @@ import {
 } from "@/components/international/InternationalProvider";
 import { CartItemImage } from "@/components/CartItemImage";
 import { cartImageKey } from "@/lib/cartImageHelper";
-import { Check, X, ArrowRight, ShoppingBag } from "lucide-react";
+import { Check, X, ArrowRight, ShoppingBag, Plus, Minus, Trash2 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const AUTO_DISMISS_MS = 7000;
 
 export function AddToCartPrompt() {
-  const { lastAddedItem, dismissLastAdded, count, subtotal, items } = useCart();
+  const { lastAddedItem, dismissLastAdded, count, subtotal, items, changeQuantity, remove } = useCart();
   const formatMoney = useDisplayMoney();
   const pathname = usePathname();
 
@@ -150,13 +150,52 @@ export function AddToCartPrompt() {
               <span>{item.grams >= 1000 ? `${item.grams / 1000}kg` : `${item.grams}g`}</span>
               {item.isWholesale && <span className="add-to-cart-prompt-tag"><StorefrontText id="copy_09513d0ed97381c5" fallback="Wholesale" /></span>}
             </div>
-            <div className="add-to-cart-prompt-pricing">
-              <span className="add-to-cart-prompt-qty">
-                {quantityAdded > 1 ? `Qty: ${quantityAdded} × ` : ""}
+            <div className="add-to-cart-prompt-pricing flex items-center justify-between gap-2 mt-1">
+              <span className="add-to-cart-prompt-price font-bold text-[#1b3022]">
+                Qty: {matchedItem ? matchedItem.quantity : quantityAdded} × {formatMoney(item.pricePaise)}
               </span>
-              <span className="add-to-cart-prompt-price">
-                {formatMoney(item.pricePaise)}
-              </span>
+
+              {matchedItem && (
+                <div className="inline-flex items-center border border-[#ded8cb] bg-white rounded text-xs overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentQty = matchedItem.quantity;
+                      if (currentQty <= 1) {
+                        remove(matchedItem.trialId || matchedItem.variantId);
+                      } else {
+                        changeQuantity(matchedItem.trialId || matchedItem.variantId, currentQty - 1);
+                      }
+                    }}
+                    className="w-6 h-6 flex items-center justify-center hover:bg-[#f6f2e9] text-[#1b3022] transition-colors"
+                    aria-label="Decrease quantity"
+                  >
+                    <Minus size={11} />
+                  </button>
+                  <span className="px-2 font-bold tabular-nums text-[11px] text-[#1b3022]">
+                    {matchedItem.quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      changeQuantity(matchedItem.trialId || matchedItem.variantId, matchedItem.quantity + 1);
+                    }}
+                    className="w-6 h-6 flex items-center justify-center hover:bg-[#f6f2e9] text-[#1b3022] transition-colors"
+                    aria-label="Increase quantity"
+                  >
+                    <Plus size={11} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => remove(matchedItem.trialId || matchedItem.variantId)}
+                    className="w-6 h-6 flex items-center justify-center text-[#8f2f2a] hover:bg-[#fcf0ef] transition-colors border-l border-[#ded8cb]"
+                    aria-label="Remove item from bag"
+                    title="Remove item"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -173,6 +212,22 @@ export function AddToCartPrompt() {
             {formatMoney(subtotal)}
           </span>
         </div>
+
+        {/* Minimum Order / Free Shipping Notification */}
+        {subtotal < 29900 ? (
+          <div className="px-3 py-2 rounded-md bg-[#fff8eb] border border-[#f5dfb8] text-[11px] text-[#85570e] font-medium leading-tight mb-2">
+            <span>Minimum order for Cash on Delivery is ₹299. Add ₹{Math.ceil((29900 - subtotal) / 100)} more to checkout.</span>
+          </div>
+        ) : subtotal < 49900 ? (
+          <div className="px-3 py-2 rounded-md bg-[#f0f9f4] border border-[#c3ead4] text-[11px] text-[#166534] font-medium leading-tight mb-2">
+            <span>Add ₹{Math.ceil((49900 - subtotal) / 100)} more for FREE Delivery across India!</span>
+          </div>
+        ) : (
+          <div className="px-3 py-1.5 rounded-md bg-[#f0f9f4] border border-[#c3ead4] text-[11px] text-[#166534] font-semibold leading-tight mb-2 flex items-center gap-1.5">
+            <Check size={12} strokeWidth={2.5} />
+            <span>You unlocked FREE Delivery across India!</span>
+          </div>
+        )}
 
         {/* Actions Suite */}
         <div className="add-to-cart-prompt-actions">

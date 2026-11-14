@@ -3070,8 +3070,13 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
 /* Trust Badges Bar */
 .tf-footer-trust-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+@media (max-width: 600px) {
+  .tf-footer-trust-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tf-footer-trust-item {
@@ -6295,6 +6300,14 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
   outline: none;
   padding: 8px 0;
 }
+.tf-quick-search-input::-webkit-search-cancel-button,
+.tf-quick-search-input::-webkit-search-decoration,
+.tf-quick-search-input::-webkit-search-results-button,
+.tf-quick-search-input::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
 .tf-quick-search-input::placeholder {
   color: #9c9486;
   font-family: system-ui, sans-serif;
@@ -6543,7 +6556,7 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
 .ritual-footer p:not(.eyebrow){color:#2e3b30;font-size:13px;max-width:none}
 .ritual-footer p.ritual-disclosure{font-size:11px}
 .ritual-tile .ritual-eyebrow{white-space:normal;overflow-wrap:anywhere}
-@media(max-width:1399px){
+@media(max-width:1023px){
   .ritual-menu{display:inline-flex}
   .ritual-nav{
     display:none;
@@ -7394,8 +7407,8 @@ input[aria-invalid="true"],textarea[aria-invalid="true"]{border:2px solid #8f2f2
 }
 
 /* Modern Accessible form enhancements per modern-web-guidance */
-input:user-valid,
-textarea:user-valid {
+input:user-valid:not(:placeholder-shown),
+textarea:user-valid:not(:placeholder-shown) {
   border-color: #3b744d;
 }
 
@@ -7766,13 +7779,38 @@ dialog.tf-checkout-error-dialog[open]::backdrop {
 
 
 
-/* Tracking preferences remain keyboard accessible and fit narrow screens. */
-.tracking-consent-panel { position: fixed; z-index: 200; bottom: 1rem; left: 1rem; right: 1rem; max-width: 46rem; padding: 1.25rem; background: #fbf8f1; color: #171713; border: 1px solid #697a55; box-shadow: 0 8px 32px #17171326; max-height: 80svh; overflow: auto; }
-.tracking-consent-panel h2 { margin: 0 0 .5rem; font-size: 1.2rem; }
-.tracking-consent-panel p { font-size: .875rem; margin: 0 0 1rem; }
-.tracking-consent-panel a { text-decoration: underline; }
-.tracking-consent-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-.tracking-consent-actions button { min-height: 44px; }
+/* Tracking preferences remain keyboard accessible and fit narrow screens without covering action CTAs. */
+.tracking-consent-panel {
+  position: fixed;
+  z-index: 95;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  max-width: 25rem;
+  width: calc(100vw - 2.5rem);
+  padding: 1rem 1.25rem;
+  background: #fbf8f1;
+  color: #171713;
+  border: 1px solid #c8d3bc;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(23, 23, 19, 0.16);
+  max-height: 80svh;
+  overflow: auto;
+}
+@media (max-width: 640px) {
+  .tracking-consent-panel {
+    bottom: 4.5rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: auto;
+    max-width: none;
+    padding: 0.875rem 1rem;
+  }
+}
+.tracking-consent-panel h2 { margin: 0 0 .375rem; font-size: 1.05rem; }
+.tracking-consent-panel p { font-size: .8125rem; margin: 0 0 .75rem; line-height: 1.4; }
+.tracking-consent-panel a { text-decoration: underline; color: #23483a; }
+.tracking-consent-actions { display: flex; gap: .375rem; flex-wrap: wrap; }
+.tracking-consent-actions button { min-height: 36px; }
 
 
 /* ==========================================================================

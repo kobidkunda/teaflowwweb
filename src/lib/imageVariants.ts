@@ -8,6 +8,10 @@ export function parseImageVariantSkus(value: unknown): string[] {
 
 export type VariantOption = { sku: string; packaging_format: string };
 
+function isBulkSku(s: string): boolean {
+  return /-(5|10|25|35)KG$/i.test(s) || /-(5000|10000|25000|35000)G$/i.test(s);
+}
+
 /** Matching pack images come first, followed by format-fallback images and shared gallery images. */
 export function imagesForVariant<T extends { variant_skus?: string[] }>(
   images: T[],
@@ -31,9 +35,18 @@ export function imagesForVariant<T extends { variant_skus?: string[] }>(
   // 2. Format fallback (when variants list or format is known)
   let formatMatches: T[] = [];
   if (format && options?.variants) {
+    const isTargetBulk = sku ? isBulkSku(sku) : false;
     const skusOfSameFormat = new Set(
       options.variants
-        .filter((v) => v.packaging_format === format)
+        .filter((v) => {
+          if (v.packaging_format !== format) return false;
+          // Avoid crossing retail (<5kg) vs bulk wholesale (>=5kg) boundaries during format fallback
+          if (sku) {
+            const isVBulk = isBulkSku(v.sku);
+            if (isTargetBulk !== isVBulk) return false;
+          }
+          return true;
+        })
         .map((v) => v.sku)
     );
     formatMatches = images.filter(

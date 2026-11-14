@@ -149,11 +149,13 @@ export function StickyPurchaseBar({
     setIsAdding(true);
     try {
       add({
-        variantId: currentVariant.id, sku: currentVariant.sku?.trim() || `HTH-${product.id}-${currentVariant.id}`,
+        variantId: currentVariant.id,
+        sku: currentVariant.sku?.trim() || `HTH-${product.id}-${currentVariant.id}`,
         slug: product.slug,
         name: product.name,
         grams: currentVariant.grams,
         pricePaise: currentVariant.price_paise,
+        imageUrl: (currentVariant as { product_image_url?: string }).product_image_url || product.primary_image?.url || (product as { primary_image_url?: string }).primary_image_url || null,
       });
       setAdded(true);
 

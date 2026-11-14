@@ -502,19 +502,48 @@ export function ShopExplorer({
 
   return (
     <div className="shop-explorer">
-      {/* Dynamic Hero Showcase matching admin sliders or fallback category state */}
-      <HomeHero
-        sliders={activeHeroSliders}
-        slider={activeHeroSliders?.[0] || null}
-        category={filters.featuredOnly ? "rare" : (currentCategoryObj?.slug || filters.category)}
-        categoryCoverImage={currentCategoryObj?.cover_image_url || null}
-        categoryTitle={
-          currentCategoryObj
-            ? `Single-Estate ${currentCategoryObj.name} Flushes & Mountain Terroirs.`
-            : null
-        }
-        categoryDescription={currentCategoryObj?.description || null}
-      />
+      {/* When search query is active, show focused search discovery header to keep results above fold */}
+      {filters.q ? (
+        <div className="tf-search-hero-strip py-8 bg-[#182a20] text-white">
+          <div className="container">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-xs uppercase tracking-widest text-[#d8c7a6] font-mono block mb-1">
+                  Search Discovery
+                </span>
+                <h1 className="text-2xl sm:text-3xl font-serif font-normal">
+                  Results for &ldquo;<span className="text-[#f1e6cf] font-medium">{filters.q}</span>&rdquo;
+                </h1>
+                <p className="text-xs text-[#b8c5b9] mt-1">
+                  {filteredProducts.length} {filteredProducts.length === 1 ? "tea" : "teas"} matching your search
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleFilterChange("q", "")}
+                className="self-start sm:self-auto px-3.5 py-1.5 rounded-full border border-[#446b55] hover:bg-[#254534] text-xs text-[#e0ded8] flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <X size={14} />
+                <span>Clear search</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Dynamic Hero Showcase matching admin sliders or fallback category state */
+        <HomeHero
+          sliders={activeHeroSliders}
+          slider={activeHeroSliders?.[0] || null}
+          category={filters.featuredOnly ? "rare" : (currentCategoryObj?.slug || filters.category)}
+          categoryCoverImage={currentCategoryObj?.cover_image_url || null}
+          categoryTitle={
+            currentCategoryObj
+              ? `Single-Estate ${currentCategoryObj.name} Flushes & Mountain Terroirs.`
+              : null
+          }
+          categoryDescription={currentCategoryObj?.description || null}
+        />
+      )}
 
       <div className="container tf-shop-catalog-container">
         {/* 1. Category Quick-Select Strip / Ribbon */}

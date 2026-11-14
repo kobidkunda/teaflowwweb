@@ -979,7 +979,7 @@ export function HomeHero({
                 </span>
                 <span className="tf-hero-trust-text">{pillar.text}</span>
                 {idx < currentSlide.pillars.length - 1 && (
-                  <span className="tf-hero-trust-bullet" aria-hidden="true">✦</span>
+                  <span className="tf-hero-trust-bullet" aria-hidden="true" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>•</span>
                 )}
               </div>
             ))}

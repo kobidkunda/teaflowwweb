@@ -106,11 +106,13 @@ function CartPageContent() {
     };
   }, [recoveryToken]);
 
-  // 2. Check for locally unlocked coupon from LeadCaptureModal
+  // 2. Check for locally saved/unlocked coupon from previous visits or checkout
   useEffect(() => {
     try {
       const match = document.cookie.match(/(?:^|;\s*)hth_applied_coupon=([^;]*)/);
-      if (match) setCouponCode(decodeURIComponent(match[1]));
+      if (match && match[1]) {
+        setCouponCode(decodeURIComponent(match[1]).trim().toUpperCase());
+      }
     } catch {
       // Storage unavailable
     }
@@ -195,7 +197,10 @@ function CartPageContent() {
                         <span className="wholesale-badge" style={{ background: "#eaf3e9", color: "#2e683f", padding: "2px 6px", borderRadius: 4, fontWeight: 700, fontSize: 11, marginRight: 6 }}><StorefrontText id="copy_f007423ca322fd6d" fallback="🌿 Wholesale Slab" />
                         </span>
                       ) : null}
-                      <span>{line.grams} <StorefrontText id="copy_f6d17905794e3132" fallback="g tin" /> </span>
+                      <span>
+                        {line.grams >= 1000 ? `${line.grams / 1000} kg` : `${line.grams} g`}{" "}
+                        {line.grams >= 10000 ? "Sack" : "Pouch"}
+                      </span>
                       <span className="bullet">·</span>
                       <span>{formatINR(line.pricePaise)} <StorefrontText id="copy_bec1687971e36be5" fallback="each" /> </span>
                     </p>
@@ -302,13 +307,33 @@ function CartPageContent() {
                 onApplied={(code, d) => {
                   setCouponCode(code);
                   setDiscount(d);
+                  try {
+                    document.cookie = `hth_applied_coupon=${encodeURIComponent(code)}; path=/; max-age=604800; SameSite=Lax`;
+                  } catch {}
                 }}
                 onCleared={() => {
                   setCouponCode("");
                   setDiscount(0);
+                  try {
+                    document.cookie = "hth_applied_coupon=; path=/; max-age=0";
+                  } catch {}
                 }}
               />
             </div>
+
+            {!hasWholesale && subtotal < 29900 && (
+              <div className="p-3.5 rounded-lg bg-[#fff8eb] border border-[#f5dfb8] text-xs text-[#85570e] my-3 space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-[#684407]">
+                  <span>⚠️ Cash on Delivery Minimum Order Notice</span>
+                </div>
+                <p>
+                  Orders require a minimum order value of <strong>₹299</strong> for Cash on Delivery home dispatch. Add <strong>₹{Math.ceil((29900 - subtotal) / 100)}</strong> more to place your order.
+                </p>
+                <Link href="/shop" className="inline-block pt-1 text-[#23483a] font-bold underline hover:text-[#142d24]">
+                  + Browse &amp; add more teas to your bag →
+                </Link>
+              </div>
+            )}
 
             <Link
               href={

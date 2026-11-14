@@ -15,9 +15,10 @@ export function ShopEmptyState({
 }: ShopEmptyStateProps) {
   const suggestions = [
     { label: "Darjeeling First Flush", q: "Darjeeling" },
-    { label: "High Altitude (>4,500 ft)", q: "High" },
-    { label: "Floral & Muscatel", q: "Floral" },
-    { label: "Assam Golden Tips", q: "Assam" },
+    { label: "Kadak Chai", q: "Kadak" },
+    { label: "Elaichi Chai", q: "Elaichi" },
+    { label: "Masala Chai", q: "Masala" },
+    { label: "Ginger Chai", q: "Ginger" },
   ];
 
   return (

@@ -10,16 +10,14 @@ import { X } from "lucide-react";
 export function WholesaleFloatingTrigger() {
   const pathname = usePathname();
   const { openWholesaleModal } = useWholesale();
-  const [minimized, setMinimized] = useState(pathname === "/leaf-to-cup");
+  const [minimized, setMinimized] = useState(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) return true;
+    return pathname === "/leaf-to-cup";
+  });
 
   // Suppress floating button on cart, checkout, order confirmation, tea PDPs, trials routes, and wholesale portal to avoid obscuring primary CTAs (especially sticky purchase bar on mobile)
   if (
-    pathname?.startsWith("/cart") ||
-    pathname?.startsWith("/checkout") ||
-    pathname?.startsWith("/order") ||
-    pathname?.startsWith("/tea") ||
-    pathname?.startsWith("/trials") ||
-    pathname?.startsWith("/wholesale")
+    /(?:^|\/)(tea|cart|checkout|order|trials|wholesale)(?:\/|$)/.test(pathname || "")
   ) {
     return null;
   }

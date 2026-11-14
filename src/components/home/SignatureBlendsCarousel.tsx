@@ -11,6 +11,7 @@ import type { Product, Variant } from "@/lib/products";
 import { AddToCart } from "@/components/AddToCart";
 import { ProductImpression } from "@/components/analytics/ProductImpression";
 import { catalogItem } from "@/lib/seo/tracking";
+import { formatPackWeight } from "@/lib/packSize";
 import styles from "./SignatureBlendsShelf.module.css";
 
 interface SignatureBlendsCarouselProps {
@@ -375,13 +376,16 @@ export function SignatureBlendsCarousel({
                     </span>
                   </div>
 
-                  <div className="tf-card-price-row">
+                  <div className="tf-card-price-row flex flex-col items-start">
                     <span className="tf-card-price">{priceDisplay}</span>
+                    <span className="text-[11px] text-[#737067] font-medium block mt-0.5">
+                      100g pouch up to 35kg bulk sack
+                    </span>
                     {activeVariant.compare_at_price_paise &&
                     activeVariant.compare_at_price_paise > activeVariant.price_paise &&
                     !hasMultiplePrices ? (
                       <del
-                        className="tf-card-original-price"
+                        className="tf-card-original-price mt-0.5"
                         aria-label={`Original price ${formatINR(activeVariant.compare_at_price_paise)}`}
                       >
                         {formatINR(activeVariant.compare_at_price_paise)}

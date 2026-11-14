@@ -12,7 +12,11 @@ interface LeafToCupTeaserProps {
 }
 
 export function LeafToCupTeaser({ placement }: LeafToCupTeaserProps = {}) {
-  const craftImage = placement?.image_url || "/images/craft/stage-01-plucking.jpg";
+  const rawImage = placement?.image_url;
+  const craftImage =
+    rawImage && !rawImage.includes("teafloww-craft-1200x800")
+      ? rawImage
+      : "/images/craft/stage-01-plucking.webp";
   const craftAlt = placement?.alt_text || "Teafloww interactive orthodox tea craft preview";
   const craftTitle = placement?.title || "From fresh harvest to your cup.";
   const craftSubtitle = placement?.subtitle || "Follow the 7 stages of orthodox tea.";
