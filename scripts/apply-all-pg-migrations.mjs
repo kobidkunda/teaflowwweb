@@ -1445,6 +1445,21 @@ export async function runAllPgMigrations() {
       console.log("✓ Applied 057_admin_response_conversations");
     }
 
+    if (!applied.has("058_pg_sqlite_master_views")) {
+      console.log("Applying 058_pg_sqlite_master_views...");
+      await client.query("BEGIN");
+      await client.query(`
+        CREATE OR REPLACE VIEW sqlite_master AS
+          SELECT 'table'::text AS type, tablename::text AS name, tablename::text AS tbl_name, 0::integer AS rootpage, ''::text AS sql
+          FROM pg_tables WHERE schemaname='public';
+        CREATE OR REPLACE VIEW sqlite_schema AS SELECT * FROM sqlite_master;
+        CREATE OR REPLACE VIEW content_blocks AS SELECT * FROM site_content_blocks;
+      `);
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["058_pg_sqlite_master_views"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 058_pg_sqlite_master_views");
+    }
+
     console.log("All PostgreSQL migrations are completely up to date!");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});

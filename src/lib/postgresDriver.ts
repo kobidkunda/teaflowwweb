@@ -54,7 +54,21 @@ function convertPlaceholders(sql: string): string {
 function normalizeSql(sql: string): string {
   let s = sql.trim();
 
-  // Convert sqlite_master table lookup
+  // Convert sqlite_master / sqlite_schema table lookup
+  s = s.replace(
+    /SELECT\s+([\w\s*,'"]+?)\s+FROM\s+(?:sqlite_master|sqlite_schema)\s+WHERE\s+(?:type\s*=\s*'table'\s+AND\s+name\s*=\s*|name\s*=\s*([^\s]+)\s+AND\s+type\s*=\s*'table')/gi,
+    (_m, cols) => {
+      const colSelect = cols.trim().toLowerCase() === "name" ? "tablename AS name" : cols;
+      return `SELECT ${colSelect} FROM pg_tables WHERE schemaname='public' AND tablename=`;
+    }
+  );
+  s = s.replace(
+    /SELECT\s+([\w\s*,'"]+?)\s+FROM\s+(?:sqlite_master|sqlite_schema)\s+WHERE\s+type\s*=\s*'table'/gi,
+    (_m, cols) => {
+      const colSelect = cols.trim().toLowerCase() === "name" ? "tablename AS name" : cols;
+      return `SELECT ${colSelect} FROM pg_tables WHERE schemaname='public'`;
+    }
+  );
   s = s.replace(
     /SELECT\s+name\s+FROM\s+sqlite_master\s+WHERE\s+type\s*=\s*'table'\s+AND\s+name\s*=/gi,
     "SELECT tablename AS name FROM pg_tables WHERE schemaname='public' AND tablename="
@@ -63,6 +77,8 @@ function normalizeSql(sql: string): string {
     /SELECT\s+name\s+FROM\s+sqlite_master\s+WHERE\s+type\s*=\s*'table'/gi,
     "SELECT tablename AS name FROM pg_tables WHERE schemaname='public'"
   );
+  s = s.replace(/\bFROM\s+sqlite_master\b/gi, "FROM pg_tables");
+  s = s.replace(/\bFROM\s+sqlite_schema\b/gi, "FROM pg_tables");
 
   // Convert INSERT OR IGNORE INTO
   if (/INSERT\s+OR\s+IGNORE\s+INTO/i.test(s)) {

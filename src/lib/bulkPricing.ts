@@ -91,8 +91,8 @@ export function getEffectiveGstRatePercent(): number {
   try {
     const db = getDb();
     const hasTable = db
-      .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='store_settings'")
-      .get() as { 1: number } | undefined;
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='store_settings'")
+      .get() as { name: string } | undefined;
     if (!hasTable) return GST_RATE_PERCENT;
     const rows = db.prepare("SELECT key, value FROM store_settings").all() as Array<{
       key: string;

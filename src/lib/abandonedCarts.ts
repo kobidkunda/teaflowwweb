@@ -325,7 +325,7 @@ export function markCartConverted(
 ): boolean {
   try {
     const hasTable = Boolean(
-      db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='abandoned_carts'").get()
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='abandoned_carts'").get()
     );
     if (!hasTable) return false;
 

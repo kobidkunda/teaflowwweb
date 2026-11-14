@@ -42,7 +42,7 @@ export function quoteCoupon(
   if (c.single_use_per_customer === 1 && customerIdentifier) {
     const db = getDb();
     const hasRedemptionsTable = Boolean(
-      db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='coupon_redemptions'").get()
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='coupon_redemptions'").get()
     );
     if (hasRedemptionsTable) {
       const phone = customerIdentifier.phone?.trim();
@@ -124,7 +124,7 @@ export function recordCouponRedemption(params: {
   try {
     const db = getDb();
     const hasTable = Boolean(
-      db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='coupon_redemptions'").get()
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='coupon_redemptions'").get()
     );
     if (!hasTable) return;
     db.prepare(`

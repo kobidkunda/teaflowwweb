@@ -16,6 +16,7 @@ import { getActiveYoupiClient } from "@/lib/youpi/config";
 import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 import type { YoupiWebhookEvent } from "@/lib/youpi/client";
 import { markCartConverted } from "@/lib/abandonedCarts";
+import { logger } from "@/lib/logger";
 export type LiveOrder = { id: string; owner: string; idempotency_key: string; quote_id: string; document: string; payment_status: string;
   fulfillment_status: string; gateway_order_id: string | null; gateway_payment_id: string | null; reserved_until: number;
   inventory_status: string; refund_minor: number; created_ms: number };
@@ -55,11 +56,15 @@ export function releaseExpired() {
 function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder; created: boolean } {
   const db = getDb();
   releaseExpired();
-  return db.transaction(() => {
+  type TxResult =
+    | { created: false; row: LiveOrder }
+    | { created: true; id: string; q: Quote; status: string };
+
+  const txResult = db.transaction((): TxResult => {
     const prior = db.prepare("SELECT * FROM commerce_orders WHERE idempotency_key=? OR quote_id=?").get(key, quoteId) as LiveOrder | undefined;
     if (prior) {
       if (prior.owner !== owner || prior.quote_id !== quoteId) throw new CommerceError("This checkout key cannot be reused.");
-      return { row: prior, created: false };
+      return { created: false, row: prior };
     }
     const q = getQuote(quoteId, owner);
     validateSubscriptionReservation(q);
@@ -86,6 +91,24 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
     const isWholesaleBankTransfer = Boolean(q.wholesale?.isWholesale && (q.wholesale.advancePercent === 0 || q.input.method === "bank_transfer"));
     const status = q.input.method === "cod" ? "cod_due" : isWholesaleBankTransfer ? "pending_bank_transfer" : "creating";
     db.prepare("INSERT INTO commerce_orders (id,owner,idempotency_key,quote_id,document,payment_status,reserved_until,created_ms) VALUES (?,?,?,?,?,?,?,?)").run(id, owner, key, quoteId, JSON.stringify(q), status, q.expires, Date.now());
+    for (const l of q.lines) {
+      if (l.trialId) {
+        if (l.trialTracked) db.prepare("INSERT INTO tea_trial_reservations(order_id,trial_id,quantity) VALUES (?,?,?)").run(id, l.trialId, l.quantity);
+      } else db.prepare("INSERT INTO commerce_reservations (order_id,variant_id,quantity) VALUES (?,?,?)").run(id, l.variantId, l.quantity);
+    }
+    if (q.input.coupon) db.prepare("INSERT INTO commerce_coupon_holds (order_id,code) VALUES (?,?)").run(id, q.input.coupon.toUpperCase());
+    attachSubscriptionOrder(q, id);
+    return { created: true, id, q, status };
+  })();
+
+  if (!txResult.created) {
+    return { row: txResult.row, created: false };
+  }
+
+  const { id, q, status } = txResult;
+
+  // Post-reservation tasks are executed safely outside the atomic inventory/order transaction
+  try {
     dispatchNotificationEvent({
       event: "order",
       source: "/api/international/orders",
@@ -111,38 +134,35 @@ function reserve(quoteId: string, owner: string, key: string): { row: LiveOrder;
       },
       dedupeKey: `order:${id}`,
     });
-    for (const l of q.lines) {
-      if (l.trialId) {
-        if (l.trialTracked) db.prepare("INSERT INTO tea_trial_reservations(order_id,trial_id,quantity) VALUES (?,?,?)").run(id, l.trialId, l.quantity);
-      } else db.prepare("INSERT INTO commerce_reservations (order_id,variant_id,quantity) VALUES (?,?,?)").run(id, l.variantId, l.quantity);
-    }
-    if (q.input.coupon) db.prepare("INSERT INTO commerce_coupon_holds (order_id,code) VALUES (?,?)").run(id, q.input.coupon.toUpperCase());
-    attachSubscriptionOrder(q, id);
-    if (status === "cod_due" || status === "pending_bank_transfer") {
-      enqueue("email", { orderId: id, template: "commerce_order_received" }, `email:confirmation:${id}`);
-      try {
-        markCartConverted(db, {
-          orderId: id,
-          customerName: q.input.address.name,
-          customerEmail: q.input.address.email,
-          customerPhone: q.input.address.phone,
-        });
-      } catch {}
-      try {
-        const srConfig = getActiveShiprocketCredentials();
-        if (status === "cod_due" && !q.subscription && srConfig.orderCreationMode === "auto") {
-          enqueue("auto_dispatch", { orderId: id }, `dispatch:auto:${id}`);
-          import("@/lib/shiprocket").then(({ prepareFullShiprocketShipment }) => {
-            prepareFullShiprocketShipment(id, "system_auto").catch(() => {});
-          }).catch(() => {});
-        }
-      } catch {}
-      import("@/lib/seo/metaCapi").then(({ sendMetaServerPurchaseEvent }) => {
-        sendMetaServerPurchaseEvent(id, q).catch(() => {});
-      }).catch(() => {});
-    }
-    return { row: liveOrder(id), created: true };
-  })();
+  } catch (err) {
+    logger.warn("post-order notification failed", { orderId: id, error: String(err) });
+  }
+
+  if (status === "cod_due" || status === "pending_bank_transfer") {
+    enqueue("email", { orderId: id, template: "commerce_order_received" }, `email:confirmation:${id}`);
+    try {
+      markCartConverted(getDb(), {
+        orderId: id,
+        customerName: q.input.address.name,
+        customerEmail: q.input.address.email,
+        customerPhone: q.input.address.phone,
+      });
+    } catch {}
+    try {
+      const srConfig = getActiveShiprocketCredentials();
+      if (status === "cod_due" && !q.subscription && srConfig.orderCreationMode === "auto") {
+        enqueue("auto_dispatch", { orderId: id }, `dispatch:auto:${id}`);
+        import("@/lib/shiprocket").then(({ prepareFullShiprocketShipment }) => {
+          prepareFullShiprocketShipment(id, "system_auto").catch(() => {});
+        }).catch(() => {});
+      }
+    } catch {}
+    import("@/lib/seo/metaCapi").then(({ sendMetaServerPurchaseEvent }) => {
+      sendMetaServerPurchaseEvent(id, q).catch(() => {});
+    }).catch(() => {});
+  }
+
+  return { row: liveOrder(id), created: true };
 }
 export async function startPayment(quoteId: string, owner: string, key: string) {
   // Separate claim from network call: uncertain provider writes must be reconciled, never blindly repeated.

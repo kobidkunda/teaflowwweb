@@ -39,7 +39,7 @@ export function sourceFor(resource: string): Texts {
   if (resource === "shell") return extractTexts({ navigation: getSiteNavigation(), announcement: getAnnouncementSettings() });
   const match = /^(product|category|page|blog|email|slider|block|placement|campaign):([a-zA-Z0-9_.-]+)$/.exec(resource);
   if (!match) throw new CommerceError("Unknown translation resource.");
-  const table = { product: "products", category: "categories", page: "site_pages", blog: "blog_posts", email: "email_templates", slider: "sliders", block: "content_blocks", placement: "site_placements", campaign: "commerce_campaigns" }[match[1]];
+  const table = { product: "products", category: "categories", page: "site_pages", blog: "blog_posts", email: "email_templates", slider: "sliders", block: "site_content_blocks", placement: "site_placements", campaign: "commerce_campaigns" }[match[1]];
   const column = match[1] === "placement" ? "section_key" : match[1] === "block" || match[1] === "email" ? "key" : /^\d+$/.test(match[2]) ? "id" : "slug";
   const row = getDb().prepare(`SELECT * FROM ${table} WHERE ${column}=?`).get(match[2]) as Record<string, unknown> | undefined;
   if (!row) throw new CommerceError("Translation source not found.");
@@ -50,7 +50,7 @@ export function sourceFor(resource: string): Texts {
 export function resourceList(): { resource: string; title: string }[] {
   const db = getDb();
   const result = [{ resource: "interface", title: "Storefront interface" }, { resource: "homepage", title: "Homepage" }, { resource: "shell", title: "Navigation & announcements" }];
-  for (const [kind, table] of [["product", "products"], ["category", "categories"], ["page", "site_pages"], ["blog", "blog_posts"], ["email", "email_templates"], ["slider", "sliders"], ["block", "content_blocks"], ["placement", "site_placements"], ["campaign", "commerce_campaigns"]]) {
+  for (const [kind, table] of [["product", "products"], ["category", "categories"], ["page", "site_pages"], ["blog", "blog_posts"], ["email", "email_templates"], ["slider", "sliders"], ["block", "site_content_blocks"], ["placement", "site_placements"], ["campaign", "commerce_campaigns"]]) {
     try {
       const rows = db.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
       rows.forEach(r => result.push({ resource: `${kind}:${kind === "email" || kind === "block" ? r.key : kind === "placement" ? r.section_key : r.id}`, title: String(r.label || r.name || r.title || (kind === "campaign" ? JSON.parse(String(r.document)).name : null) || r.subject || r.key || r.section_key || r.id) }));
