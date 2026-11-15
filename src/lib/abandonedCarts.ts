@@ -3,6 +3,12 @@ import { getDb } from "@/lib/db";
 import { randomUUID } from "node:crypto";
 import type { GeoLocation } from "@/lib/geo";
 import { cleanWhatsAppNumber } from "@/lib/wholesale";
+import { attributionBundleSchema } from "@/lib/funnel/types";
+import {
+  getTableColumns,
+  safeRecordEntityAttribution,
+  type ExtractedRequestAttribution,
+} from "@/lib/funnel/server";
 import type Database from "better-sqlite3";
 
 export const cartSyncFingerprintSchema = z.object({
@@ -44,6 +50,7 @@ export const cartSyncSchema = z.object({
   fingerprint: cartSyncFingerprintSchema.optional(),
   items: z.array(cartSyncItemSchema).max(30).default([]),
   customer: cartSyncCustomerSchema.optional(),
+  attribution: attributionBundleSchema.optional(),
 });
 
 export type CartSyncInput = z.infer<typeof cartSyncSchema>;
@@ -51,6 +58,7 @@ export type CartSyncInput = z.infer<typeof cartSyncSchema>;
 export interface SyncCartParams extends CartSyncInput {
   geo: GeoLocation;
   userAgent: string;
+  resolvedAttribution?: ExtractedRequestAttribution;
 }
 
 export interface SyncCartResult {
@@ -220,6 +228,9 @@ export function syncAbandonedCart(
 
     let cartId: string;
     let recoveryToken: string;
+    const cartCols = getTableColumns(db, "abandoned_carts");
+    const lastTouch = params.resolvedAttribution?.lastTouch || params.resolvedAttribution?.firstTouch;
+    const funnelName = params.resolvedAttribution?.funnelName || "retail_storefront";
 
     if (existingCart) {
       cartId = existingCart.id;
@@ -232,65 +243,153 @@ export function syncAbandonedCart(
       const shippingPostcode = incomingPostcode || existingCart.shipping_postcode || null;
       const shippingAddress = incomingAddress || existingCart.shipping_address || null;
 
-      db.prepare(`
-        UPDATE abandoned_carts
-        SET status = 'active',
-            subtotal_paise = ?,
-            item_count = ?,
-            customer_phone = ?,
-            customer_name = ?,
-            customer_email = ?,
-            shipping_city = ?,
-            shipping_state = ?,
-            shipping_postcode = ?,
-            shipping_address = ?,
-            last_active_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(
-        subtotalPaise,
-        itemCount,
-        phone,
-        name,
-        email,
-        shippingCity,
-        shippingState,
-        shippingPostcode,
-        shippingAddress,
-        cartId
-      );
+      if (cartCols.has("utm_source")) {
+        db.prepare(`
+          UPDATE abandoned_carts
+          SET status = 'active',
+              subtotal_paise = ?,
+              item_count = ?,
+              customer_phone = ?,
+              customer_name = ?,
+              customer_email = ?,
+              shipping_city = ?,
+              shipping_state = ?,
+              shipping_postcode = ?,
+              shipping_address = ?,
+              utm_source = CASE WHEN utm_source = '' THEN ? ELSE utm_source END,
+              utm_medium = CASE WHEN utm_medium = '' THEN ? ELSE utm_medium END,
+              utm_campaign = CASE WHEN utm_campaign = '' THEN ? ELSE utm_campaign END,
+              utm_term = CASE WHEN utm_term = '' THEN ? ELSE utm_term END,
+              utm_content = CASE WHEN utm_content = '' THEN ? ELSE utm_content END,
+              gclid = CASE WHEN gclid = '' THEN ? ELSE gclid END,
+              fbclid = CASE WHEN fbclid = '' THEN ? ELSE fbclid END,
+              landing_page = CASE WHEN landing_page = '' THEN ? ELSE landing_page END,
+              funnel_name = CASE WHEN funnel_name = '' THEN ? ELSE funnel_name END,
+              last_active_at = CURRENT_TIMESTAMP,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(
+          subtotalPaise,
+          itemCount,
+          phone,
+          name,
+          email,
+          shippingCity,
+          shippingState,
+          shippingPostcode,
+          shippingAddress,
+          lastTouch?.utm_source || "",
+          lastTouch?.utm_medium || "",
+          lastTouch?.utm_campaign || "",
+          lastTouch?.utm_term || "",
+          lastTouch?.utm_content || "",
+          lastTouch?.gclid || "",
+          lastTouch?.fbclid || "",
+          lastTouch?.landing_page || "",
+          funnelName,
+          cartId
+        );
+      } else {
+        db.prepare(`
+          UPDATE abandoned_carts
+          SET status = 'active',
+              subtotal_paise = ?,
+              item_count = ?,
+              customer_phone = ?,
+              customer_name = ?,
+              customer_email = ?,
+              shipping_city = ?,
+              shipping_state = ?,
+              shipping_postcode = ?,
+              shipping_address = ?,
+              last_active_at = CURRENT_TIMESTAMP,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).run(
+          subtotalPaise,
+          itemCount,
+          phone,
+          name,
+          email,
+          shippingCity,
+          shippingState,
+          shippingPostcode,
+          shippingAddress,
+          cartId
+        );
+      }
     } else {
       cartId = "cart_" + randomUUID().replace(/-/g, "").slice(0, 16);
       recoveryToken = "rec_" + randomUUID().replace(/-/g, "");
       const phone = incomingPhone || knownLead?.phone_number || null;
       const name = incomingName || knownLead?.customer_name || null;
 
-      db.prepare(`
-        INSERT INTO abandoned_carts (
-          id, session_id, customer_phone, customer_name, customer_email,
-          shipping_city, shipping_state, shipping_postcode, shipping_address,
-          status, subtotal_paise, item_count, recovery_token, recovery_channel,
-          admin_notes, last_active_at, created_at, updated_at
-        ) VALUES (
-          ?, ?, ?, ?, ?,
-          ?, ?, ?, ?,
-          'active', ?, ?, ?, 'whatsapp',
-          '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-        )
-      `).run(
-        cartId,
-        params.sessionId,
-        phone,
-        name,
-        incomingEmail,
-        incomingCity,
-        incomingState,
-        incomingPostcode,
-        incomingAddress,
-        subtotalPaise,
-        itemCount,
-        recoveryToken
-      );
+      if (cartCols.has("utm_source")) {
+        db.prepare(`
+          INSERT INTO abandoned_carts (
+            id, session_id, customer_phone, customer_name, customer_email,
+            shipping_city, shipping_state, shipping_postcode, shipping_address,
+            status, subtotal_paise, item_count, recovery_token, recovery_channel,
+            utm_source, utm_medium, utm_campaign, utm_term, utm_content, gclid, fbclid, landing_page, funnel_name,
+            admin_notes, last_active_at, created_at, updated_at
+          ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            'active', ?, ?, ?, 'whatsapp',
+            ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          )
+        `).run(
+          cartId,
+          params.sessionId,
+          phone,
+          name,
+          incomingEmail,
+          incomingCity,
+          incomingState,
+          incomingPostcode,
+          incomingAddress,
+          subtotalPaise,
+          itemCount,
+          recoveryToken,
+          lastTouch?.utm_source || "",
+          lastTouch?.utm_medium || "",
+          lastTouch?.utm_campaign || "",
+          lastTouch?.utm_term || "",
+          lastTouch?.utm_content || "",
+          lastTouch?.gclid || "",
+          lastTouch?.fbclid || "",
+          lastTouch?.landing_page || "",
+          funnelName
+        );
+      } else {
+        db.prepare(`
+          INSERT INTO abandoned_carts (
+            id, session_id, customer_phone, customer_name, customer_email,
+            shipping_city, shipping_state, shipping_postcode, shipping_address,
+            status, subtotal_paise, item_count, recovery_token, recovery_channel,
+            admin_notes, last_active_at, created_at, updated_at
+          ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            'active', ?, ?, ?, 'whatsapp',
+            '', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          )
+        `).run(
+          cartId,
+          params.sessionId,
+          phone,
+          name,
+          incomingEmail,
+          incomingCity,
+          incomingState,
+          incomingPostcode,
+          incomingAddress,
+          subtotalPaise,
+          itemCount,
+          recoveryToken
+        );
+      }
     }
 
     // 5. Replace cart_items lines atomically
@@ -564,6 +663,15 @@ export function listAbandonedCarts(
       fingerprint_hash: (c.fingerprint_hash as string) || "",
       screen_resolution: (c.screen_resolution as string) || "",
       timezone: (c.timezone as string) || "Asia/Kolkata",
+      utm_source: (c.utm_source as string) || "",
+      utm_medium: (c.utm_medium as string) || "",
+      utm_campaign: (c.utm_campaign as string) || "",
+      utm_term: (c.utm_term as string) || "",
+      utm_content: (c.utm_content as string) || "",
+      gclid: (c.gclid as string) || "",
+      fbclid: (c.fbclid as string) || "",
+      landing_page: (c.landing_page as string) || "",
+      funnel_name: (c.funnel_name as string) || "retail_storefront",
       items,
     };
   });

@@ -67,4 +67,23 @@ window.dataLayer.push({
 ## 4. User Consent & Cookie Handling
 
 * **Essential Cookies Only:** Session cookies (`cart_session`, `admin_session`) are strictly functional and required for shopping security.
+* **First-Party Attribution Storage (`tf_attr`, `tf_sid`, `tf_attribution_v1`):** Captures UTM parameters (`utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `utm_id`), ad click IDs (`gclid`, `dclid`, `gbraid`, `wbraid`, `fbclid`, `ttclid`, `msclkid`), referrer, and landing page into TeaFloww's first-party database (`visitor_sessions`, `funnel_events`, `funnel_conversations`, `entity_attributions`).
+* **Consent-Gated Third-Party Pixels & Server CAPI:** External pixels (`gtag`, `fbq`, GTM) and server-side Meta Conversions API (`ViewContent`, `AddToCart`, `InitiateCheckout`, `Lead`, `Contact`, `Purchase`) remain strictly gated on explicit cookie consent (`CONSENT_KEY` / `marketingConsent`).
 * **Tracking Disclosures:** Outlined clearly in the public `/privacy` policy page with direct opt-out provisions.
+
+---
+
+## 5. Unified First-Party Funnel, Attribution & Remarketing Architecture
+
+### Captured Touchpoints & Entities
+1. **Storefront & Landing Visits:** `FunnelTracker` (`src/components/analytics/FunnelTracker.tsx`) + `POST /api/funnel/track`.
+2. **Product Views & Add-to-Cart:** `PDPTracker`, `CartProvider` (`add_to_cart`), `/api/cart/sync`.
+3. **Leads, Forms & Inquiries:** `LeadCaptureModal` (`captured_leads`), `/api/contact` (`contact_inquiries`), `/api/wholesale` (`wholesale_inquiries`), `/api/newsletter` (`newsletter_subscriptions`), `/api/blend-lab/projects`, `/api/brochure/download`, `/api/v1/private-label/*` (projects, quotes, samples, checkout), `/api/subscriptions/enroll`.
+4. **Conversations:** Delegated WhatsApp (`wa.me` / `whatsapp.com`) & `tel:` link clicks across storefront/checkout/wholesale, plus contact & wholesale form threads and `/admin/responses` replies & customer feedback mirrored into `funnel_conversations`.
+5. **Abandoned Carts, Checkout & Orders:** `/api/cart/sync`, `/api/commerce/quote`, `/api/commerce/payment`, `/api/checkout`, Razorpay/YouPI payment webhooks, COD transitions, and bank transfer confirmation (`applyPaymentEvent`, `applyYoupiPaymentEvent`, `switchOrderToCod`, `confirmBankTransferPayment`).
+
+### Attribution Models & Admin Intelligence
+* **First-Touch & Last-Touch Models:** Preserves immutable first campaign/keyword touch alongside latest touch in `visitor_sessions` and `entity_attributions`.
+* **Click-ID Normalization:** Automatically infers `google / cpc`, `meta / paid_social`, `tiktok / paid_social`, or `microsoft / cpc` when ad click IDs (`gclid`, `fbclid`, `ttclid`, `msclkid`) appear without explicit UTM parameters.
+* **Admin Hub (`/admin/funnel`):** Stage-by-stage funnel visualization, First-Touch vs Last-Touch toggle, Campaign / Source-Medium / Keywords / Ad Content / Landing Page / Funnel breakdowns, live event & conversation feed, and Remarketing Audience Builder.
+* **Remarketing Exports (`/api/admin/funnel/audiences`):** Generates Meta Custom Audiences (SHA-256 hashed), Google Ads Customer Match (SHA-256 hashed), and CRM Plain CSVs with formula-injection escaping and automatic paid-buyer exclusion on unconverted segments.

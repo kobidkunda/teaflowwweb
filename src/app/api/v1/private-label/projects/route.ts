@@ -4,6 +4,7 @@ import { PrivateLabelService } from "@/lib/private-label/service";
 import { createProjectDraftRequestSchema } from "@/lib/private-label/schemas";
 import { toPublicProjectDto } from "@/lib/private-label/public-dto";
 import type { ProjectStatus } from "@/lib/private-label/types";
+import { extractAttributionFromRequest, safeRecordEntityAttribution } from "@/lib/funnel/server";
 
 function resolveCustomer(request: Request) {
   const session = getCustomerSession(request);
@@ -105,6 +106,21 @@ export async function POST(request: Request) {
     );
 
     const publicProject = toPublicProjectDto(project);
+    const attribution = extractAttributionFromRequest(request, body, "/private-label");
+    safeRecordEntityAttribution({
+      entityType: "private_label_project",
+      entityId: project.id,
+      attribution,
+      funnelName: "private_label",
+      funnelStage: "form_submit",
+      eventName: "pl_project_created",
+      path: attribution.lastTouch.landing_page || "/private-label",
+      customerId: customer.id,
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone || null,
+      metadata: { title: project.title },
+    });
 
     return NextResponse.json(
       {

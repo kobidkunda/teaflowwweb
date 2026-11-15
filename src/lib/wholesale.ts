@@ -1,6 +1,13 @@
 import { getDb } from "@/lib/db";
 import { getStoreSettings } from "@/lib/storeSettings";
 import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
+import {
+  buildCompactAttributionPayload,
+  getTableColumns,
+  recordConversationEvent,
+  safeRecordEntityAttribution,
+  type ExtractedRequestAttribution,
+} from "@/lib/funnel/server";
 
 export interface WholesaleInquiry {
   id?: number;
@@ -67,28 +74,65 @@ export function buildWhatsAppInquiryUrl(params: {
 /**
  * Parameterized database insert that persists the lead safely before redirecting to WhatsApp.
  */
-export function recordWholesaleInquiry(inquiry: WholesaleInquiryInput): {
+export function recordWholesaleInquiry(
+  inquiry: WholesaleInquiryInput,
+  attribution?: ExtractedRequestAttribution
+): {
   id: number;
   whatsappUrl: string;
   whatsappNumber: string;
 } {
   const db = getDb();
-  const stmt = db.prepare(`
-    INSERT INTO wholesale_inquiries (
-      name, business_name, email, phone, interest, estimated_volume, location, notes, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')
-  `);
+  const lastTouch = attribution?.lastTouch || attribution?.firstTouch;
+  const cols = getTableColumns(db, "wholesale_inquiries");
 
-  const result = stmt.run(
-    inquiry.name.trim(),
-    inquiry.business_name.trim(),
-    inquiry.email.trim().toLowerCase(),
-    inquiry.phone.trim(),
-    inquiry.interest.trim(),
-    inquiry.estimated_volume.trim(),
-    (inquiry.location || "").trim() || null,
-    (inquiry.notes || "").trim() || null
-  );
+  let result: { lastInsertRowid: number | bigint };
+  if (cols.has("utm_source")) {
+    const stmt = db.prepare(`
+      INSERT INTO wholesale_inquiries (
+        name, business_name, email, phone, interest, estimated_volume, location, notes, status,
+        session_id, utm_source, utm_medium, utm_campaign, utm_term, utm_content, gclid, fbclid, landing_page, funnel_name
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    result = stmt.run(
+      inquiry.name.trim(),
+      inquiry.business_name.trim(),
+      inquiry.email.trim().toLowerCase(),
+      inquiry.phone.trim(),
+      inquiry.interest.trim(),
+      inquiry.estimated_volume.trim(),
+      (inquiry.location || "").trim() || null,
+      (inquiry.notes || "").trim() || null,
+      attribution?.sessionId || null,
+      lastTouch?.utm_source || "",
+      lastTouch?.utm_medium || "",
+      lastTouch?.utm_campaign || "",
+      lastTouch?.utm_term || "",
+      lastTouch?.utm_content || "",
+      lastTouch?.gclid || "",
+      lastTouch?.fbclid || "",
+      lastTouch?.landing_page || "",
+      attribution?.funnelName || "wholesale_b2b"
+    );
+  } else {
+    const stmt = db.prepare(`
+      INSERT INTO wholesale_inquiries (
+        name, business_name, email, phone, interest, estimated_volume, location, notes, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')
+    `);
+
+    result = stmt.run(
+      inquiry.name.trim(),
+      inquiry.business_name.trim(),
+      inquiry.email.trim().toLowerCase(),
+      inquiry.phone.trim(),
+      inquiry.interest.trim(),
+      inquiry.estimated_volume.trim(),
+      (inquiry.location || "").trim() || null,
+      (inquiry.notes || "").trim() || null
+    );
+  }
 
   const settings = getStoreSettings();
   const whatsappUrl = buildWhatsAppInquiryUrl({
@@ -97,6 +141,42 @@ export function recordWholesaleInquiry(inquiry: WholesaleInquiryInput): {
   });
 
   const insertedId = Number(result.lastInsertRowid);
+  const entityId = `wholesale:${insertedId}`;
+
+  safeRecordEntityAttribution({
+    entityType: "bulk_order",
+    entityId,
+    attribution,
+    funnelName: attribution?.funnelName || "wholesale_b2b",
+    funnelStage: "form_submit",
+    eventName: "wholesale_inquiry",
+    path: lastTouch?.landing_page || "/wholesale",
+    customerName: inquiry.name.trim(),
+    customerEmail: inquiry.email.trim().toLowerCase(),
+    customerPhone: inquiry.phone.trim(),
+    metadata: {
+      businessName: inquiry.business_name.trim(),
+      interest: inquiry.interest.trim(),
+      estimatedVolume: inquiry.estimated_volume.trim(),
+    },
+  });
+
+  try {
+    recordConversationEvent({
+      sessionId: attribution?.sessionId,
+      channel: "wholesale_form",
+      sourcePage: lastTouch?.landing_page || "/wholesale",
+      referenceCode: `WHOLESALE-${insertedId}`,
+      customerName: inquiry.name.trim(),
+      customerEmail: inquiry.email.trim().toLowerCase(),
+      customerPhone: inquiry.phone.trim(),
+      messagePreview: `${inquiry.business_name.trim()} — ${inquiry.interest.trim()} (${inquiry.estimated_volume.trim()})`,
+      linkedEntityType: "bulk_order",
+      linkedEntityId: entityId,
+      attribution,
+    });
+  } catch {}
+
   dispatchNotificationEvent({
     event: "bulk_order",
     source: "/api/wholesale",
@@ -112,6 +192,7 @@ export function recordWholesaleInquiry(inquiry: WholesaleInquiryInput): {
       estimatedVolume: inquiry.estimated_volume.trim(),
       location: (inquiry.location || "").trim() || null,
       notes: (inquiry.notes || "").trim() || null,
+      attribution: buildCompactAttributionPayload(attribution),
     },
   });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimitResponse } from "@/lib/rateLimit";
 import { leadCaptureSchema, captureLead } from "@/lib/leads";
+import { extractAttributionFromRequest } from "@/lib/funnel/server";
 
 export const runtime = "nodejs";
 
@@ -25,15 +26,48 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Capture lead and link to cart / fingerprint
+  // 3. Capture lead and link to cart / fingerprint / funnel attribution
   try {
+    const resolvedAttribution = extractAttributionFromRequest(request, body);
     const result = captureLead({
       sessionId: parsed.data.sessionId,
       phoneNumber: parsed.data.phoneNumber,
       customerName: parsed.data.customerName,
       cartId: parsed.data.cartId,
       source: parsed.data.source,
+      attribution: parsed.data.attribution,
+      resolvedAttribution,
     });
+
+    if (resolvedAttribution.marketingConsent) {
+      import("@/lib/seo/metaCapi")
+        .then(({ sendMetaServerFunnelEvent }) =>
+          sendMetaServerFunnelEvent({
+            eventName: "Lead",
+            eventId: `lead_${result.leadId}`,
+            marketingConsent: true,
+            user: {
+              phone: parsed.data.phoneNumber,
+              name: parsed.data.customerName,
+            },
+            attribution: {
+              fbc: resolvedAttribution.fbc,
+              fbp: resolvedAttribution.fbp,
+              clientIp: resolvedAttribution.clientIp,
+              userAgent: resolvedAttribution.userAgent,
+              sourceUrl: resolvedAttribution.referer || undefined,
+              utmSource: resolvedAttribution.lastTouch.utm_source,
+              utmMedium: resolvedAttribution.lastTouch.utm_medium,
+              utmCampaign: resolvedAttribution.lastTouch.utm_campaign,
+              utmTerm: resolvedAttribution.lastTouch.utm_term,
+              utmContent: resolvedAttribution.lastTouch.utm_content,
+              funnelName: resolvedAttribution.funnelName,
+            },
+            customData: { content_name: parsed.data.source },
+          })
+        )
+        .catch(() => {});
+    }
 
     return NextResponse.json({
       success: true,

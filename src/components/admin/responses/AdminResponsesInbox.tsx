@@ -29,6 +29,7 @@ interface ResponseItem {
   createdAt: string;
   deepLink: string | null;
   payload: Record<string, unknown>;
+  attribution?: Record<string, unknown> | null;
 }
 
 interface ConversationEntry {
@@ -427,6 +428,28 @@ export function AdminResponsesInbox() {
             {actionNotice && (
               <div style={{ marginBottom: "12px", padding: "8px 12px", borderRadius: "6px", background: "#eef5ed", color: "#23483a", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                 <CheckCircle2 size={14} /> {actionNotice}
+              </div>
+            )}
+
+            {/* Attribution & Funnel Context */}
+            {selected.attribution && (
+              <div style={{ marginBottom: "16px", padding: "12px", borderRadius: "6px", background: "#f4f7f4", border: "1px solid #d5e2d5", fontSize: "12px" }}>
+                <div style={{ fontWeight: 700, color: "#23483a", marginBottom: "6px", textTransform: "uppercase", fontSize: "11px" }}>
+                  Funnel &amp; Campaign Attribution
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px", color: "#1d2a24" }}>
+                  <div><strong>Funnel:</strong> {String(selected.attribution.funnelName || "—")}</div>
+                  <div><strong>Source/Medium:</strong> {[selected.attribution.utm_source, selected.attribution.utm_medium].filter(Boolean).join(" / ") || "direct"}</div>
+                  <div><strong>Campaign:</strong> {String(selected.attribution.utm_campaign || "—")}</div>
+                  <div><strong>Keyword:</strong> {String(selected.attribution.utm_term || "—")}</div>
+                  <div><strong>Ad Content:</strong> {String(selected.attribution.utm_content || "—")}</div>
+                  <div><strong>Stage:</strong> {String(selected.attribution.funnelStage || "—")}</div>
+                </div>
+                {Boolean(selected.attribution.landing_page) && (
+                  <div style={{ marginTop: "6px", fontSize: "11px", color: "#46524a", wordBreak: "break-all" }}>
+                    <strong>Landing:</strong> {String(selected.attribution.landing_page)}
+                  </div>
+                )}
               </div>
             )}
 

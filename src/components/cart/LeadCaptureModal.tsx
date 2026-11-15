@@ -1,5 +1,6 @@
 "use client";
 import { trackLead } from "@/lib/seo/tracking";
+import { getClientAttributionBundle } from "@/lib/funnel/clientAttribution";
 
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -163,6 +164,7 @@ export function LeadCaptureModal() {
           phoneNumber: phoneNumber.trim(),
           customerName: customerName.trim() || undefined,
           source,
+          attribution: getClientAttributionBundle(),
         }),
       });
 

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { rateLimitResponse } from "@/lib/rateLimit";
 import { cartSyncSchema, syncAbandonedCart } from "@/lib/abandonedCarts";
 import { resolveGeo } from "@/lib/geo";
+import { extractAttributionFromRequest, safeRecordEntityAttribution } from "@/lib/funnel/server";
 
 export const runtime = "nodejs";
 
@@ -26,9 +27,10 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Extract Geolocation and User-Agent
+  // 3. Extract Geolocation, User-Agent & Funnel Attribution
   const geo = await resolveGeo(request);
   const userAgent = request.headers.get("user-agent") || "";
+  const resolvedAttribution = extractAttributionFromRequest(request, body);
 
   // 4. Atomic abandoned cart synchronization
   try {
@@ -37,9 +39,27 @@ export async function POST(request: Request) {
       fingerprint: parsed.data.fingerprint,
       items: parsed.data.items,
       customer: parsed.data.customer,
+      attribution: parsed.data.attribution,
+      resolvedAttribution,
       geo,
       userAgent,
     });
+
+    if (result.itemCount > 0) {
+      safeRecordEntityAttribution({
+        entityType: "abandoned_cart",
+        entityId: result.cartId,
+        attribution: { ...resolvedAttribution, sessionId: parsed.data.sessionId },
+        funnelName: resolvedAttribution.funnelName,
+        funnelStage: parsed.data.customer?.phone || parsed.data.customer?.email ? "cart_abandoned" : "add_to_cart",
+        eventName: "cart_sync",
+        valuePaise: result.subtotalPaise,
+        customerName: parsed.data.customer?.name || null,
+        customerEmail: parsed.data.customer?.email || null,
+        customerPhone: parsed.data.customer?.phone || null,
+        metadata: { itemCount: result.itemCount },
+      });
+    }
 
     return NextResponse.json({
       success: true,

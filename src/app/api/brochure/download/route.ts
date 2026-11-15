@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "node:fs";
 import { getBrochureSettings, getBrochureLocalPath } from "@/lib/brochure";
+import { extractAttributionFromRequest, safeRecordEntityAttribution } from "@/lib/funnel/server";
 
 export const runtime = "nodejs";
 
@@ -14,6 +15,20 @@ export async function GET(request: Request) {
         { status: 404 }
       );
     }
+
+    try {
+      const attribution = extractAttributionFromRequest(request, null, "/brochure");
+      safeRecordEntityAttribution({
+        entityType: "brochure",
+        entityId: `${attribution.sessionId || "anon"}:${Date.now()}`,
+        attribution,
+        funnelName: attribution.funnelName || "private_label",
+        funnelStage: "lead_capture",
+        eventName: "brochure_download",
+        path: attribution.lastTouch.landing_page || "/brochure",
+        metadata: { title: s.title || "TeaFloww Brochure", url: s.url },
+      });
+    } catch {}
 
     // Remote file (S3 / CDN)
     if (s.url.startsWith("http://") || s.url.startsWith("https://")) {

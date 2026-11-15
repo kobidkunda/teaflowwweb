@@ -59,6 +59,15 @@ export type AbandonedCart = {
   fingerprint_hash?: string;
   screen_resolution?: string;
   timezone?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  gclid?: string;
+  fbclid?: string;
+  landing_page?: string;
+  funnel_name?: string;
   items?: CartItem[];
 };
 
@@ -400,6 +409,25 @@ export function AbandonedCartsClient() {
                         {getDeviceIcon(cart.user_agent)}
                         <span style={{ fontFamily: "monospace" }}>{cart.ip_address || "local"}</span>
                       </div>
+                      {(cart.utm_source || cart.utm_campaign || cart.utm_term) && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                          {cart.utm_source && (
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "#eef5ed", color: "#23483a", fontWeight: 600 }}>
+                              {cart.utm_source}{cart.utm_medium ? `/${cart.utm_medium}` : ""}
+                            </span>
+                          )}
+                          {cart.utm_campaign && (
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "#f3f4f6", color: "#374151" }}>
+                              {cart.utm_campaign}
+                            </span>
+                          )}
+                          {cart.utm_term && (
+                            <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "#fef3c7", color: "#92400e" }}>
+                              kw: {cart.utm_term}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </td>
 
                     {/* Activity */}
@@ -555,6 +583,28 @@ export function AbandonedCartsClient() {
                 </button>
               </div>
             </div>
+
+            {/* Attribution & Funnel Context */}
+            {(inspectCart.utm_source || inspectCart.utm_campaign || inspectCart.utm_term || inspectCart.gclid || inspectCart.fbclid || inspectCart.landing_page) && (
+              <div style={{ background: "#f4f7f4", padding: 14, borderRadius: 8, border: "1px solid #d5e2d5" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#23483a", marginBottom: 8 }}>
+                  Campaign &amp; Funnel Attribution
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, fontSize: 12, color: "#1d2a24" }}>
+                  <div><strong>Funnel:</strong> {inspectCart.funnel_name || "retail_storefront"}</div>
+                  <div><strong>Source / Medium:</strong> {[inspectCart.utm_source, inspectCart.utm_medium].filter(Boolean).join(" / ") || "direct"}</div>
+                  <div><strong>Campaign:</strong> {inspectCart.utm_campaign || "—"}</div>
+                  <div><strong>Keyword (Term):</strong> {inspectCart.utm_term || "—"}</div>
+                  <div><strong>Content / Ad:</strong> {inspectCart.utm_content || "—"}</div>
+                  <div><strong>Click IDs:</strong> {[inspectCart.gclid ? "GCLID" : "", inspectCart.fbclid ? "FBCLID" : ""].filter(Boolean).join(", ") || "—"}</div>
+                </div>
+                {inspectCart.landing_page && (
+                  <div style={{ fontSize: 11, color: "#555", marginTop: 6, wordBreak: "break-all" }}>
+                    <strong>Landing:</strong> {inspectCart.landing_page}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Bag Lines */}
             <div>

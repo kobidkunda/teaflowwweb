@@ -3,6 +3,7 @@ import { getDb } from "@/lib/db";
 import { sendMailHtml } from "@/lib/email";
 import { listRecentDeliveries, type WebhookDeliveryRow } from "@/lib/notifications/deliveries";
 import { NOTIFICATION_EVENT_TYPES, type NotificationEventType } from "@/lib/notifications/events";
+import { getEntityAttribution, recordConversationEvent } from "@/lib/funnel/server";
 
 export const RESPONSE_STATUSES = [
   "new",
@@ -36,6 +37,50 @@ export interface AdminResponseItem {
   createdAt: string;
   deepLink: string | null;
   payload: Record<string, unknown>;
+  attribution?: Record<string, unknown> | null;
+}
+
+function resolveAttributionForResponseItem(item: AdminResponseItem): Record<string, unknown> | null {
+  try {
+    const direct = getEntityAttribution(item.entityType, item.id);
+    if (direct) return direct;
+    if (item.entityType === "private_label") {
+      const sampleAttr = getEntityAttribution("private_label_sample", item.id);
+      if (sampleAttr) return sampleAttr;
+      const orderAttr = getEntityAttribution("private_label_order", item.id);
+      if (orderAttr) return orderAttr;
+    }
+    if (item.email && tableExists("visitor_sessions")) {
+      const row = getDb()
+        .prepare(
+          `SELECT session_id, funnel_name, funnel_stage,
+                  last_utm_source, last_utm_medium, last_utm_campaign, last_utm_term, last_utm_content,
+                  last_gclid, last_fbclid, last_landing_page, last_referrer
+           FROM visitor_sessions
+           WHERE customer_email = ?
+           ORDER BY updated_at DESC
+           LIMIT 1`
+        )
+        .get(item.email.trim().toLowerCase()) as Record<string, unknown> | undefined;
+      if (row) {
+        return {
+          sessionId: row.session_id || "",
+          funnelName: row.funnel_name || "retail_storefront",
+          funnelStage: row.funnel_stage || "",
+          utm_source: row.last_utm_source || "",
+          utm_medium: row.last_utm_medium || "",
+          utm_campaign: row.last_utm_campaign || "",
+          utm_term: row.last_utm_term || "",
+          utm_content: row.last_utm_content || "",
+          gclid: row.last_gclid || "",
+          fbclid: row.last_fbclid || "",
+          landing_page: row.last_landing_page || "",
+          referrer: row.last_referrer || "",
+        };
+      }
+    }
+  } catch {}
+  return null;
 }
 
 export interface AdminConversationEntry {
@@ -445,8 +490,13 @@ export function listAdminResponses(options: {
 
   pool.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+  const pageItems = pool.slice(offset, offset + limit).map((item) => ({
+    ...item,
+    attribution: resolveAttributionForResponseItem(item),
+  }));
+
   return {
-    items: pool.slice(offset, offset + limit),
+    items: pageItems,
     counts,
     total: pool.length,
   };
@@ -460,7 +510,10 @@ export function getAdminResponseDetail(entityType: NotificationEventType, id: st
   ensureAdminResponseTables();
   const overrides = statusOverrideMap(entityType);
   const items = loadCategoryItems(entityType, 200, overrides);
-  const item = items.find((x) => x.id === id) || null;
+  const rawItem = items.find((x) => x.id === id) || null;
+  const item = rawItem
+    ? { ...rawItem, attribution: resolveAttributionForResponseItem(rawItem) }
+    : null;
 
   const conversation = getDb()
     .prepare(
@@ -562,6 +615,22 @@ export async function addAdminConversationEntry(input: {
   const entry = db
     .prepare("SELECT * FROM admin_conversation_entries WHERE id = ?")
     .get(entryId) as AdminConversationEntry;
+
+  if (input.entryType === "customer_feedback" || input.entryType === "reply_email") {
+    try {
+      const existingAttr = getEntityAttribution(input.entityType, input.entityId);
+      recordConversationEvent({
+        sessionId: typeof existingAttr?.sessionId === "string" && existingAttr.sessionId ? existingAttr.sessionId : undefined,
+        channel: input.entryType === "customer_feedback" ? "customer_feedback" : "admin_inbox_reply",
+        sourcePage: "/admin/responses",
+        referenceCode: input.entityId,
+        customerEmail: input.sendEmailTo || null,
+        messagePreview: input.message.trim().slice(0, 180),
+        linkedEntityType: input.entityType,
+        linkedEntityId: input.entityId,
+      });
+    } catch {}
+  }
 
   return { entry, emailSent };
 }

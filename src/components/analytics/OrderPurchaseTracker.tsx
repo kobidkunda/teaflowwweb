@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { trackPurchase, type TrackingItem } from "@/lib/seo/tracking";
 import { currencyDigits } from "@/lib/international/money";
+import { sendFunnelEvent } from "@/lib/funnel/clientAttribution";
 
 export interface OrderPurchaseTrackerProps {
   orderId: string;
@@ -29,6 +30,7 @@ export function OrderPurchaseTracker({
   currency = "INR",
   items,
 }: OrderPurchaseTrackerProps) {
+  const firstPartySent = useRef<string>("");
   useEffect(() => {
     if (!orderId || !verifiedPaid) return;
 
@@ -36,6 +38,22 @@ export function OrderPurchaseTracker({
     const totalValue = (totalMinor ?? totalPaise ?? 0) / divisor;
     const shippingValue = (shippingMinor ?? shippingPaise ?? 0) / divisor;
     const taxValue = ((taxMinor ?? taxPaise) ?? 0) / divisor;
+
+    if (firstPartySent.current !== orderId) {
+      firstPartySent.current = orderId;
+      sendFunnelEvent({
+        eventId: `purchase_${orderId}`,
+        funnelStage: "order_paid",
+        eventName: "purchase",
+        entityType: "order",
+        entityId: orderId,
+        valuePaise: Math.round(totalMinor ?? totalPaise ?? 0),
+        currency,
+        metadata: {
+          itemCount: items.reduce((s, i) => s + (i.quantity ?? 1), 0),
+        },
+      });
+    }
 
     trackPurchase(
       orderId,

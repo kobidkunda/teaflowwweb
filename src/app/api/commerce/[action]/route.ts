@@ -11,6 +11,7 @@ import { shipment } from "@/lib/international/fulfillment";
 import { getPaymentSettings } from "@/lib/paymentSettings";
 import { getShippingSettings } from "@/lib/shippingSettings";
 import { getStoreSettings } from "@/lib/storeSettings";
+import { extractAttributionFromRequest, safeRecordEntityAttribution } from "@/lib/funnel/server";
 export const runtime = "nodejs";
 export async function GET(request: Request, { params }: { params: Promise<{ action: string }> }) {
   const denied = gate(request); if (denied) return denied;
@@ -118,8 +119,67 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       response.cookies.set("tf_preferences", JSON.stringify(prefs), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: 365 * 86400 });
       return response;
     }
-    if (action === "quote") return json(publicQuote(await createQuote(input, session)), session);
+    if (action === "quote") {
+      const quoteObj = await createQuote(input, session);
+      const attribution = extractAttributionFromRequest(request, input, "/checkout");
+      safeRecordEntityAttribution({
+        entityType: "quote",
+        entityId: quoteObj.id,
+        attribution,
+        funnelName: quoteObj.wholesale?.isWholesale ? "wholesale_b2b" : attribution.funnelName,
+        funnelStage: "checkout_start",
+        eventName: "checkout_quote_created",
+        path: attribution.lastTouch.landing_page || "/checkout",
+        valuePaise: quoteObj.totalMinor,
+        currency: quoteObj.currency,
+        customerName: quoteObj.input.address.name,
+        customerEmail: quoteObj.input.address.email,
+        customerPhone: quoteObj.input.address.phone,
+        metadata: { currency: quoteObj.currency, isWholesale: Boolean(quoteObj.wholesale?.isWholesale) },
+      });
+
+      if (attribution.marketingConsent) {
+        import("@/lib/seo/metaCapi")
+          .then(({ sendMetaServerFunnelEvent }) =>
+            sendMetaServerFunnelEvent({
+              eventName: "InitiateCheckout",
+              eventId: `ic_${quoteObj.id}`,
+              marketingConsent: true,
+              user: {
+                name: quoteObj.input.address.name,
+                email: quoteObj.input.address.email,
+                phone: quoteObj.input.address.phone,
+                country: quoteObj.input.address.country,
+                city: quoteObj.input.address.city,
+                postcode: quoteObj.input.address.postcode,
+              },
+              attribution: {
+                fbc: attribution.fbc,
+                fbp: attribution.fbp,
+                clientIp: attribution.clientIp,
+                userAgent: attribution.userAgent,
+                sourceUrl: attribution.referer || undefined,
+                utmSource: attribution.lastTouch.utm_source,
+                utmMedium: attribution.lastTouch.utm_medium,
+                utmCampaign: attribution.lastTouch.utm_campaign,
+                utmTerm: attribution.lastTouch.utm_term,
+                utmContent: attribution.lastTouch.utm_content,
+                funnelName: quoteObj.wholesale?.isWholesale ? "wholesale_b2b" : attribution.funnelName,
+              },
+              customData: {
+                currency: quoteObj.currency,
+                value: Number((quoteObj.totalMinor / 100).toFixed(2)),
+                num_items: quoteObj.lines.reduce((s, l) => s + l.quantity, 0),
+              },
+            })
+          )
+          .catch(() => {});
+      }
+
+      return json(publicQuote(quoteObj), session);
+    }
     if (action === "payment") {
+      const attribution = extractAttributionFromRequest(request, input, "/checkout");
       const payload = typeof input === "object" && input !== null ? { ...(input as Record<string, unknown>) } : {};
       if (typeof payload.idempotencyKey !== "string" || !z.string().uuid().safeParse(payload.idempotencyKey).success) {
         payload.idempotencyKey = randomUUID();
@@ -153,21 +213,60 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       const paymentResult = await startPayment(quote.id, session, p.idempotencyKey);
       try {
         const cookieHeader = request.headers.get("cookie") || "";
-        const fbc = /(?:^|;\s*)_fbc=([^;]+)/.exec(cookieHeader)?.[1];
-        const fbp = /(?:^|;\s*)_fbp=([^;]+)/.exec(cookieHeader)?.[1];
-        const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || undefined;
-        const userAgent = request.headers.get("user-agent") || undefined;
-        const sourceUrl = request.headers.get("referer") || undefined;
-        if (fbc || fbp || clientIp || userAgent) {
-          const { saveOrderAttribution } = await import("@/lib/seo/metaCapi");
-          saveOrderAttribution(paymentResult.orderId, {
-            ...(fbc ? { fbc: decodeURIComponent(fbc) } : {}),
-            ...(fbp ? { fbp: decodeURIComponent(fbp) } : {}),
-            clientIp,
-            userAgent,
-            sourceUrl,
-          });
-        }
+        const fbc = attribution.fbc || /(?:^|;\s*)_fbc=([^;]+)/.exec(cookieHeader)?.[1];
+        const fbp = attribution.fbp || /(?:^|;\s*)_fbp=([^;]+)/.exec(cookieHeader)?.[1];
+        const clientIp =
+          attribution.clientIp ||
+          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+          request.headers.get("x-real-ip") ||
+          undefined;
+        const userAgent = attribution.userAgent || request.headers.get("user-agent") || undefined;
+        const sourceUrl = attribution.referer || request.headers.get("referer") || undefined;
+        const { saveOrderAttribution } = await import("@/lib/seo/metaCapi");
+        saveOrderAttribution(paymentResult.orderId, {
+          ...(fbc ? { fbc: decodeURIComponent(fbc) } : {}),
+          ...(fbp ? { fbp: decodeURIComponent(fbp) } : {}),
+          clientIp,
+          userAgent,
+          sourceUrl,
+          utmSource: attribution.lastTouch.utm_source || undefined,
+          utmMedium: attribution.lastTouch.utm_medium || undefined,
+          utmCampaign: attribution.lastTouch.utm_campaign || undefined,
+          utmTerm: attribution.lastTouch.utm_term || undefined,
+          utmContent: attribution.lastTouch.utm_content || undefined,
+          funnelName: quote.wholesale?.isWholesale ? "wholesale_b2b" : attribution.funnelName,
+        });
+
+        const isDirectOrder =
+          paymentResult.paymentStatus === "cod_due" ||
+          paymentResult.paymentStatus === "pending_bank_transfer";
+
+        safeRecordEntityAttribution({
+          entityType: "order",
+          entityId: paymentResult.orderId,
+          attribution,
+          funnelName: quote.wholesale?.isWholesale ? "wholesale_b2b" : attribution.funnelName,
+          funnelStage: isDirectOrder ? "order_placed" : "payment_info",
+          eventName:
+            paymentResult.paymentStatus === "cod_due"
+              ? "order_cod_placed"
+              : paymentResult.paymentStatus === "pending_bank_transfer"
+              ? "order_bank_transfer_placed"
+              : "payment_initiated",
+          path: attribution.lastTouch.landing_page || "/checkout",
+          valuePaise: quote.totalMinor,
+          currency: quote.currency,
+          customerName: quote.input.address.name,
+          customerEmail: quote.input.address.email,
+          customerPhone: quote.input.address.phone,
+          convertedOrderId: isDirectOrder ? paymentResult.orderId : null,
+          convertedRevenuePaise: isDirectOrder ? quote.totalMinor : 0,
+          metadata: {
+            quoteId: quote.id,
+            paymentStatus: paymentResult.paymentStatus,
+            method: quote.input.method,
+          },
+        });
       } catch {}
       return json(paymentResult, session);
     }

@@ -1,4 +1,5 @@
 import { readTrackingConsent, safeTrackingUrl, trackingRouteAllowed } from "./consent";
+import { getClientAttributionBundle } from "@/lib/funnel/clientAttribution";
 
 export interface TrackingItem {
   item_id: string;
@@ -22,11 +23,32 @@ export function canTrack() {
   return consent.analytics || consent.marketing;
 }
 
+function readSafeAttributionForDataLayer(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+  try {
+    const bundle = getClientAttributionBundle();
+    const touch = (bundle.lastTouch || {}) as Record<string, string>;
+    const out: Record<string, string> = {};
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]) {
+      if (typeof touch[k] === "string" && touch[k].trim()) {
+        out[k] = touch[k].trim().slice(0, 150);
+      }
+    }
+    if (Object.keys(out).length > 0 && bundle.funnelName) {
+      out.funnel_name = String(bundle.funnelName).slice(0, 60);
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
 function googleEvent(event: string, params: Record<string, unknown>, ecommerce = false) {
   if (!canTrack()) return false;
   window.dataLayer ||= [];
   const eventId = params.event_id || window.crypto?.randomUUID?.() || `event_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-  params = { ...params, event_id: eventId };
+  const attr = readSafeAttributionForDataLayer();
+  params = { ...attr, ...params, event_id: eventId };
   const config = window.__tfTracking;
   // One transport per destination. GTM event tags consume objects; standalone GA4 consumes commands.
   if (config?.gtmEnabled && config.gtmContainerId) {

@@ -5,6 +5,11 @@ import { customerCreateSampleOrderSchema } from "@/lib/private-label/schemas";
 import { toPublicSampleOrderDto } from "@/lib/private-label/public-dto";
 import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 import {
+  buildCompactAttributionPayload,
+  extractAttributionFromRequest,
+  safeRecordEntityAttribution,
+} from "@/lib/funnel/server";
+import {
   PrivateLabelGateError,
   PrivateLabelNotFoundError,
   type AuditActor,
@@ -118,6 +123,22 @@ export async function POST(request: Request) {
     const detailed = PrivateLabelService.getSampleOrder(sample.id, customer.id);
     const publicSample = toPublicSampleOrderDto(detailed, detailed.items);
 
+    const attribution = extractAttributionFromRequest(request, body, "/private-label");
+    safeRecordEntityAttribution({
+      entityType: "private_label_sample",
+      entityId: String(sample.id),
+      attribution,
+      funnelName: "private_label",
+      funnelStage: "order_placed",
+      eventName: "pl_sample_ordered",
+      path: attribution.lastTouch.landing_page || "/private-label",
+      customerId: customer.id,
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone || null,
+      metadata: { sampleType: parseResult.data.sample_type, quantity: parseResult.data.quantity },
+    });
+
     dispatchNotificationEvent({
       event: "private_label",
       source: "/api/v1/private-label/samples",
@@ -131,6 +152,7 @@ export async function POST(request: Request) {
         quantity: parseResult.data.quantity,
         couponCode: parseResult.data.coupon_code ?? null,
         shippingAddress: parseResult.data.shipping_address,
+        attribution: buildCompactAttributionPayload(attribution),
       },
       dedupeKey: `sample:${sample.id}`,
     });

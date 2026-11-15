@@ -3,6 +3,7 @@ import { gate, body, json, failure } from '@/lib/international/http';
 import { getCustomerSession } from '@/lib/customerSessions';
 import { previewSubscription, enrollSubscription, previewCycle, commitCycle, existingPayment, changeSubscription } from '@/lib/subscriptions/service';
 import { subscriptionList, subscriptionPolicy } from '@/lib/subscriptions/store';
+import { extractAttributionFromRequest, safeRecordEntityAttribution } from '@/lib/funnel/server';
 export const runtime = 'nodejs';
 export async function GET(request: Request, { params }: { params: Promise<{ action: string }> }) {
   const denied = gate(request); if (denied) return denied;
@@ -22,7 +23,24 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
   try {
     const { action } = await params, input = await body(request);
     if (action === 'preview') return json(await previewSubscription(input, customer.id));
-    if (action === 'enroll') return json(enrollSubscription(input, customer.id));
+    if (action === 'enroll') {
+      const enrolled = enrollSubscription(input, customer.id);
+      const attribution = extractAttributionFromRequest(request, input, '/subscriptions');
+      safeRecordEntityAttribution({
+        entityType: 'subscription',
+        entityId: enrolled.subscriptionId,
+        attribution,
+        funnelName: 'subscriptions',
+        funnelStage: 'order_placed',
+        eventName: 'subscription_enrolled',
+        path: attribution.lastTouch.landing_page || '/subscriptions',
+        customerId: customer.id,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        customerPhone: customer.phone || null,
+      });
+      return json(enrolled);
+    }
     if (action === 'quote') return json(await previewCycle(input, customer.id));
     if (action === 'pay') return json(await commitCycle(input, customer.id));
     if (action === 'resume-payment') { const p = z.object({ cycleId: z.string().uuid() }).strict().parse(input); return json(await existingPayment(p.cycleId, customer.id)); }

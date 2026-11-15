@@ -11,6 +11,30 @@ export interface MetaCapiAttribution {
   clientIp?: string;
   userAgent?: string;
   sourceUrl?: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmCampaign?: string;
+  utmTerm?: string;
+  utmContent?: string;
+  funnelName?: string;
+}
+
+export type MetaCapiEventName =
+  | "ViewContent"
+  | "AddToCart"
+  | "InitiateCheckout"
+  | "Lead"
+  | "Contact"
+  | "Purchase";
+
+export interface MetaCapiUserInput {
+  email?: string | null;
+  phone?: string | null;
+  name?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postcode?: string | null;
+  country?: string | null;
 }
 
 function sha256Normalized(value: string | undefined | null): string | undefined {
@@ -37,6 +61,37 @@ function splitName(fullName: string | undefined | null): { fn?: string; ln?: str
   return { fn: parts[0], ln: parts.slice(1).join(" ") };
 }
 
+function buildHashedUserData(
+  user: MetaCapiUserInput,
+  attribution: MetaCapiAttribution = {}
+): Record<string, unknown> {
+  const { fn, ln } = splitName(user.name);
+  const userData: Record<string, unknown> = {};
+  const em = sha256Normalized(user.email);
+  const ph = normalizePhoneHash(user.phone);
+  const fnHash = sha256Normalized(fn);
+  const lnHash = sha256Normalized(ln);
+  const ct = sha256Normalized(user.city?.replace(/[^a-zA-Z0-9]/g, ""));
+  const st = sha256Normalized(user.state?.replace(/[^a-zA-Z0-9]/g, ""));
+  const zp = sha256Normalized(user.postcode?.replace(/\s+/g, ""));
+  const country = sha256Normalized(user.country);
+
+  if (em) userData.em = [em];
+  if (ph) userData.ph = [ph];
+  if (fnHash) userData.fn = [fnHash];
+  if (lnHash) userData.ln = [lnHash];
+  if (ct) userData.ct = [ct];
+  if (st) userData.st = [st];
+  if (zp) userData.zp = [zp];
+  if (country) userData.country = [country];
+  if (attribution.fbc) userData.fbc = attribution.fbc;
+  if (attribution.fbp) userData.fbp = attribution.fbp;
+  if (attribution.clientIp) userData.client_ip_address = attribution.clientIp;
+  if (attribution.userAgent) userData.client_user_agent = attribution.userAgent;
+
+  return userData;
+}
+
 export function saveOrderAttribution(orderId: string, attribution: MetaCapiAttribution): void {
   try {
     const db = getDb();
@@ -61,33 +116,33 @@ function loadOrderAttribution(orderId: string): MetaCapiAttribution {
   }
 }
 
+function attributionCustomProperties(attribution: MetaCapiAttribution = {}): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (attribution.utmSource) out.utm_source = attribution.utmSource;
+  if (attribution.utmMedium) out.utm_medium = attribution.utmMedium;
+  if (attribution.utmCampaign) out.utm_campaign = attribution.utmCampaign;
+  if (attribution.utmTerm) out.utm_term = attribution.utmTerm;
+  if (attribution.utmContent) out.utm_content = attribution.utmContent;
+  if (attribution.funnelName) out.funnel_name = attribution.funnelName;
+  return out;
+}
+
 export function buildMetaPurchasePayload(orderId: string, quote: Quote, attribution: MetaCapiAttribution = {}) {
   const analytics = quoteAnalytics(quote);
   const addr = quote.input.address;
-  const { fn, ln } = splitName(addr.name);
 
-  const userData: Record<string, unknown> = {};
-  const em = sha256Normalized(addr.email);
-  const ph = normalizePhoneHash(addr.phone);
-  const fnHash = sha256Normalized(fn);
-  const lnHash = sha256Normalized(ln);
-  const ct = sha256Normalized(addr.city?.replace(/[^a-zA-Z0-9]/g, ""));
-  const st = sha256Normalized(addr.state?.replace(/[^a-zA-Z0-9]/g, ""));
-  const zp = sha256Normalized(addr.postcode?.replace(/\s+/g, ""));
-  const country = sha256Normalized(addr.country);
-
-  if (em) userData.em = [em];
-  if (ph) userData.ph = [ph];
-  if (fnHash) userData.fn = [fnHash];
-  if (lnHash) userData.ln = [lnHash];
-  if (ct) userData.ct = [ct];
-  if (st) userData.st = [st];
-  if (zp) userData.zp = [zp];
-  if (country) userData.country = [country];
-  if (attribution.fbc) userData.fbc = attribution.fbc;
-  if (attribution.fbp) userData.fbp = attribution.fbp;
-  if (attribution.clientIp) userData.client_ip_address = attribution.clientIp;
-  if (attribution.userAgent) userData.client_user_agent = attribution.userAgent;
+  const userData = buildHashedUserData(
+    {
+      email: addr.email,
+      phone: addr.phone,
+      name: addr.name,
+      city: addr.city,
+      state: addr.state,
+      postcode: addr.postcode,
+      country: addr.country,
+    },
+    attribution
+  );
 
   const eventData: Record<string, unknown> = {
     event_name: "Purchase",
@@ -108,6 +163,7 @@ export function buildMetaPurchasePayload(orderId: string, quote: Quote, attribut
         item_price: Number(i.price.toFixed(2)),
       })),
       num_items: analytics.items.reduce((sum, i) => sum + (i.quantity ?? 1), 0),
+      ...attributionCustomProperties(attribution),
     },
   };
 
@@ -117,15 +173,40 @@ export function buildMetaPurchasePayload(orderId: string, quote: Quote, attribut
   return payload;
 }
 
-/**
- * Sends a server-side Purchase event to Meta Conversions API with the exact same
- * `event_id` (`purchase_<orderId>`) used by the browser Pixel/GTM so Meta deduplicates cleanly.
- * No-ops gracefully if `META_CAPI_ACCESS_TOKEN` is not configured.
- */
-export async function sendMetaServerPurchaseEvent(
-  orderId: string,
-  quote: Quote,
-  explicitAttribution?: MetaCapiAttribution
+export function buildMetaFunnelEventPayload(input: {
+  eventName: Exclude<MetaCapiEventName, "Purchase">;
+  eventId: string;
+  user?: MetaCapiUserInput;
+  attribution?: MetaCapiAttribution;
+  customData?: Record<string, unknown>;
+}) {
+  const attribution = input.attribution || {};
+  const userData = buildHashedUserData(input.user || {}, attribution);
+
+  const eventData: Record<string, unknown> = {
+    event_name: input.eventName,
+    event_time: Math.floor(Date.now() / 1000),
+    event_id: input.eventId,
+    event_source_url: attribution.sourceUrl || "https://teafloww.com/",
+    action_source: "website",
+    user_data: userData,
+    custom_data: {
+      ...(input.customData || {}),
+      ...attributionCustomProperties(attribution),
+    },
+  };
+
+  const payload: Record<string, unknown> = { data: [eventData] };
+  const testCode = process.env.META_CAPI_TEST_EVENT_CODE?.trim();
+  if (testCode) payload.test_event_code = testCode;
+  return payload;
+}
+
+async function postMetaCapi(
+  dedupId: string,
+  kind: string,
+  payload: Record<string, unknown>,
+  meta: Record<string, unknown>
 ): Promise<{ sent: boolean; reason?: string }> {
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN?.trim();
   if (!accessToken) {
@@ -139,7 +220,6 @@ export async function sendMetaServerPurchaseEvent(
   }
 
   const db = getDb();
-  const dedupId = `capi:purchase:${orderId}`;
   try {
     const existing = db.prepare("SELECT id FROM commerce_events WHERE id = ?").get(dedupId);
     if (existing) return { sent: false, reason: "already_sent" };
@@ -147,32 +227,83 @@ export async function sendMetaServerPurchaseEvent(
     // Continue if table check fails
   }
 
-  const storedAttr = loadOrderAttribution(orderId);
-  const attribution = { ...storedAttr, ...explicitAttribution };
-  const payload = buildMetaPurchasePayload(orderId, quote, attribution);
-
   try {
-    const res = await fetch(`https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${encodeURIComponent(accessToken)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const res = await fetch(
+      `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${encodeURIComponent(accessToken)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
 
     if (!res.ok) {
       const errText = await res.text().catch(() => "");
-      logger.error("meta-capi Purchase event failed", { orderId, status: res.status, detail: errText.slice(0, 300) });
+      logger.error(`meta-capi ${kind} event failed`, {
+        dedupId,
+        status: res.status,
+        detail: errText.slice(0, 300),
+      });
       return { sent: false, reason: `http_${res.status}` };
     }
 
     try {
       db.prepare(
-        "INSERT INTO commerce_events (id, kind, document, created_ms) VALUES (?, 'meta_capi_purchase', ?, ?) ON CONFLICT(id) DO NOTHING"
-      ).run(dedupId, JSON.stringify({ orderId, pixelId, eventId: `purchase_${orderId}` }), Date.now());
+        "INSERT INTO commerce_events (id, kind, document, created_ms) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO NOTHING"
+      ).run(dedupId, kind, JSON.stringify({ ...meta, pixelId }), Date.now());
     } catch {}
 
     return { sent: true };
   } catch (err) {
-    logger.error("meta-capi network error sending Purchase", { orderId, error: err instanceof Error ? err.message : String(err) });
+    logger.error(`meta-capi network error sending ${kind}`, {
+      dedupId,
+      error: err instanceof Error ? err.message : String(err),
+    });
     return { sent: false, reason: "network_error" };
   }
+}
+
+/**
+ * Sends a consent-gated server-side funnel event (Lead, Contact, InitiateCheckout, AddToCart, ViewContent)
+ * to Meta Conversions API with deterministic event_id deduplication.
+ */
+export async function sendMetaServerFunnelEvent(input: {
+  eventName: Exclude<MetaCapiEventName, "Purchase">;
+  eventId: string;
+  marketingConsent: boolean;
+  user?: MetaCapiUserInput;
+  attribution?: MetaCapiAttribution;
+  customData?: Record<string, unknown>;
+}): Promise<{ sent: boolean; reason?: string }> {
+  if (!input.marketingConsent) {
+    return { sent: false, reason: "no_marketing_consent" };
+  }
+  const payload = buildMetaFunnelEventPayload(input);
+  return postMetaCapi(
+    `capi:${input.eventName.toLowerCase()}:${input.eventId}`,
+    `meta_capi_${input.eventName.toLowerCase()}`,
+    payload,
+    { eventName: input.eventName, eventId: input.eventId }
+  );
+}
+
+/**
+ * Sends a server-side Purchase event to Meta Conversions API with the exact same
+ * `event_id` (`purchase_<orderId>`) used by the browser Pixel/GTM so Meta deduplicates cleanly.
+ * No-ops gracefully if `META_CAPI_ACCESS_TOKEN` is not configured.
+ */
+export async function sendMetaServerPurchaseEvent(
+  orderId: string,
+  quote: Quote,
+  explicitAttribution?: MetaCapiAttribution
+): Promise<{ sent: boolean; reason?: string }> {
+  const storedAttr = loadOrderAttribution(orderId);
+  const attribution = { ...storedAttr, ...explicitAttribution };
+  const payload = buildMetaPurchasePayload(orderId, quote, attribution);
+  return postMetaCapi(
+    `capi:purchase:${orderId}`,
+    "meta_capi_purchase",
+    payload,
+    { orderId, eventId: `purchase_${orderId}` }
+  );
 }

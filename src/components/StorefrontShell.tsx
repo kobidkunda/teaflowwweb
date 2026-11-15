@@ -28,6 +28,7 @@ const LeadCaptureModal = dynamic(
 );
 import { QuickVariantModal } from "@/components/cart/QuickVariantModal";
 import { AddToCartPrompt } from "@/components/cart/AddToCartPrompt";
+import { FunnelTracker } from "@/components/analytics/FunnelTracker";
 
 /**
  * StorefrontShell manages layout wrapping between public storefront routes and
@@ -109,6 +110,7 @@ export function StorefrontShell({
         <LeadCaptureModal />
         <AddToCartPrompt />
         <QuickVariantModal />
+        <FunnelTracker />
       </WholesaleProvider>
     </CartProvider>
   );

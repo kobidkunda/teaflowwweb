@@ -131,19 +131,27 @@ export default function AdminVisitorsPage() {
       </div>
 
       {/* Marketing Tags & GTM Shortcut Banner */}
-      <div className="flex items-center justify-between p-3.5 mb-6 bg-[#f6f3ea] border border-[#e2ddd0] rounded-lg text-xs">
+      <div className="flex items-center justify-between flex-wrap gap-3 p-3.5 mb-6 bg-[#f6f3ea] border border-[#e2ddd0] rounded-lg text-xs">
         <div className="flex items-center gap-2 text-[#18231c]">
           <Tag className="w-4 h-4 text-[#2c4e38]" />
           <span>
-            Manage external tags, <strong>Google Tag Manager</strong>, Meta Pixel & GA4.
+            Explore full UTM, Keyword, Lead, Conversation &amp; Remarketing Funnel or configure pixels.
           </span>
         </div>
-        <Link
-          href="/admin/tracking"
-          className="font-bold text-[#2c4e38] hover:underline shrink-0"
-        >
-          Configure Marketing Pixels & GTM →
-        </Link>
+        <div className="flex items-center gap-4 shrink-0">
+          <Link
+            href="/admin/funnel"
+            className="font-bold text-[#2c4e38] hover:underline"
+          >
+            Open Funnel &amp; Ads Attribution →
+          </Link>
+          <Link
+            href="/admin/tracking"
+            className="font-bold text-[#2c4e38] hover:underline"
+          >
+            Configure Pixels &amp; GTM →
+          </Link>
+        </div>
       </div>
 
       {error && (

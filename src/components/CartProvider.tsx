@@ -4,6 +4,7 @@ import { cartImageKey } from "@/lib/cartImageHelper";
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { trackCartDelta } from "@/lib/seo/tracking";
 import { getOrCreateSessionId, getClientFingerprint } from "@/lib/fingerprint";
+import { getClientAttributionBundle, sendFunnelEvent } from "@/lib/funnel/clientAttribution";
 import type { Product, Variant } from "@/lib/productModels";
 
 export type CartLine = {
@@ -266,10 +267,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         const sid = sessionId || getOrCreateSessionId();
         const fingerprint = await getClientFingerprint();
+        const attribution = getClientAttributionBundle();
 
         const syncPayload = {
           sessionId: sid,
           fingerprint,
+          attribution,
           items: items.map((x) => ({
             variantId: x.trialId ? 0 : x.variantId,
             ...(x.trialId ? { trialId: x.trialId } : {}),
@@ -316,7 +319,23 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const maxQty = line.isWholesale ? 10000 : 20;
     const existing = items.find(x => line.trialId ? x.trialId === line.trialId : !x.trialId && x.variantId === line.variantId);
     if (existing && existing.quantity >= (existing.isWholesale ? 10000 : 20)) return;
-    if (track) void trackCartDelta(line, qtyToAdd, "add");
+    if (track) {
+      void trackCartDelta(line, qtyToAdd, "add");
+      sendFunnelEvent({
+        funnelStage: "add_to_cart",
+        eventName: "add_to_cart",
+        entityType: line.trialId ? "trial" : "variant",
+        entityId: String(line.trialId || line.variantId),
+        valuePaise: line.pricePaise * qtyToAdd,
+        metadata: {
+          name: line.name,
+          sku: line.sku || "",
+          grams: line.grams,
+          quantity: qtyToAdd,
+          isWholesale: Boolean(line.isWholesale),
+        },
+      });
+    }
 
     if (notify) {
       const resolvedImg = line.imageUrl || catalogImages[cartImageKey(line)] || null;

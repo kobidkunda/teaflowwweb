@@ -3,6 +3,7 @@ import { getCustomerSession } from "@/lib/customerSessions";
 import { PrivateLabelService } from "@/lib/private-label/service";
 import { customerOrderCheckoutSchema } from "@/lib/private-label/schemas";
 import { toPublicProductionOrderDto } from "@/lib/private-label/public-dto";
+import { extractAttributionFromRequest, safeRecordEntityAttribution } from "@/lib/funnel/server";
 import {
   PrivateLabelNotFoundError,
   PrivateLabelRevisionConflictError,
@@ -108,6 +109,25 @@ export async function POST(request: Request) {
       orderDetails.job,
       orderDetails.job?.milestones || []
     );
+
+    if (!deduped) {
+      const attribution = extractAttributionFromRequest(request, body, "/private-label");
+      safeRecordEntityAttribution({
+        entityType: "private_label_order",
+        entityId: String(order.id),
+        attribution,
+        funnelName: "private_label",
+        funnelStage: "order_placed",
+        eventName: "pl_order_placed",
+        path: attribution.lastTouch.landing_page || "/private-label",
+        customerId: customer.id,
+        customerName: customer.name,
+        customerEmail: customer.email,
+        customerPhone: customer.phone || null,
+        convertedOrderId: String(order.id),
+        metadata: { quoteId: quote.id },
+      });
+    }
 
     return NextResponse.json(
       {

@@ -7,6 +7,7 @@ import {
   PrivateLabelNotFoundError,
   PrivateLabelGateError,
 } from "@/lib/private-label/types";
+import { extractAttributionFromRequest, safeRecordEntityAttribution } from "@/lib/funnel/server";
 
 function resolveCustomer(request: Request) {
   const session = getCustomerSession(request);
@@ -88,6 +89,21 @@ export async function POST(request: Request) {
     );
 
     const publicQuote = toPublicQuoteWithItemsDto(quote);
+    const attribution = extractAttributionFromRequest(request, body, "/private-label");
+    safeRecordEntityAttribution({
+      entityType: "private_label_quote",
+      entityId: quote.id,
+      attribution,
+      funnelName: "private_label",
+      funnelStage: "checkout_start",
+      eventName: "pl_quote_created",
+      path: attribution.lastTouch.landing_page || "/private-label",
+      customerId: customer.id,
+      customerName: customer.name,
+      customerEmail: customer.email,
+      customerPhone: customer.phone || null,
+      metadata: { projectId },
+    });
 
     return NextResponse.json(
       {

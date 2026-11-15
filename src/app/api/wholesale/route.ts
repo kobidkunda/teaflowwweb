@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { recordWholesaleInquiry } from "@/lib/wholesale";
 import { getStoreSettings } from "@/lib/storeSettings";
+import { extractAttributionFromRequest } from "@/lib/funnel/server";
 
 export const runtime = "nodejs";
 
@@ -47,7 +48,42 @@ export async function POST(request: Request) {
       );
     }
 
-    const { id, whatsappUrl, whatsappNumber } = recordWholesaleInquiry(parsed.data);
+    const attribution = extractAttributionFromRequest(request, body, "/wholesale");
+    const { id, whatsappUrl, whatsappNumber } = recordWholesaleInquiry(parsed.data, attribution);
+
+    if (attribution.marketingConsent) {
+      import("@/lib/seo/metaCapi")
+        .then(({ sendMetaServerFunnelEvent }) =>
+          sendMetaServerFunnelEvent({
+            eventName: "Lead",
+            eventId: `wholesale_${id}`,
+            marketingConsent: true,
+            user: {
+              email: parsed.data.email,
+              phone: parsed.data.phone,
+              name: parsed.data.name,
+            },
+            attribution: {
+              fbc: attribution.fbc,
+              fbp: attribution.fbp,
+              clientIp: attribution.clientIp,
+              userAgent: attribution.userAgent,
+              sourceUrl: attribution.referer || undefined,
+              utmSource: attribution.lastTouch.utm_source,
+              utmMedium: attribution.lastTouch.utm_medium,
+              utmCampaign: attribution.lastTouch.utm_campaign,
+              utmTerm: attribution.lastTouch.utm_term,
+              utmContent: attribution.lastTouch.utm_content,
+              funnelName: attribution.funnelName,
+            },
+            customData: {
+              content_name: parsed.data.interest,
+              content_category: "wholesale_b2b",
+            },
+          })
+        )
+        .catch(() => {});
+    }
 
     return NextResponse.json({
       ok: true,

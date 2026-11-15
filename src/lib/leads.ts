@@ -2,6 +2,13 @@ import { z } from "zod";
 import { getDb } from "@/lib/db";
 import { cleanWhatsAppNumber } from "@/lib/wholesale";
 import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
+import {
+  buildCompactAttributionPayload,
+  getTableColumns,
+  safeRecordEntityAttribution,
+  type ExtractedRequestAttribution,
+} from "@/lib/funnel/server";
+import { attributionBundleSchema } from "@/lib/funnel/types";
 import type Database from "better-sqlite3";
 
 export const leadCaptureSchema = z.object({
@@ -19,6 +26,7 @@ export const leadCaptureSchema = z.object({
   customerName: z.string().trim().max(100).optional(),
   cartId: z.string().trim().max(128).optional(),
   source: z.enum(["exit_intent", "cart_incentive", "manual"]).default("exit_intent"),
+  attribution: attributionBundleSchema.optional(),
 });
 
 export type LeadCaptureInput = z.input<typeof leadCaptureSchema>;
@@ -86,7 +94,7 @@ export function provisionLeadCoupon(
  * in abandoned_carts and visitor_fingerprints, and provisions an incentive coupon.
  */
 export function captureLead(
-  input: LeadCaptureInput,
+  input: LeadCaptureInput & { resolvedAttribution?: ExtractedRequestAttribution },
   database?: InstanceType<typeof Database>
 ): LeadCaptureResult {
   const db = database ?? getDb();
@@ -144,15 +152,48 @@ export function captureLead(
       .get(input.sessionId) as { id: string; applied_coupon_code?: string } | undefined;
   }
 
+  const attr = input.resolvedAttribution;
+  const lastTouch = attr?.lastTouch || attr?.firstTouch;
+
   const result = db.transaction(() => {
-    // 1. Record captured lead
-    const leadInsert = db
-      .prepare(`
-        INSERT INTO captured_leads (
-          phone_number, customer_name, session_id, cart_id, provisioned_coupon, source, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `)
-      .run(cleanPhone, cleanName, input.sessionId, cart?.id ?? null, couponCode, source);
+    // 1. Record captured lead (preserving UTM/funnel fields when migrated)
+    const leadCols = getTableColumns(db, "captured_leads");
+    let leadInsert: { lastInsertRowid: number | bigint };
+    if (leadCols.has("utm_source")) {
+      leadInsert = db
+        .prepare(`
+          INSERT INTO captured_leads (
+            phone_number, customer_name, session_id, cart_id, provisioned_coupon, source,
+            utm_source, utm_medium, utm_campaign, utm_term, utm_content, gclid, fbclid, landing_page, funnel_name,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `)
+        .run(
+          cleanPhone,
+          cleanName,
+          input.sessionId,
+          cart?.id ?? null,
+          couponCode,
+          source,
+          lastTouch?.utm_source || "",
+          lastTouch?.utm_medium || "",
+          lastTouch?.utm_campaign || "",
+          lastTouch?.utm_term || "",
+          lastTouch?.utm_content || "",
+          lastTouch?.gclid || "",
+          lastTouch?.fbclid || "",
+          lastTouch?.landing_page || "",
+          attr?.funnelName || "retail_storefront"
+        );
+    } else {
+      leadInsert = db
+        .prepare(`
+          INSERT INTO captured_leads (
+            phone_number, customer_name, session_id, cart_id, provisioned_coupon, source, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `)
+        .run(cleanPhone, cleanName, input.sessionId, cart?.id ?? null, couponCode, source);
+    }
 
     const leadId = Number(leadInsert.lastInsertRowid);
 
@@ -191,6 +232,19 @@ export function captureLead(
   })();
 
   if (result.success) {
+    safeRecordEntityAttribution({
+      entityType: "lead_modal",
+      entityId: String(result.leadId),
+      attribution: attr,
+      funnelName: attr?.funnelName || "retail_storefront",
+      funnelStage: "lead_capture",
+      eventName: `lead_${source}`,
+      path: lastTouch?.landing_page || "/",
+      customerName: cleanName || null,
+      customerPhone: cleanPhone,
+      metadata: { source, couponCode: result.couponCode, cartId: result.cartId ?? null },
+    });
+
     dispatchNotificationEvent({
       event: "lead_modal",
       source: "/api/leads/capture",
@@ -205,6 +259,7 @@ export function captureLead(
         couponCode: result.couponCode,
         discountPercent: result.discountPercent,
         source,
+        attribution: buildCompactAttributionPayload(attr),
       },
       dedupeKey: `lead:${result.leadId}`,
     });

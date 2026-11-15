@@ -7,6 +7,7 @@ import type { CustomerAddress } from "@/lib/customerAddresses";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { trackBeginCheckout, trackAddShippingInfo, trackAddPaymentInfo, trackCheckoutDiagnostic } from "@/lib/seo/tracking";
+import { sendFunnelEvent } from "@/lib/funnel/clientAttribution";
 import { useCart } from "@/components/CartProvider";
 import { useInternational } from "./InternationalProvider";
 import { formatMoney } from "@/lib/international/money";
@@ -203,8 +204,19 @@ export function LiveCheckout() {
   const key = useRef("");
   const quotedItems = useRef("");
   const beganCheckout = useRef(false);
+  const firstPartyCheckoutRef = useRef(false);
   const paymentTracked = useRef("");
   useEffect(() => {
+    if (!firstPartyCheckoutRef.current && cart.items.length > 0) {
+      firstPartyCheckoutRef.current = true;
+      sendFunnelEvent({
+        funnelStage: "checkout_start",
+        eventName: "begin_checkout",
+        path: "/checkout",
+        valuePaise: cart.subtotal,
+        metadata: { itemCount: cart.count },
+      });
+    }
     const record = () => {
       if (!beganCheckout.current && cart.items.length && cart.items.every(i => i.sku || i.trialId || i.variantId)) {
         beganCheckout.current = trackBeginCheckout(cart.items.map(i => ({ item_id: i.sku || i.trialId || `HTH-${i.variantId}`, item_name: i.name, price: i.pricePaise / 100, quantity: i.quantity })), cart.subtotal / 100, "INR");
@@ -212,7 +224,7 @@ export function LiveCheckout() {
     };
     record(); window.addEventListener(CONSENT_EVENT, record);
     return () => window.removeEventListener(CONSENT_EVENT, record);
-  }, [cart.items, cart.subtotal]);
+  }, [cart.items, cart.subtotal, cart.count]);
   const t = (id: string) => ctx?.texts[id] || id;
   const CHECKOUT_DRAFT_KEY = "teafloww_checkout_draft_v1";
   const [country, setCountry] = useState(ctx?.country || "IN");
@@ -940,6 +952,16 @@ export function LiveCheckout() {
       if (quote.analytics && paymentTracked.current !== quote.id) {
         if (trackAddPaymentInfo(method, quote.analytics.items, quote.analytics.value, quote.analytics.currency)) paymentTracked.current = quote.id;
       }
+      sendFunnelEvent({
+        funnelStage: "payment_info",
+        eventName: "add_payment_info",
+        entityType: "order",
+        entityId: p.orderId,
+        path: "/checkout",
+        valuePaise: quote.totalMinor,
+        currency: quote.currency,
+        metadata: { method, quoteId: quote.id },
+      });
 
       if (saveAddressToAccount && customer) {
         fetch("/api/customer/addresses", {

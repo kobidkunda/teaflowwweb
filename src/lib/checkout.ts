@@ -5,6 +5,11 @@ import { quoteTotals, SHIPPING_METHOD } from "@/lib/money";
 import { validateCouponServer } from "@/lib/storefront";
 import { markCartConverted } from "@/lib/abandonedCarts";
 import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
+import {
+  buildCompactAttributionPayload,
+  safeRecordEntityAttribution,
+  type ExtractedRequestAttribution,
+} from "@/lib/funnel/server";
 export { FREE_SHIPPING_THRESHOLD, SHIPPING_FEE, GST_RATE_PERCENT, calculateShipping, calculateTaxPaise, quoteTotals } from "@/lib/money";
 import { randomUUID } from "node:crypto";
 export class CheckoutError extends Error {}
@@ -15,6 +20,7 @@ export type DemoOrderInput = CheckoutInput & {
   phone?: string;
   sessionId?: string;
   customerId?: string;
+  attribution?: ExtractedRequestAttribution;
 };
 
 export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPaise: number; discountPaise: number; taxPaise: number; deduped: boolean } {
@@ -162,6 +168,35 @@ export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPa
       orderVals.push(resolvedCustomerId);
     }
 
+    const attr = raw.attribution;
+    const lastTouch = attr?.lastTouch || attr?.firstTouch;
+    if (cols.includes("utm_source")) {
+      orderCols.push(
+        "session_id",
+        "utm_source",
+        "utm_medium",
+        "utm_campaign",
+        "utm_term",
+        "utm_content",
+        "gclid",
+        "fbclid",
+        "landing_page",
+        "funnel_name"
+      );
+      orderVals.push(
+        sessionId || attr?.sessionId || null,
+        lastTouch?.utm_source || "",
+        lastTouch?.utm_medium || "",
+        lastTouch?.utm_campaign || "",
+        lastTouch?.utm_term || "",
+        lastTouch?.utm_content || "",
+        lastTouch?.gclid || "",
+        lastTouch?.fbclid || "",
+        lastTouch?.landing_page || "",
+        attr?.funnelName || (hasWholesaleItems ? "wholesale_b2b" : "retail_storefront")
+      );
+    }
+
     const placeholders = orderCols.map(() => "?").join(",");
     db.prepare(`INSERT INTO orders (${orderCols.join(",")}) VALUES (${placeholders})`).run(...orderVals);
 
@@ -171,11 +206,32 @@ export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPa
     // Atomically transition cart session state to 'converted'
     markCartConverted(db, {
       orderId: id,
-      sessionId,
+      sessionId: sessionId || attr?.sessionId,
       customerName: input.name,
       customerEmail: input.email,
       customerPhone: phone,
     });
+
+    safeRecordEntityAttribution(
+      {
+        entityType: "order",
+        entityId: id,
+        attribution: attr,
+        funnelName: attr?.funnelName || (hasWholesaleItems ? "wholesale_b2b" : "retail_storefront"),
+        funnelStage: "order_placed",
+        eventName: "demo_order_placed",
+        path: lastTouch?.landing_page || "/checkout",
+        valuePaise: total,
+        currency: "INR",
+        customerName: input.name,
+        customerEmail: input.email,
+        customerPhone: phone ?? null,
+        convertedOrderId: id,
+        convertedRevenuePaise: total,
+        metadata: { couponCode },
+      },
+      db
+    );
 
     // Demo-only: do NOT decrement stock until a verified payment capture exists.
     dispatchNotificationEvent({
@@ -192,6 +248,7 @@ export function createDemoOrder(raw: DemoOrderInput): { orderId: string; totalPa
         customerEmail: input.email,
         phone: phone ?? null,
         lines,
+        attribution: buildCompactAttributionPayload(attr),
       },
       dedupeKey: `checkout:${id}`,
     });

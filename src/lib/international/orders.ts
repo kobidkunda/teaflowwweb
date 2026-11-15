@@ -17,6 +17,7 @@ import { dispatchNotificationEvent } from "@/lib/notifications/dispatch";
 import type { YoupiWebhookEvent } from "@/lib/youpi/client";
 import { markCartConverted } from "@/lib/abandonedCarts";
 import { logger } from "@/lib/logger";
+import { safeRecordEntityAttribution } from "@/lib/funnel/server";
 export type LiveOrder = { id: string; owner: string; idempotency_key: string; quote_id: string; document: string; payment_status: string;
   fulfillment_status: string; gateway_order_id: string | null; gateway_payment_id: string | null; reserved_until: number;
   inventory_status: string; refund_minor: number; created_ms: number };
@@ -374,6 +375,24 @@ export function applyPaymentEvent(id: string, raw: unknown) {
                   customerPhone: q.input.address.phone,
                 });
               } catch {}
+              safeRecordEntityAttribution(
+                {
+                  entityType: "order",
+                  entityId: row.id,
+                  funnelName: q.wholesale?.isWholesale ? "wholesale_b2b" : q.subscription ? "subscriptions" : "retail_storefront",
+                  funnelStage: "order_paid",
+                  eventName: "order_paid",
+                  valuePaise: q.totalMinor,
+                  currency: q.currency,
+                  customerName: q.input.address.name,
+                  customerEmail: q.input.address.email,
+                  customerPhone: q.input.address.phone,
+                  convertedOrderId: row.id,
+                  convertedRevenuePaise: q.totalMinor,
+                  metadata: { paymentId: p.id, gateway: "razorpay", status },
+                },
+                db
+              );
               try {
                 const srConfig = getActiveShiprocketCredentials();
                 if (!q.subscription && srConfig.orderCreationMode === "auto") {
@@ -466,6 +485,24 @@ export function applyYoupiPaymentEvent(deliveryId: string, event: YoupiWebhookEv
                 customerPhone: q.input.address.phone,
               });
             } catch {}
+            safeRecordEntityAttribution(
+              {
+                entityType: "order",
+                entityId: row.id,
+                funnelName: q.wholesale?.isWholesale ? "wholesale_b2b" : q.subscription ? "subscriptions" : "retail_storefront",
+                funnelStage: "order_paid",
+                eventName: "order_paid",
+                valuePaise: q.totalMinor,
+                currency: q.currency,
+                customerName: q.input.address.name,
+                customerEmail: q.input.address.email,
+                customerPhone: q.input.address.phone,
+                convertedOrderId: row.id,
+                convertedRevenuePaise: q.totalMinor,
+                metadata: { paymentId: event.paymentId, gateway: "youpi", status },
+              },
+              db
+            );
             try {
               const srConfig = getActiveShiprocketCredentials();
               if (!q.subscription && srConfig.orderCreationMode === "auto") {
@@ -655,6 +692,24 @@ export function switchOrderToCod(id: string, token: string): LiveOrder {
       Date.now()
     );
 
+    safeRecordEntityAttribution(
+      {
+        entityType: "order",
+        entityId: id,
+        funnelName: q.wholesale?.isWholesale ? "wholesale_b2b" : "retail_storefront",
+        funnelStage: "order_placed",
+        eventName: "order_switched_to_cod",
+        valuePaise: updatedQuote.totalMinor,
+        currency: updatedQuote.currency,
+        customerName: updatedQuote.input.address.name,
+        customerEmail: updatedQuote.input.address.email,
+        customerPhone: updatedQuote.input.address.phone,
+        convertedOrderId: id,
+        convertedRevenuePaise: updatedQuote.totalMinor,
+      },
+      db
+    );
+
     try {
       markCartConverted(db, {
         orderId: id,
@@ -819,6 +874,27 @@ export function confirmBankTransferPayment(orderId: string, actor = "admin", utr
     } catch {}
 
     enqueue("email", { orderId, template: "commerce_order_received" }, `email:bank_transfer_confirmed:${orderId}`);
+    try {
+      const q = JSON.parse(row.document) as Quote;
+      safeRecordEntityAttribution(
+        {
+          entityType: "order",
+          entityId: orderId,
+          funnelName: q.wholesale?.isWholesale ? "wholesale_b2b" : "retail_storefront",
+          funnelStage: "order_paid",
+          eventName: "order_bank_transfer_confirmed",
+          valuePaise: q.totalMinor,
+          currency: q.currency,
+          customerName: q.input.address.name,
+          customerEmail: q.input.address.email,
+          customerPhone: q.input.address.phone,
+          convertedOrderId: orderId,
+          convertedRevenuePaise: q.totalMinor,
+          metadata: { actor, utrReference: utrReference || null },
+        },
+        db
+      );
+    } catch {}
     return liveOrder(orderId);
   })();
 }

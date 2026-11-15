@@ -53,6 +53,7 @@ describe("Admin Navigation Configuration & Helpers", () => {
       "/admin/abandoned-carts",
       "/admin/coupons",
       "/admin/visitors",
+      "/admin/funnel",
     ]);
 
     const editorialGroup = NAV_GROUPS.find((g) => g.id === "editorial")!;

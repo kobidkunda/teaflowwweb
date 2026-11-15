@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimitResponse } from "@/lib/rateLimit";
 import { contactInquirySchema, recordContactInquiry } from "@/lib/contact";
+import { extractAttributionFromRequest } from "@/lib/funnel/server";
 
 export const runtime = "nodejs";
 
@@ -41,10 +42,43 @@ export async function POST(request: Request) {
   const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
 
   try {
+    const attribution = extractAttributionFromRequest(request, body, "/contact");
     const result = recordContactInquiry(parsed.data, {
       ip_hash: ip,
       user_agent: userAgent,
+      attribution,
     });
+
+    if (attribution.marketingConsent) {
+      import("@/lib/seo/metaCapi")
+        .then(({ sendMetaServerFunnelEvent }) =>
+          sendMetaServerFunnelEvent({
+            eventName: "Lead",
+            eventId: `contact_${result.referenceCode}`,
+            marketingConsent: true,
+            user: {
+              email: parsed.data.email,
+              phone: parsed.data.phone,
+              name: parsed.data.name,
+            },
+            attribution: {
+              fbc: attribution.fbc,
+              fbp: attribution.fbp,
+              clientIp: attribution.clientIp,
+              userAgent: attribution.userAgent,
+              sourceUrl: attribution.referer || undefined,
+              utmSource: attribution.lastTouch.utm_source,
+              utmMedium: attribution.lastTouch.utm_medium,
+              utmCampaign: attribution.lastTouch.utm_campaign,
+              utmTerm: attribution.lastTouch.utm_term,
+              utmContent: attribution.lastTouch.utm_content,
+              funnelName: attribution.funnelName,
+            },
+            customData: { content_name: `contact_${parsed.data.topic}` },
+          })
+        )
+        .catch(() => {});
+    }
 
     return NextResponse.json({
       ok: true,
