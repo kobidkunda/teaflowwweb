@@ -1,5 +1,38 @@
 # Prioritized Development Checklist
 
+## Universal Brand Email Templates System with Logo & Responsive Tables — 2026-11-16
+- [x] **Brand Email Layout Engine & Modern Web Guidance Compliance** (`src/lib/emailLayout.ts`):
+  - Built `buildBrandEmailHtml` and `buildBrandEmailText` implementing cross-client compatible, responsive HTML email standards (Gmail, Apple Mail, Outlook MSO, Yahoo Mail, mobile WebViews).
+  - Centered 600px container (`#FAF8F5` background, `#FFFFFF` card, `#E5E7EB` borders) with official TeaFloww brand logo (`08_light_forest_green.png` via `{{logo_url}}`), category status badge, Georgia editorial serif headings, and bulletproof action buttons.
+  - Responsive data and summary tables adhering to modern HTML table semantics (`role="table"`, `<th scope="col">`, `#F4F7F4` header shading, cell padding, mobile wrapping).
+  - Standardized legal brand footer: TeaFloww (Nirva), Works (00, Fulbari Ghoshpukur Bypass, Siliguri, WB 734015), Registered Office (Shiv Shakti Kali Bari Rd Sukantapally East Siliguri 734005), GSTIN: 19CTHPK8646J2ZY, support email, phone, and direct origin sourcing disclosure.
+- [x] **Canonical Transactional Templates (All 10 Touchpoints)** (`src/lib/emailTemplates.ts`, `scripts/migrations/060_brand_email_templates.mjs`):
+  - Covered all 10 store email templates with dedicated data tables and matching formatted plain-text bodies:
+    1. `admin_password_reset`: Staff password reset, security details table, and reset button.
+    2. `order_confirmation`: Customer receipt with order summary table, Siliguri packing facility note, and support contact.
+    3. `order_shipped`: Dispatch notice with tracking number/status table and tracking button.
+    4. `contact_acknowledgement`: Inquiry confirmation with reference code and 24h SLA table.
+    5. `wholesale_acknowledgement`: Trade desk intake with business details table and 2-day SLA.
+    6. `newsletter_welcome`: Tea Circle welcome with harvest privileges table and tea discovery CTA.
+    7. `abandoned_cart_recovery`: Bag recovery with reserved harvest status table and checkout CTA.
+    8. `commerce_order_received`: Live order received with order details and payment status table.
+    9. `commerce_payment_review`: Under-review order with review status table and direct support link.
+    10. `subscription_renewal`: Subscription cycle notice with dispatch date, renewal schedule table, and management link.
+- [x] **System Emails Upgraded to Branded HTML**:
+  - `sendAdminAlertEmail` (`src/lib/email.ts`): Dispatches administrative event notifications (orders, refunds, stock, webhooks) with brand logo, severity badge, key-value table, and administrative footer.
+  - `addAdminConversationEntry` (`src/lib/admin/responses.ts`): Sends customer replies from admin conversation thread in branded HTML with logo, message card, staff signature, and contact table.
+- [x] **Admin Template Editor & Previews**:
+  - Enhanced `sampleVarsFor` in `src/app/api/admin/email-templates/[key]/route.ts` with complete sample data across all 10 templates.
+  - Enhanced `POST /api/admin/email-templates/:key/test` (`src/app/api/admin/email-templates/[key]/test/route.ts`) to merge sample variables when testing, ensuring test emails display fully rendered tables in actual inboxes.
+  - Enhanced `generateEmailDraft()` in `src/lib/emailTemplates.ts` to output rich drafts with logo and overview tables.
+- [x] **Additive Migration & Parity**:
+  - Created `scripts/migrations/060_brand_email_templates.mjs` and applied it cleanly to SQLite (`npm run db:migrate`).
+  - Added PostgreSQL migration parity in `scripts/apply-all-pg-migrations.mjs`.
+- [x] **Automated Tests & Quality Assurance**:
+  - Added `tests/unit/brand-email-templates.test.ts` (7 tests verifying template structure, logo, tables, variables, plain-text fallbacks).
+  - All 24 email tests in `tests/unit/email-templates.test.ts` and `tests/unit/brand-email-templates.test.ts` passed (100%).
+  - Full TypeScript check (`npm run typecheck`) and ESLint passed with 0 errors.
+
 ## Unified First-Party Funnel, UTM/Keyword Attribution, Conversation Capture & Remarketing System — 2026-11-15
 - [x] **Database Schema & Migrations** (`scripts/migrations/059_funnel_attribution_system.mjs`, `scripts/apply-all-pg-migrations.mjs`):
   - Added `visitor_sessions`, `funnel_events`, `funnel_conversations`, and `entity_attributions` tables plus UTM/click-ID attribution columns (`session_id`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, `gclid`, `fbclid`, `landing_page`, `funnel_name`) across `abandoned_carts`, `captured_leads`, `contact_inquiries`, `wholesale_inquiries`, `newsletter_subscriptions`, and `orders`.

@@ -1623,6 +1623,27 @@ export async function runAllPgMigrations() {
       console.log("✓ Applied 059_funnel_attribution_system");
     }
 
+    // Migration 060 (Brand email templates with logo & tables)
+    if (!applied.has("060_brand_email_templates")) {
+      console.log("Applying 060_brand_email_templates...");
+      await client.query("BEGIN");
+      const { up } = await import("./migrations/060_brand_email_templates.mjs");
+      const fakeDb = {
+        exec: async (sql) => client.query(sql),
+        prepare: (sql) => {
+          let paramIdx = 1;
+          const pgSql = sql.replace(/\?/g, () => `$${paramIdx++}`);
+          return {
+            run: async (...params) => client.query(pgSql, params),
+          };
+        },
+      };
+      await up(fakeDb);
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["060_brand_email_templates"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 060_brand_email_templates");
+    }
+
     console.log("All PostgreSQL migrations are completely up to date!");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});

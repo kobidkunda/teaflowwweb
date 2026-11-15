@@ -38,14 +38,17 @@ export async function PUT(request: Request, ctx: { params: Promise<{ key: string
   }
 }
 
-function sampleVarsFor(key: string): Record<string, string> {
+export function sampleVarsFor(key?: string): Record<string, string> {
   const base: Record<string, string> = {
     store_name: "TeaFloww",
     support_email: "info@teafloww.com",
     logo_url: "https://teafloww.com/logo/png/08_light_forest_green.png",
     customer_name: "Aarav Sharma",
     order_id: "TF-2026-000123",
-    order_total: "₹499",
+    order_total: "₹1,249",
+    payment_status: "Captured (Online UPI)",
+    dispatch_date: "November 24, 2026",
+    renewal_url: "https://teafloww.com/account/subscriptions?renewal=sample-cycle-123",
     tracking_url: "https://teafloww.com/track?order=TF-2026-000123",
     reset_link: "https://teafloww.com/admin/reset?token=sample-token",
     reference_code: "TF-CNT-ABC123",

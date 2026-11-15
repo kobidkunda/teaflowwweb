@@ -229,35 +229,38 @@ export async function sendAdminAlertEmail(input: {
     ...entries.map(([k, v]) => `- ${k}: ${formatAlertValue(v)}`),
   ].filter((line): line is string => line !== null);
 
-  const rowsHtml = entries
-    .map(
-      ([k, v]) => `
-        <tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;font-weight:600;color:#143c31;vertical-align:top;width:32%;font-size:13px;">${escapeHtml(k)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;color:#1f2937;font-size:13px;white-space:pre-wrap;word-break:break-word;">${escapeHtml(formatAlertValue(v))}</td>
-        </tr>`
-    )
-    .join("");
+  const { buildBrandEmailHtml } = await import("@/lib/emailLayout");
+  const { defaultEmailContext } = await import("@/lib/emailTemplates");
+  const ctx = defaultEmailContext();
 
-  const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:640px;margin:0 auto;padding:24px;background:#faf8f5;color:#1f2937;">
-      <div style="background:#143c31;color:#ffffff;padding:18px 22px;border-radius:10px 10px 0 0;">
-        <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.8;">TeaFloww Admin Alert</div>
-        <h1 style="margin:6px 0 0;font-size:18px;font-weight:600;">${escapeHtml(input.eventLabel)}</h1>
-      </div>
-      <div style="background:#ffffff;padding:20px 22px;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;">
-        <p style="margin:0 0 12px;font-size:15px;font-weight:500;color:#111827;">${escapeHtml(input.summary)}</p>
-        <p style="margin:0 0 16px;font-size:12px;color:#6b7280;">
-          ${input.referenceId ? `<strong>Reference:</strong> ${escapeHtml(input.referenceId)} &middot; ` : ""}
-          <strong>Source:</strong> ${escapeHtml(input.source)} &middot;
-          <strong>At:</strong> ${escapeHtml(input.occurredAt)}
-        </p>
-        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;">
-          <tbody>${rowsHtml}</tbody>
-        </table>
-      </div>
-    </div>
-  `;
+  const rows = entries.map(([k, v]) => [
+    escapeHtml(k),
+    escapeHtml(formatAlertValue(v)),
+  ]);
+
+  const html = buildBrandEmailHtml({
+    categoryBadge: `ADMIN ALERT · ${input.event.toUpperCase()}`,
+    heading: input.eventLabel,
+    leadParagraph: escapeHtml(input.summary),
+    detailsBox: {
+      title: "Event Metadata",
+      items: [
+        ...(input.referenceId ? [{ label: "Reference", value: escapeHtml(input.referenceId) }] : []),
+        { label: "Event Source", value: escapeHtml(input.source) },
+        { label: "Timestamp", value: escapeHtml(input.occurredAt) },
+      ],
+    },
+    table: {
+      caption: "Submitted Event Details",
+      columns: ["Field", "Value"],
+      rows,
+    },
+    secondaryNoteHtml: "This is an internal system notification dispatched to configured administrative recipients.",
+  })
+    .replaceAll("{{logo_url}}", ctx.logo_url)
+    .replaceAll("{{store_name}}", ctx.store_name)
+    .replaceAll("{{support_email}}", ctx.support_email)
+    .replaceAll(/\{\{#logo\}\}([\s\S]*?)\{\{\/logo\}\}/g, "$1");
 
   return sendMailHtml({
     to: input.to,

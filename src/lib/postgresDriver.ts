@@ -223,7 +223,8 @@ export function getPostgresDb(): SyncDatabase {
           let sql = msg.sql;
           const isInsert = /^INSERT\\s+INTO/i.test(sql.trim());
           const hasReturning = /RETURNING/i.test(sql);
-          
+          let posted = false;
+
           if (isInsert && !hasReturning) {
             const tableMatch = sql.trim().match(/^INSERT\\s+INTO\\s+["\\\`]?([a-zA-Z0-9_]+)["\\\`]?/i);
             const tableName = tableMatch ? tableMatch[1].toLowerCase() : '';
@@ -234,22 +235,26 @@ export function getPostgresDb(): SyncDatabase {
                 const res = await c.query(returningSql, msg.params);
                 const lastId = res.rows && res.rows[0] && res.rows[0].id != null ? res.rows[0].id : 0;
                 port.postMessage({ id: msg.id, ok: true, rows: res.rows, rowCount: res.rowCount, lastId });
-                Atomics.store(signal, 0, 1);
-                Atomics.notify(signal, 0, 1);
-                return;
+                posted = true;
               } catch {
                 // If RETURNING id fails, fall back to original query
               }
             }
           }
 
-          const res = await c.query(sql, msg.params);
-          port.postMessage({ id: msg.id, ok: true, rows: res.rows, rowCount: res.rowCount, lastId: 0 });
+          if (!posted) {
+            const res = await c.query(sql, msg.params);
+            port.postMessage({ id: msg.id, ok: true, rows: res.rows, rowCount: res.rowCount, lastId: 0 });
+          }
         }
       } catch (err) {
+        if (err && /connection|terminat|closed|econn/i.test(String(err.message || ''))) {
+          try { if (client) await client.end(); } catch {}
+          client = null;
+        }
         port.postMessage({ id: msg.id, ok: false, error: err.message, stack: err.stack });
       } finally {
-        Atomics.store(signal, 0, 1);
+        Atomics.store(signal, 0, msg.id);
         Atomics.notify(signal, 0, 1);
       }
     });
@@ -265,11 +270,23 @@ export function getPostgresDb(): SyncDatabase {
 
   function sendSync(type: "exec" | "query", sql: string, params: unknown[] = []) {
     const id = nextId++;
+    if (nextId > 0x70000000) {
+      nextId = 1;
+    }
+    // Discard any orphaned message before issuing the next synchronous request
+    while (receiveMessageOnPort(port1)) {}
     Atomics.store(signal, 0, 0);
     port1.postMessage({ id, type, sql, params });
-    Atomics.wait(signal, 0, 0);
+    while (Atomics.load(signal, 0) !== id) {
+      const cur = Atomics.load(signal, 0);
+      if (cur === id) break;
+      Atomics.wait(signal, 0, cur, 100);
+    }
 
-    const msg = receiveMessageOnPort(port1);
+    let msg = receiveMessageOnPort(port1);
+    while (msg && msg.message && msg.message.id !== undefined && msg.message.id !== id) {
+      msg = receiveMessageOnPort(port1);
+    }
     if (!msg || !msg.message) {
       throw new Error("PostgreSQL sync bridge received null response");
     }

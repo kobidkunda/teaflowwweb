@@ -583,10 +583,46 @@ export async function addAdminConversationEntry(input: {
   let emailSent = false;
 
   if (input.entryType === "reply_email" && input.sendEmailTo) {
+    const { buildBrandEmailHtml } = await import("@/lib/emailLayout");
+    const { defaultEmailContext } = await import("@/lib/emailTemplates");
+    const ctx = defaultEmailContext();
+    const escape = (s: string) =>
+      s
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+
+    const html = buildBrandEmailHtml({
+      categoryBadge: "Customer Support Desk",
+      heading: input.subject || "Message from TeaFloww",
+      leadParagraph:
+        "A specialist from our Siliguri tasting and support team has responded to your message:",
+      bodyHtml: `<div style="padding:16px 18px;background:#fbfbf9;border-left:3px solid #143c31;border-radius:4px;margin:16px 0;font-size:14px;line-height:1.6;color:#1d2a24;white-space:pre-wrap;">${escape(
+        input.message
+      )}</div>`,
+      table: {
+        caption: "Response Details",
+        columns: ["Detail", "Information"],
+        rows: [
+          ["Representative", escape(input.author)],
+          ["Support Desk", ctx.support_email],
+          ["Dispatch / Origin Hub", "Siliguri, West Bengal"],
+        ],
+      },
+      secondaryNoteHtml:
+        "You can reply directly to this email to continue the conversation with our team.",
+    })
+      .replaceAll("{{logo_url}}", ctx.logo_url)
+      .replaceAll("{{store_name}}", ctx.store_name)
+      .replaceAll("{{support_email}}", ctx.support_email)
+      .replaceAll(/\{\{#logo\}\}([\s\S]*?)\{\{\/logo\}\}/g, "$1");
+
     const res = await sendMailHtml({
       to: input.sendEmailTo,
       subject: input.subject || "Reply from TeaFloww",
       text: input.message,
+      html,
     });
     emailSent = res.sent;
   }

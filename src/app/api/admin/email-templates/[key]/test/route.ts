@@ -3,6 +3,7 @@ import { z } from "zod";
 import { guard, invalid, notFound, conflict } from "@/lib/adminHttp";
 import { getEmailTemplate, renderEmailTemplate } from "@/lib/emailTemplates";
 import { getSmtpStatus, sendMailHtml } from "@/lib/email";
+import { sampleVarsFor } from "../route";
 
 export const runtime = "nodejs";
 
@@ -24,6 +25,8 @@ export async function POST(request: Request, ctx: { params: Promise<{ key: strin
   try {
     const template = getEmailTemplate(decodeURIComponent(key));
     if (!template) return notFound("Email template not found.");
+    const sample = sampleVarsFor(template.key);
+    const testVars = { ...sample, ...(parsed.data.vars ?? {}) };
     const smtp = getSmtpStatus();
     if (!smtp.configured) {
       return NextResponse.json({
@@ -31,10 +34,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ key: strin
         sent: false,
         reason: "SMTP is not configured. Set SMTP_HOST (plus SMTP_USER/SMTP_PASS and RESET_FROM_EMAIL) and retry.",
         smtp,
-        preview: renderEmailTemplate(template, parsed.data.vars ?? {}),
+        preview: renderEmailTemplate(template, testVars),
       });
     }
-    const rendered = renderEmailTemplate(template, parsed.data.vars ?? {});
+    const rendered = renderEmailTemplate(template, testVars);
     const result = await sendMailHtml({
       to: parsed.data.to,
       subject: "[TEST] " + rendered.subject,
