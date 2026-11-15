@@ -231,4 +231,40 @@ describe("Product PDF Dossier & Certification Suite", () => {
       }
     });
   });
+
+  describe("5. ProductDossierPdf Dialog Visibility & Non-Occlusion", () => {
+    it("renders <dialog> with display: none and aria-hidden when closed to prevent occluding buy box", async () => {
+      const { renderToStaticMarkup } = await import("react-dom/server");
+      const React = await import("react");
+      const { ProductDossierPdf } = await import("@/components/pdp/ProductDossierPdf");
+
+      const html = renderToStaticMarkup(
+        React.createElement(ProductDossierPdf, {
+          pdfUrl: "/uploads/test-report.pdf",
+          pdfTitle: "Everyday Strong Milk Chai Technical Report",
+          productName: "Everyday Strong Milk Chai",
+          estate: "Greenwood & Tinkhong Estates",
+          flush: "Peak Second Flush",
+        })
+      );
+
+      // Verify <dialog> is present in markup
+      expect(html).toContain('id="pdp-pdf-dialog"');
+      expect(html).toContain('class="tf-pdf-dialog"');
+
+      // Crucially, it must have display:none and aria-hidden when not open
+      expect(html).toContain('style="display:none"');
+      expect(html).toContain('aria-hidden="true"');
+    });
+
+    it("verifies globals.css explicitly hides dialog.tf-pdf-dialog when :not([open])", () => {
+      const cssPath = path.resolve("src/app/globals.css");
+      const css = fs.readFileSync(cssPath, "utf-8");
+
+      expect(css).toContain("dialog.tf-pdf-dialog:not([open])");
+      expect(css).toMatch(/dialog\.tf-pdf-dialog:not\(\[open\]\)[\s\S]*?display:\s*none\s*!important/);
+      expect(css).toMatch(/dialog\.tf-pdf-dialog:not\(\[open\]\)[\s\S]*?pointer-events:\s*none\s*!important/);
+      expect(css).toMatch(/dialog\.tf-pdf-dialog\[open\][\s\S]*?display:\s*flex/);
+    });
+  });
 });

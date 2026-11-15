@@ -1,5 +1,17 @@
 # Prioritized Development Checklist
 
+## Storefront "Added to Bag" Confirmation Modal & Cart Notification Fix — 2026-11-15
+- [x] Homepage & Storefront Add-to-Cart Notification Prompt (`src/components/AddToCart.tsx`, `ShopProductCard.tsx`, `QuickVariantModal.tsx`):
+  - Enabled `notify = true` when calling `add()` in `AddToCart.tsx` and `ShopProductCard.tsx`, ensuring that clicking "Add to Cart" directly on the homepage signature blends carousel or shop cards triggers the "Added to Bag" notification prompt modal (`AddToCartPrompt`).
+  - Restored `AddToCartPrompt` display with item thumbnail, pack weight, price, quantity stepper, free shipping threshold meter, and clear "Proceed to Checkout" / "Keep Shopping" actions.
+  - Kept variant modal popups quiet and non-intrusive while providing immediate visual confirmation and direct checkout pathway.
+- [x] Product PDF Dossier Dialog Occlusion Prevention (`src/components/pdp/ProductDossierPdf.tsx`, `src/app/globals.css`):
+  - Ensured `<dialog.tf-pdf-dialog>` is strictly hidden with `display: none !important` and `pointer-events: none !important` when `:not([open])` so it never occludes buy box or interactive controls.
+- [x] Quality Assurance & Automated Tests:
+  - Updated end-to-end Playwright test in `tests/e2e/signature-blends-homepage.spec.ts` verifying that clicking Add to Cart on the homepage adds the item directly to the shopping cart, updates button state to "Added to bag", displays `[data-testid="add-to-cart-prompt"]` with "Proceed to Checkout", and keeps modal backdrops closed.
+  - Verified Vitest unit test suite (198 passed | 1 skipped, 3074 tests passing).
+  - Verified full production build and typecheck passed cleanly (`npm run check`).
+
 ## Direct Add-to-Cart Flow & Modal Suppression — 2026-11-15
 - [x] Streamlined Add-to-Cart Action (`src/components/AddToCart.tsx`):
   - Removed intrusive `openQuickModal` pop-up trigger from `handleQuickAdd`, ensuring that clicking "Add to Cart" directly adds the selected or lowest in-stock variant into the customer's shopping bag.

@@ -378,7 +378,7 @@ export function VariantPicker({
           role="tab"
           aria-selected={!isWholesaleMode}
           onClick={() => switchMode("retail")}
-          className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center ${
+          className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center cursor-pointer ${
             !isWholesaleMode
               ? "bg-[#1b3022] text-[#fbf8f1] shadow-xs"
               : "text-[#475244] hover:text-[#1b3022]"
@@ -390,7 +390,7 @@ export function VariantPicker({
           role="tab"
           aria-selected={isWholesaleMode}
           onClick={() => switchMode("wholesale")}
-          className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 text-xs font-bold rounded-md transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
             isWholesaleMode
               ? "bg-[#1b3022] text-[#fbf8f1] shadow-xs"
               : "text-[#475244] hover:text-[#1b3022]"
@@ -701,7 +701,7 @@ export function VariantPicker({
         {sizeLabel} <StorefrontText id="copy_93b65c1b11181916" fallback="· Approximately" /> {servings} <StorefrontText id="copy_5fc790d0e5ad6d37" fallback="cups ·" /> {perCupDisplay} <StorefrontText id="copy_fb02ea9db1a972dc" fallback="per cup" /> </p>
 
       {/* 6. Quantity Stepper, Add to Bag & Buy Now Row */}
-      <div className="flex items-center flex-wrap sm:flex-nowrap gap-2.5 mb-3">
+      <div className="flex items-center flex-wrap gap-2.5 mb-3">
         {/* Accessible Quantity Selector Stepper */}
         {isWholesaleMode && !isBulkSackSelected ? (
           <div className="flex items-center gap-1.5 flex-wrap">

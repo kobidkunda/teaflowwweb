@@ -7641,13 +7641,14 @@ dialog.tf-pdf-dialog {
   margin: auto;
   box-shadow: 0 25px 70px -15px rgba(15, 28, 20, 0.45),
               0 8px 24px -6px rgba(0, 0, 0, 0.12);
-  display: flex;
+  display: none;
   flex-direction: column;
   overflow: hidden;
   outline: none;
 
   /* Smooth exit state */
   opacity: 0;
+  pointer-events: none;
   transform: scale(0.96) translateY(14px);
   transition-property: opacity, transform, display, overlay;
   transition-duration: 0.28s;
@@ -7655,9 +7656,16 @@ dialog.tf-pdf-dialog {
   transition-behavior: allow-discrete;
 }
 
+dialog.tf-pdf-dialog:not([open]) {
+  display: none !important;
+  pointer-events: none !important;
+}
+
 /* Open state & @starting-style entry */
 dialog.tf-pdf-dialog[open] {
+  display: flex;
   opacity: 1;
+  pointer-events: auto;
   transform: scale(1) translateY(0);
 
   @starting-style {

@@ -121,7 +121,7 @@ export function ShopProductCard({
       grams: targetVariant.grams,
       pricePaise: targetVariant.price_paise,
       imageUrl: targetVariant.product_image_url || product.primary_image_url || product.primary_image?.url || imageUrl,
-    }, true, false);
+    }, true, true);
     setAdded(true);
     setTimeout(() => setAdded(false), 2400);
   };

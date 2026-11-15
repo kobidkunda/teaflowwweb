@@ -41,7 +41,7 @@ export function AddToCart({
       grams: target.grams,
       pricePaise: target.price_paise,
       imageUrl: target.product_image_url || product.primary_image_url || product.primary_image?.url || null,
-    }, true, false);
+    }, true, true);
 
     setAdded(true);
     setTimeout(() => setAdded(false), 2400);

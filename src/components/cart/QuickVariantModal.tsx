@@ -187,7 +187,7 @@ export function QuickVariantModal() {
         wholesaleMoq: isWholesale ? wholesaleMoq : undefined,
       },
       true,
-      false
+      true
     );
     setAddedVariants((prev) => ({ ...prev, [activeVariant.id]: true }));
     closeQuickModal();

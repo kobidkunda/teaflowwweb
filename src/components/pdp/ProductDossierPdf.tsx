@@ -188,6 +188,8 @@ export function ProductDossierPdf({
         closedby="any"
         aria-labelledby="pdp-pdf-dialog-title"
         aria-describedby="pdp-pdf-dialog-desc"
+        aria-hidden={!isOpen}
+        style={!isOpen ? { display: "none" } : undefined}
       >
         {/* Modal Top Chrome / Header */}
         <div className="flex items-center justify-between px-5 py-3.5 bg-[#ffffff] border-b border-[#e5dfd3] gap-4">

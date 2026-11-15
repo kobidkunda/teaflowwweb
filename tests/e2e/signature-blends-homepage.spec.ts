@@ -26,9 +26,15 @@ test.describe("Homepage — Our Signature Blends Showcase", () => {
     await expect(addToCartBtn).toBeEnabled();
     await addToCartBtn.click();
 
-    // Verify the item is added directly: button confirms added state and modal does NOT open
+    // Verify the item is added: button confirms added state, Added to Bag prompt appears, and center modal does NOT open
     await expect(firstCard.getByRole("button", { name: /Added to bag/i })).toBeVisible();
     const modalBackdrop = page.locator(".quick-variant-backdrop");
     await expect(modalBackdrop).toHaveCount(0);
+
+    // Verify the Added to Bag prompt modal appears
+    const prompt = page.locator("[data-testid='add-to-cart-prompt']");
+    await expect(prompt).toBeVisible({ timeout: 5000 });
+    await expect(prompt.getByText(/Added to Bag/i)).toBeVisible();
+    await expect(prompt.getByRole("link", { name: /Proceed to Checkout/i })).toBeVisible();
   });
 });
