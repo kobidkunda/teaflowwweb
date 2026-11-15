@@ -37,4 +37,20 @@ test.describe("Homepage — Our Signature Blends Showcase", () => {
     await expect(prompt.getByText(/Added to Bag/i)).toBeVisible();
     await expect(prompt.getByRole("link", { name: /Proceed to Checkout/i })).toBeVisible();
   });
+
+  test("adds item to bag on /shop and displays Added to Bag prompt modal", async ({ page }) => {
+    await page.goto("/shop");
+    const shopCard = page.locator(".shop-product-card").first();
+    await expect(shopCard).toBeVisible();
+
+    const addBtn = shopCard.locator("button.tf-mockup-add-to-cart-btn");
+    await expect(addBtn).toBeEnabled();
+    await addBtn.click();
+
+    // Verify the Added to Bag prompt modal appears on /shop
+    const prompt = page.locator("[data-testid='add-to-cart-prompt']");
+    await expect(prompt).toBeVisible({ timeout: 5000 });
+    await expect(prompt.getByText(/Added to Bag/i)).toBeVisible();
+    await expect(prompt.getByRole("link", { name: /Proceed to Checkout/i })).toBeVisible();
+  });
 });
