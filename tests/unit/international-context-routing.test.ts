@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolvePreferences } from "@/lib/international/context";
-import { LANGUAGES } from "@/lib/international/models";
+import { LANGUAGES, localeSchema } from "@/lib/international/models";
 import { SECURITY_HEADERS } from "@/lib/security";
 
 describe("International Context & Preferences Resolution", () => {
@@ -132,6 +132,15 @@ describe("International Context & Preferences Resolution", () => {
 
     const hi = LANGUAGES.find((l) => l.code === "hi");
     expect(hi?.dir).toBe("ltr");
+  });
+
+  it("accepts all eight Pan-India language codes while preserving international locales", () => {
+    for (const code of ["en", "hi", "bn", "pa", "mr", "gu", "ta", "te"]) {
+      expect(localeSchema.safeParse(code).success).toBe(true);
+      expect(LANGUAGES.some(language => language.code === code && language.dir === "ltr")).toBe(true);
+    }
+    expect(localeSchema.safeParse("ar").success).toBe(true);
+    expect(localeSchema.safeParse("xx").success).toBe(false);
   });
 
   it("verifies Razorpay and security headers are configured without GPS prompts", () => {
