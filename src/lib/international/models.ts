@@ -1,12 +1,15 @@
 import { z } from "zod";
 export const LANGUAGES = [
   { code: "en", name: "English", dir: "ltr" }, { code: "hi", name: "हिन्दी", dir: "ltr" },
-  { code: "bn", name: "বাংলা", dir: "ltr" }, { code: "ar", name: "العربية", dir: "rtl" },
+  { code: "bn", name: "বাংলা", dir: "ltr" },
+  { code: "pa", name: "ਪੰਜਾਬੀ", dir: "ltr" }, { code: "mr", name: "मराठी", dir: "ltr" },
+  { code: "gu", name: "ગુજરાતી", dir: "ltr" }, { code: "ta", name: "தமிழ்", dir: "ltr" },
+  { code: "te", name: "తెలుగు", dir: "ltr" }, { code: "ar", name: "العربية", dir: "rtl" },
   { code: "fr", name: "Français", dir: "ltr" }, { code: "de", name: "Deutsch", dir: "ltr" },
   { code: "es", name: "Español", dir: "ltr" }, { code: "pt", name: "Português", dir: "ltr" },
   { code: "ja", name: "日本語", dir: "ltr" }, { code: "zh-CN", name: "简体中文", dir: "ltr" },
 ] as const;
-export const localeSchema = z.enum(["en", "hi", "bn", "ar", "fr", "de", "es", "pt", "ja", "zh-CN"]);
+export const localeSchema = z.enum(["en", "hi", "bn", "pa", "mr", "gu", "ta", "te", "ar", "fr", "de", "es", "pt", "ja", "zh-CN"]);
 export const countrySchema = z.string().regex(/^[A-Z]{2}$/);
 export const currencySchema = z.string().regex(/^[A-Z]{3}$/).refine(v => Intl.supportedValuesOf("currency").includes(v), "Unsupported currency");
 const amount = z.number().int().min(0).max(100_000_000);
