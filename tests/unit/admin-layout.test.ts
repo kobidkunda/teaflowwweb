@@ -32,6 +32,8 @@ describe("Admin Navigation Configuration & Helpers", () => {
       "/admin/sliders",
       "/admin/blend-lab",
       "/admin/trials",
+      "/admin/trade",
+      "/admin/business",
     ]);
 
     const privateLabelGroup = NAV_GROUPS.find((g) => g.id === "private-label")!;

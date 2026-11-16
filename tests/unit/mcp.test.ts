@@ -177,6 +177,38 @@ describe("mcp 100% capabilities: full specification suite", () => {
       "private_label_report_dashboard",
       "private_label_validate_publish_gate",
       "private_label_check_compatibility",
+      "trade.getOverview",
+      "trade.updateSettings",
+      "trade.listOffers",
+      "trade.upsertOffer",
+      "trade.deleteOffer",
+      "trade.listLanes",
+      "trade.upsertLane",
+      "trade.toggleLane",
+      "trade.previewQuote",
+      "trade.listContent",
+      "trade.upsertContent",
+      "trade.listEnquiries",
+      "trade.updateEnquiry",
+      "trade.convertEnquiryToQuote",
+      "trade.listPilots",
+      "trade.upsertPilot",
+      "trade.listOrders",
+      "trade.reconcileOrder",
+      "business.getOverview",
+      "business.updateSettings",
+      "business.listOffers",
+      "business.upsertOffer",
+      "business.listContent",
+      "business.upsertContent",
+      "business.listClaims",
+      "business.upsertClaim",
+      "business.listLeads",
+      "business.getLead",
+      "business.transitionLead",
+      "business.createQuote",
+      "business.listOutbox",
+      "business.retryOutbox",
     ]);
   });
 
@@ -668,7 +700,7 @@ describe("mcp 100% capabilities: full specification suite", () => {
       };
     }>;
 
-    expect(tools.length).toBe(160);
+    expect(tools.length).toBe(192);
 
     for (const tool of tools) {
       expect(tool.annotations).toBeDefined();

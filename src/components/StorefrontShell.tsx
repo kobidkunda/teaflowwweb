@@ -57,6 +57,17 @@ export function StorefrontShell({
 }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin");
+  const isTrade =
+    pathname === "/tea-shops" ||
+    pathname?.startsWith("/tea-shops/") ||
+    pathname === "/for-tea-shops";
+  const isBusiness =
+    pathname === "/start-tea-business" ||
+    pathname === "/tea-traders";
+
+  if (isTrade || isBusiness) {
+    return <>{children}</>;
+  }
 
   if (isAdmin) {
     return (

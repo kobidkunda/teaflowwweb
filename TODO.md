@@ -1,5 +1,55 @@
 # Prioritized Development Checklist
 
+## Pan-India Multilingual Storefront & Admin Translation System — 2026-11-17
+- [x] **Pan-India Language Matrix Selected & Model Expansion**:
+  - Expanded supported Indian languages to cover >92% of tea consumers across India without bloat:
+    - English (`en` - Default)
+    - Hindi (`hi` - हिन्दी)
+    - Bengali (`bn` - বাংলা - Siliguri & Darjeeling home region)
+    - Punjabi (`pa` - ਪੰਜਾਬੀ - Gurmukhi)
+    - Marathi (`mr` - मराठी)
+    - Gujarati (`gu` - ગુજરાતી)
+    - Tamil (`ta` - தமிழ்)
+    - Telugu (`te` - తెలుగు)
+  - Updated `LANGUAGES` and `localeSchema` in `src/lib/international/models.ts`.
+  - Updated Next.js URL rewriting middleware in `src/middleware.ts` to intercept all 8 locales.
+- [x] **Storefront Chrome Pan-India Dictionary**:
+  - Built `src/lib/international/panIndiaDictionary.ts` covering 33 key categories across navigation, announcements, cart/bag, checkout, CTAs, forms, and legal footer for all 7 regional languages.
+  - Excluded product titles and agricultural terroir dossiers by design (kept in authentic English/estate origin).
+  - Seeded into local SQLite database via `scripts/seed-pan-india-translations.mjs`.
+- [x] **Top-Right Language Switcher**:
+  - Created accessible, responsive `<LanguageSwitcher />` (`src/components/international/LanguageSwitcher.tsx`) with native script labels, keyboard navigation, and instant cookie + URL routing.
+  - Integrated into top-right header actions, announcement bar, and mobile navigation drawer (`src/components/StorefrontHeader.tsx`).
+  - Added dedicated styling in `src/components/international/international.css`.
+- [x] **Admin Translation Studio Upgraded**:
+  - Upgraded `/admin/translations` (`src/components/admin/international/TranslationAdmin.tsx`) with category tabs (Navigation, Cart/Bag, Checkout, Buttons & Badges, Forms, Footer), search filter, inline editing, and "Save & Publish" without requiring OpenAI API keys.
+  - Added "Load Pan-India Defaults" button for one-click population of regional dictionaries.
+  - Updated admin API (`src/app/api/admin/international/[action]/route.ts`) to support direct upsert and partial dictionary validation.
+- [x] **Translation Engine & Fallbacks**:
+  - Updated `publishedTexts("interface", locale)` in `src/lib/international/translations.ts` to cleanly merge the Pan-India dictionary with any custom admin database overrides, while honoring stale-hash invalidation.
+  - Enabled all Pan-India languages in `enabledLanguages()`.
+  - Allowed partial dictionaries in `validateTexts(..., allowPartial=true)`.
+- [x] **Automated Tests & Quality Assurance**:
+  - Added `tests/unit/pan-india-translations.test.ts` (6 tests) and `tests/unit/language-switcher.test.ts` (2 tests).
+  - Verified regression safety with existing `tests/unit/international-translations-studio.test.ts` (6 tests). All 14 tests passing (100%).
+  - Full TypeScript typecheck (`npm run typecheck`) and ESLint passed with 0 errors.
+
+## Sentry Image Optimizer LRUCache 0-Byte Disk Cache Fix — 2026-11-16
+- [x] **Root Cause Diagnosis**:
+  - Investigated Sentry Issue #161314266 (`LRUCache: calculateSize returned 0, but size must be > 0. Items with size 0 would never be evicted, causing unbounded cache growth.` on `GET /_next/image`).
+  - Identified upstream Next.js 15.5.x bug (Vercel Issue #93757, PR #94068): When Next.js scans `.next/cache/images/` at startup or on image requests, `initCacheEntries` does not filter out 0-byte files, and `disk-lru-cache.external.js` passes `size = 0` to `lru.set(entry.key, entry.size)`. This permanently rejects `_diskLRUPromise` and crashes image optimization on all subsequent requests.
+  - Located the actual 0-byte file on production server in `.next-previous-20261115-funnel/cache/images/TYfP65wsBeMiEd0CeSINu1GMycj9AKy1hovOF9vCZSU/86400.1794826964567.X4fmRb9ZiEYnyttdThePjW81kBJW83jYbI6gx-EsG_c.Vy8iMTFjMDgtMWExYmE0ZmUzN2Mi.avif` (0 bytes) created when PM2 hit its restrictive `600M` memory limit and killed the process mid-write during image processing.
+- [x] **Automated Next.js Patch**:
+  - Implemented `scripts/patch-next-image-cache.mjs` ensuring:
+    1. `disk-lru-cache.external.js` checks `if (entry && entry.size > 0)` before calling `lru.set`.
+    2. `image-optimizer.js` checks `if (buffer && buffer.byteLength > 0)` before pushing cache entries, and purges empty entries automatically.
+  - Wired into `package.json` (`postinstall` and `build` scripts) for automatic local and CI/CD application.
+- [x] **Process Memory Headroom**:
+  - Updated `ecosystem.config.cjs` `max_memory_restart` from `600M` to `1200M` to provide adequate headroom for Sharp image transformations without triggering violent PM2 SIGKILL restarts.
+- [x] **Automated Verification**:
+  - Created `tests/unit/patch-next-image-cache.test.ts` with 5 tests (idempotency, disk-lru safeguards, image-optimizer safeguards, 0-byte skipping, and reproducing the exact unpatched error). All passed.
+  - Verified `npm run typecheck` and `npm run lint` passed with 0 errors.
+
 ## Universal Brand Email Templates System with Logo & Responsive Tables — 2026-11-16
 - [x] **Brand Email Layout Engine & Modern Web Guidance Compliance** (`src/lib/emailLayout.ts`):
   - Built `buildBrandEmailHtml` and `buildBrandEmailText` implementing cross-client compatible, responsive HTML email standards (Gmail, Apple Mail, Outlook MSO, Yahoo Mail, mobile WebViews).

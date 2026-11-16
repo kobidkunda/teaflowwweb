@@ -105,8 +105,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ act
       p.resources.forEach(r => queueTranslation(r, p.locale)); audit(actor, "translations.queue", p); return json({ queued: p.resources.length });
     }
     if (action === "translation") {
-      const p = z.object({ id: z.string().uuid(), action: z.enum(["draft", "publish", "unpublish"]), texts: z.record(z.string(), z.string()).default({}) }).strict().parse(input);
-      editTranslation(p.id, p.texts, p.action); audit(actor, `translation.${p.action}`, { id: p.id }); return json({ ok: true });
+      const p = z.object({
+        id: z.string().optional(),
+        resource: z.string().optional(),
+        locale: localeSchema.optional(),
+        action: z.enum(["draft", "publish", "unpublish"]),
+        texts: z.record(z.string(), z.string()).default({})
+      }).strict().parse(input);
+      const targetIdOrResource = p.id || p.resource || "interface";
+      editTranslation(targetIdOrResource, p.texts, p.action, p.locale);
+      audit(actor, `translation.${p.action}`, { id: p.id, resource: p.resource, locale: p.locale });
+      return json({ ok: true });
     }
     if (action === "campaign") {
       const p = campaignSchema.parse(input);

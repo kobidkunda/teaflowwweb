@@ -7,6 +7,14 @@ import {
   PRIVATE_LABEL_TOOL_ALIASES,
 } from "@/lib/private-label/mcp-tools";
 import {
+  TRADE_TOOL_DEFINITIONS,
+  TRADE_TOOL_ALIASES,
+} from "@/lib/trade/mcpTools";
+import {
+  BUSINESS_TOOL_DEFINITIONS,
+  BUSINESS_TOOL_ALIASES,
+} from "@/lib/business/mcpTools";
+import {
   PrivateLabelRevisionConflictError,
   PrivateLabelNotFoundError,
   PrivateLabelGateError,
@@ -5572,6 +5580,8 @@ export const TOOL_DEFINITIONS: ToolDef[] = [
     },
   },
   ...PRIVATE_LABEL_TOOL_DEFINITIONS,
+  ...TRADE_TOOL_DEFINITIONS,
+  ...BUSINESS_TOOL_DEFINITIONS,
 ];
 
 export function listToolDefinitions() {
@@ -5955,6 +5965,8 @@ const TOOL_ALIASES: Record<string, string> = {
   "admin.trialHistory": "trial_history",
 
   ...PRIVATE_LABEL_TOOL_ALIASES,
+  ...TRADE_TOOL_ALIASES,
+  ...BUSINESS_TOOL_ALIASES,
 };
 
 export function dispatchToolCall(name: unknown, args: unknown): unknown {

@@ -1,0 +1,102 @@
+"use client";
+
+import React, { useEffect } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Globe, Volume2 } from "lucide-react";
+import type { AnyTradeLocale } from "@/lib/trade/contracts";
+import { TRADE_LANGUAGE_META } from "@/lib/trade/i18nMeta";
+import styles from "./trade.module.css";
+
+const TRADE_LANG_STORAGE_KEY = "tf_trade_lang";
+
+export function TradeNeutralEntry({
+  enabledLocales,
+}: {
+  enabledLocales: AnyTradeLocale[];
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(TRADE_LANG_STORAGE_KEY) as AnyTradeLocale | null;
+      if (saved && enabledLocales.includes(saved)) {
+        const qs = searchParams.toString();
+        router.replace(`/tea-shops/${saved}${qs ? `?${qs}` : ""}`);
+      }
+    } catch {}
+  }, [enabledLocales, router, searchParams]);
+
+  function preview(loc: AnyTradeLocale) {
+    const meta = TRADE_LANGUAGE_META[loc];
+    try {
+      const synth = window.speechSynthesis;
+      synth?.cancel();
+      const voice = synth
+        ?.getVoices()
+        .find((v) => v.lang.toLowerCase().startsWith(loc));
+      if (synth && voice) {
+        const u = new SpeechSynthesisUtterance(meta.nativeName);
+        u.voice = voice;
+        u.lang = voice.lang;
+        synth.speak(u);
+      }
+    } catch {}
+  }
+
+  const qs = searchParams.toString();
+  const suffix = qs ? `?${qs}` : "";
+
+  return (
+    <div className={styles.tradeRoot}>
+      <header className={styles.header}>
+        <div className={`${styles.wrap} ${styles.nav}`}>
+          <span className={styles.logo}>TeaFloww</span>
+          <span className={styles.tradeBadge}>For tea shops</span>
+        </div>
+      </header>
+      <main id="main-content" className={styles.wrap} style={{ paddingBlock: 48 }}>
+        <div className={styles.panel} style={{ maxWidth: 520, marginInline: "auto" }}>
+          <h1 className={styles.h2} style={{ fontSize: 32, marginBottom: 8 }}>
+            <Globe size={24} aria-hidden="true" style={{ marginRight: 8 }} />
+            Choose your language
+          </h1>
+          <p className={styles.small} lang="bn">
+            আপনার ভাষা বেছে নিন · अपनी भाषा चुनें
+          </p>
+          <div style={{ marginTop: 18 }}>
+            {enabledLocales.map((loc) => {
+              const meta = TRADE_LANGUAGE_META[loc] || TRADE_LANGUAGE_META.en;
+              return (
+                <div key={loc} className={styles.langrow}>
+                  <Link
+                    href={`/tea-shops/${loc}${suffix}`}
+                    className={styles.textbutton}
+                    lang={loc}
+                    onClick={() => {
+                      try {
+                        window.localStorage.setItem(TRADE_LANG_STORAGE_KEY, loc);
+                      } catch {}
+                    }}
+                  >
+                    <span>{meta.nativeName}</span>
+                    <small>{meta.englishName}</small>
+                  </Link>
+                  <button
+                    type="button"
+                    className={styles.voiceBtn}
+                    aria-label={`Hear ${meta.englishName}`}
+                    onClick={() => preview(loc)}
+                  >
+                    <Volume2 size={18} aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}

@@ -8,6 +8,8 @@ import { LANGUAGES, CommerceError } from "./models";
 import { hash } from "./quotes";
 import { config, enqueue } from "./store";
 import { providerFetch } from "./providers";
+import { PAN_INDIA_ITEMS, getLocaleDictionary } from "./panIndiaDictionary";
+
 export const UI_SOURCE: Record<string, string> = {
   ...storefrontCopy,
   nav_shop: "Shop Tea", nav_leaf: "Leaf to Cup", nav_black: "Black Teas", nav_blend_lab: "Blend Lab", nav_finder: "Tea Finder", nav_trials: "Trials & Samples", nav_wholesale: "Wholesale & Bulk",
@@ -21,6 +23,12 @@ export const UI_SOURCE: Record<string, string> = {
   pending: "Payment verification pending", review: "Review your delivery details and final total before payment.", coupon: "Offer code", loading: "Loading…", expired: "Your quote expired. Calculate a new total.",
   inrAcceptance: "I accept that my payment will be charged in INR (Indian Rupees) and my bank may apply foreign exchange or conversion fees.",
 };
+
+// Merge Pan-India dictionary items into UI_SOURCE
+for (const item of PAN_INDIA_ITEMS) {
+  UI_SOURCE[item.id] = item.en;
+  UI_SOURCE[item.en] = item.en;
+}
 export type Texts = Record<string, string>;
 export type Translation = { id: string; resource: string; locale: string; source_hash: string; source: string; draft: string | null; published: string | null; published_hash: string | null; revision: number; updated_ms: number };
 const approved = /^(name|title|subtitle|description|body_markdown|content|eyebrow|headline|heading|subheading|body|label|text|tagline|emphasis|image_alt|alt_text|cta_label|caption|quote|author|role|tasting_notes|steep_instructions|estate_story|dry_leaf_appearance|dry_leaf_aroma|liquor_hue_name|liquor_clarity|liquor_body|wet_leaf_aroma|wet_leaf_oxidation|seo_title|seo_description|meta_title|meta_description|subject|text_body|summary|excerpt|heroTitle|heroDescription|announcement)$/;
@@ -73,7 +81,21 @@ export function publishedTexts(resource: string, locale: string): Texts | null {
         if (row) t = translation(`${match[1]}:${row.id}`, locale);
       }
     }
-    return t?.published && t.published_hash === hash(sourceFor(t.resource)) ? JSON.parse(t.published) : null;
+    if (t?.published) {
+      const isStale = t.published_hash !== hash(sourceFor(t.resource));
+      if (isStale) return null;
+      const dbPublished = JSON.parse(t.published);
+      if (resource === "interface" || resource === "shell") {
+        const panIndia = getLocaleDictionary(locale);
+        return { ...panIndia, ...dbPublished };
+      }
+      return dbPublished;
+    }
+    if (resource === "interface" || resource === "shell") {
+      const panIndia = getLocaleDictionary(locale);
+      if (Object.keys(panIndia).length > 0) return panIndia;
+    }
+    return null;
   } catch { return null; }
 }
 export function localize<T>(value: T, resource: string, locale: string): T {
@@ -93,12 +115,17 @@ export function localize<T>(value: T, resource: string, locale: string): T {
   }
   return copy;
 }
-export function enabledLanguages() { return LANGUAGES.filter(l => l.code === "en" || publishedTexts("interface", l.code)); }
-export function validateTexts(source: Texts, output: unknown): Texts {
-  const texts = z.record(z.string(), z.string().min(1).max(30000)).parse(output);
-  if (Object.keys(texts).sort().join("|") !== Object.keys(source).sort().join("|")) throw new CommerceError("Translation fields do not match the source.");
+export function enabledLanguages() {
+  return LANGUAGES.filter(l => l.code === "en" || ["hi", "bn", "pa", "mr", "gu", "ta", "te"].includes(l.code) || publishedTexts("interface", l.code));
+}
+export function validateTexts(source: Texts, output: unknown, allowPartial = false): Texts {
+  const texts = z.record(z.string(), z.string().max(30000)).parse(output);
+  if (!allowPartial && Object.keys(texts).sort().join("|") !== Object.keys(source).sort().join("|")) {
+    throw new CommerceError("Translation fields do not match the source.");
+  }
   for (const [key, original] of Object.entries(source)) {
     const target = texts[key];
+    if (!target) continue;
     if (/[<>]/.test(target)) throw new CommerceError("Translation contains unsupported markup.");
     const protectedTokens = (s: string) => s.match(/\d+(?:[.,]\d+)*\s*(?:kg|mg|ml|g|°C|°F|cm|mm|oz|lb)\b|\d+(?:[.,]\d+)*|https?:\/\/[^\s)]+|\{\{[^}]+\}\}|\b(?:TeaFloww|Nirva|TFW-[\w-]+|[A-Z0-9]+(?:-[A-Z0-9]+)+)\b/g) || [];
     if (protectedTokens(original).sort().join("|") !== protectedTokens(target).sort().join("|")) throw new CommerceError("Translation changed protected values or placeholders.");
@@ -126,13 +153,32 @@ export function queueTranslation(resource: string, locale: string) {
   // Revision guard prevents a delayed job from overwriting any editor changes.
   return enqueue("translate", { id: row.id, resource: canonicalResource, locale, source, sourceHash, revision: row.revision }, `translation:${row.id}:${sourceHash}:${row.revision}`);
 }
-export function editTranslation(id: string, raw: unknown, action: "draft" | "publish" | "unpublish") {
+export function editTranslation(idOrResource: string, raw: unknown, action: "draft" | "publish" | "unpublish", locale?: string) {
   const db = getDb();
   return db.transaction(() => {
-    const row = db.prepare("SELECT * FROM commerce_translations WHERE id=?").get(id) as Translation | undefined;
-    if (!row) throw new CommerceError("Translation not found.");
-    const source = sourceFor(row.resource), sourceHash = hash(source);
-    const text = action === "unpublish" ? null : validateTexts(source, raw);
+    let row: Translation | undefined;
+    if (/^[0-9a-f-]{36}$/i.test(idOrResource)) {
+      row = db.prepare("SELECT * FROM commerce_translations WHERE id=?").get(idOrResource) as Translation | undefined;
+    } else if (locale) {
+      row = db.prepare("SELECT * FROM commerce_translations WHERE resource=? AND locale=?").get(idOrResource, locale) as Translation | undefined;
+    }
+    const resource = row?.resource || idOrResource;
+    const loc = row?.locale || locale || "hi";
+    const source = sourceFor(resource), sourceHash = hash(source);
+    const allowPartial = resource === "interface" || resource === "shell";
+    const text = action === "unpublish" ? null : validateTexts(source, raw, allowPartial);
+
+    if (!row) {
+      const newId = randomUUID();
+      const pub = action === "publish" ? JSON.stringify(text) : null;
+      const dft = action === "draft" ? JSON.stringify(text) : pub;
+      db.prepare(
+        "INSERT INTO commerce_translations (id,resource,locale,source_hash,source,draft,published,published_hash,revision,updated_ms) VALUES (?,?,?,?,?,?,?,?,1,?)"
+      ).run(newId, resource, loc, sourceHash, JSON.stringify(source), dft, pub, sourceHash, Date.now());
+      return;
+    }
+
+    const id = row.id;
     db.prepare("INSERT INTO commerce_translation_history (id,translation_id,document,created_ms) VALUES (?,?,?,?)").run(randomUUID(), id, JSON.stringify(row), Date.now());
     if (action === "publish") db.prepare("UPDATE commerce_translations SET draft=?,published=?,published_hash=?,source_hash=?,source=?,revision=revision+1,updated_ms=? WHERE id=?").run(JSON.stringify(text), JSON.stringify(text), sourceHash, sourceHash, JSON.stringify(source), Date.now(), id);
     else if (action === "unpublish") db.prepare("UPDATE commerce_translations SET published=NULL,published_hash=NULL,revision=revision+1,updated_ms=? WHERE id=?").run(Date.now(), id);

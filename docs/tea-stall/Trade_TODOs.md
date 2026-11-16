@@ -1,0 +1,61 @@
+# TeaFloww Trade · Build backlog
+
+**Track by ID.** Each entry is a proposed implementation task with one accountable role and observable acceptance evidence. “After” lists prerequisites. These boxes track production work. The companion HTML is a design fixture.
+
+## P0 · Commercial inputs and preparation
+
+- [ ] **T01 · Merchandising · Select the launch trial and blends.** Record the published trial ID, constituent names and weights, price, active variants, stock source and visual assets. Resolve the catalogue/previous price-list discrepancy in admin. Verify 3 g per serving displays approximately 333 servings/kg wherever a serving estimate is published. **Done when** the owner signs off one admin-derived offer sheet and stale trial claims have been corrected at their source.
+- [ ] **T02 · Logistics · Verify pilot lanes.** Weigh the kit, carton and filled 5/25 kg packs. Capture dimensional divisor, billing increment, slab edges, PIN coverage, route handover, local charges, GST inclusion, COD ceilings, advance/refusal/RTO terms and validity date. **Done when** a carrier quote, depot address, named operator and revision exist for each enabled service.
+- [ ] **T03 · Commerce lead · Trace integrations.** Check the target branch and deployed revision, locate the active quote/order/payment/worker APIs and stock reservation rules. Walk a test order from trial and a test order from bulk. **Done when** extension points, historical order compatibility and test-account outcomes are documented.
+- [ ] **T04 · Platform owner · Resolve exposed credentials.** Rotate the exposed production credentials, review usage and remove secret material from public project instructions and history as appropriate. **Done when** the owner verifies replacement credentials through authorised operations and records remediation privately.
+- [ ] **T05 · Content lead · Produce launch proof.** Photograph the actual kit; film a measured brew with dose, water, milk, serving yield and actual time. Prepare a lightweight poster, 15-second edit, captions, transcript and short voice clips. **Done when** the selected lot/kit and claims can be traced to an approved source.
+
+## P0 · Shared design and localisation
+
+- [ ] **T06 · Design + frontend · Build one component gallery.** Implement tokens, button hierarchy, focus ring, spacing, field/error, modal sheet, quote/receipt, loading and quantity choices. Use the visual specification for narrow and wide layouts. **Done when** trial, bulk and checkout render the same primitives with both long and short strings.
+- [ ] **T07 · Frontend · Isolate the route.** After T03, T06. Add trade shell, route metadata, skip link and campaign entry; scope the single sticky action; retain the root consent mechanism. **Done when** retail home, product, cart and checkout pass smoke tests and the trade page never mounts retail announcements or floating retail sales prompts.
+- [ ] **T08 · Localisation lead · Publish language resources.** After T01, T05. Translate labels, units, errors, trial contents, depot/pickup terms, WhatsApp draft, checkout, balance and receipt into en/bn/hi/gu/mr. Stage other languages. **Done when** a native reviewer can complete a trade journey without a silent language switch.
+- [ ] **T09 · Frontend · Implement language and audio.** After T06, T08. Support explicit URL → saved choice → picker; native-name button selects, adjacent speaker previews without selecting. Persist trade-only preference; restore focus, stop old audio, preserve current basket when switching. **Done when** deep links, a shared phone, storage denial, missing audio and keyboard dismissal all work.
+- [ ] **T10 · Frontend · Build hero, trial and product projection.** After T01, T05–T07. Server-render published entries with admin-priced variants; feature one trial. Load a single responsive hero poster; fetch video/audio only on action. **Done when** changing stock or an actual variant weight updates the trade experience and a missing film never blocks a sale.
+
+## P0 · Freight and assisted sales
+
+- [ ] **T11 · Backend · Add versioned offer and lane storage.** After T01–T03. Add channel assignments, pack rules, handover, charge lines, validity, language/media and assistance configuration with additive migrations. **Done when** old retail orders still load, overlapping rates resolve deterministically or require operator review, and test migrations pass on supported databases.
+- [ ] **T12 · Backend · Implement parcel and surface quote engine.** After T11. Resolve canonical lines, tiers, packed dimensions, route, payment eligibility and all charges. Compare only eligible services with the same handover basis. **Done when** the five fixtures in the plan pass plus dimensional-outlier, multiple cartons, unavailable COD and unknown-tax cases.
+- [ ] **T13 · Backend · Bind and expire quotes.** After T12. Persist input hash, service, versions, line snapshots, handover, payment split and expiry; bind to the requesting session. **Done when** another customer cannot use the quote and changed PIN, method, quantity, stock or price causes a fresh review.
+- [ ] **T14 · Frontend · Build quote, comparison and failure states.** After T06, T12. Put the receipt next to the controls on desktop, immediately below PIN on phone. Show goods, freight, fees, net kg, total, per-kg, handover, ETA and split. **Done when** a delayed previous response cannot overwrite the latest pack and the sticky CTA agrees with the current receipt.
+- [ ] **T15 · Support + frontend · Route assisted enquiries.** After T08, T11. Use the configured WhatsApp number and a localised reviewable draft; offer callback with consent and preferred hours. Store an enquiry once, dedupe retries, show the enquiry ID and assign an owner. **Done when** support can convert one manual request into an expiring quote without re-entering the basket.
+- [ ] **T16 · Merchandising + logistics · Configure operator screens.** After T11, T12. Add lookup by PIN, exclusions, effective dates, named depot, price breakdown and before/after preview. **Done when** an operator can disable one failing lane and its checkout stops while enquiry still works.
+
+## P0 · Payment, measurement and launch
+
+- [ ] **T17 · Commerce · Add trade checkout adapter.** After T03, T13, T14. Revalidate the full address, SKU stock, active trade rule, credit, payment method and expiry. Pin quote/order together in one transaction. **Done when** attempts to apply the retail free-shipping threshold or reuse an expired quote fail and the buyer can review changed terms.
+- [ ] **T18 · Payments · Verify prepaid and approved COD paths.** After T17. Integrate with the existing gateway. Record full prepaid, approved advance and balance, pending, rejected, capture, refund and remittance. **Done when** timeout/retry, replayed webhooks, simultaneous last-stock orders and late captures reconcile once.
+- [ ] **T19 · Frontend + support · Deliver review, confirmation and recovery.** After T15, T18. Keep locale, handover point, remaining payment and receipt link across payment redirects. Treat enquiries and orders as separate outcomes. **Done when** a fresh browser can use an authorised order link and a refresh never places another order.
+- [ ] **T20 · Analytics · Reconcile the funnel.** After T13, T15, T18. Define attribution, consent, canonical catalogue IDs, transaction ID, merchandise value and order/delivery milestones. **Done when** one verified test order produces one purchase, an enquiry produces zero purchases, and a refund is linked to the original order.
+- [ ] **T21 · QA · Run acceptance matrix below.** After T07–T20 as relevant. Execute `npm run check`, relevant Playwright suites and migration checks. Record device, network, locale, build SHA and output. **Done when** defects blocking price comprehension, input or payment are corrected.
+- [ ] **T22 · Release lead · Launch controlled pilot.** After T02, T04, T16, T19–T21. Enable only tested lanes, payment modes and reviewed locales. Confirm ownership of daily fulfilment and support. **Done when** first pilot orders reconcile to carrier invoices, deposits and delivered outcomes. Keep assisted ordering available if a lane is paused.
+
+## P1 and P2 · Value and repeat supply
+
+- [ ] **T23 · Product + frontend · Add measured leaf-cost comparison (P1).** Use two batches with delivered price, actual grams and saleable glasses. Show either direction of difference, including parity. Connect a valid quote, label handover, and allow a manual comparator at the same point. **Done when** ₹280/kg × 30 g ÷ 1,000 ÷ 10 = ₹0.84/glass; empty, zero and fractional-glass inputs show a useful prompt.
+- [ ] **T24 · Product · Recommend pack coverage (P1).** Ask cups/day, observed dose and selling days. Calculate kilograms as cups × dose in g × days ÷ 1,000. For 150 × 3 × 30, show 13.5 kg and the closest available pack options plus total cash outlay. **Done when** the shop owner can change dose and choose a smaller order.
+- [ ] **T25 · Commerce · Credit and reorder (P1).** Add trial credit only if configured with qualifying quantity, expiry and one-use rules. QR links carry locale and a non-sensitive blend reference. Resolve prior orders only after authorisation. **Done when** repeated credit claims cannot double redeem, and a retired pack offers available alternatives.
+- [ ] **T26 · Logistics + UX · Pilot mixed packs (P2).** Allow canonical lines from multiple blends, count tiers per SKU and calculate actual carton capacity. **Done when** 25+5 kg plus packaging never displays a 30 kg slab benefit unless a verified carrier rule accepts the billed shipment.
+- [ ] **T27 · Regional operations · Pilot shared-load supply (P2).** Record interest separately from booked reservations. Publish only real collection point, local fee, cutoff, partner and dispatch. **Done when** insufficient demand, cancellation and collection each have a support workflow.
+- [ ] **T28 · Growth + support · Repeat supply and language expansion (P2).** Add opt-in reorder reminders, additional reviewed languages and a support owner by market. **Done when** shoppers can change cadence or opt out and each market has handover, payment and translated support coverage.
+
+## Release acceptance matrix
+
+| Scenario | Expected evidence |
+|---|---|
+| First neutral visit, saved preference, Bengali ad with different saved locale | First visit opens sheet. Explicit URL wins. Language switch retains pack and campaign parameters. |
+| One hand at 360 px, bright surroundings, 200% zoom, Bengali or Marathi long text | Both hero actions accessible, targets 48 px, focus visible, labels wrap, CTA avoids the keyboard and safe area. No loss of content in reflow. |
+| Slow network, low-memory Android, reduced motion or audio unavailable | Static poster and two actions usable; no media request before tap; visible text and confirmation work throughout. |
+| 5 vs 25 kg, doorstep vs depot, oversized carton | All-in and freight-only amounts distinct. Handover shown before checkout. Same-slab comparisons require the same eligible service and payment terms. |
+| Trial retired, stock reaches zero, location outside coverage | Hide retired offer, disable unavailable pack, offer reviewed alternatives or a manual enquiry. Preserve valid choices. |
+| Unsupported PIN, unavailable COD, timeout, then retry with new pack | Distinct UI and action for each. Loading announces state. Old quote and stale request cannot initiate payment. |
+| Confirmation loading, rejected payment, duplicated webhook, refund and RTO | Accurate distinct statuses, single transaction ID, inventory/credits released or reconciled, support can find the order. |
+| Existing retail cart, back navigation, old order and channel-specific freight | Separate trade draft, working back button, historical order readable and existing retail pricing passes regression. |
+| Owner comprehension | Ask a local-language owner to state the total, pickup point, amount due now and next action without prompting. Revise labels on any misunderstanding. |
+| Performance | Project budgets: hero mobile ≤60 KB, JS target ≤150 KB compressed on entry, user-initiated video target ≤1.5 MB. Field targets at p75: LCP ≤2.5 s, INP ≤200 ms, CLS ≤0.1. Use throttled lab tests before launch and field measurements when traffic is sufficient. |

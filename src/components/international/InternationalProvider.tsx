@@ -20,8 +20,22 @@ export function useDisplayMoney() {
 }
 export function LocalizedLink(props: ComponentProps<typeof Link>) {
   const ctx = useInternational();
-  const href = typeof props.href === "string" && ctx && ctx.locale !== "en" && /^\/(?!\/|api\/|admin|order\/|purchase\/|feeds|mcp|_next)/.test(props.href) && !/^\/(hi|bn|ar|fr|de|es|pt|ja|zh-CN)(\/|$)/.test(props.href) ? `/${ctx.locale}${props.href}` : props.href;
+  const href = typeof props.href === "string" && ctx && ctx.locale !== "en" && /^\/(?!\/|api\/|admin|order\/|purchase\/|feeds|mcp|_next)/.test(props.href) && !/^\/(hi|bn|pa|mr|gu|ta|te|ar|fr|de|es|pt|ja|zh-CN)(\/|$)/.test(props.href) ? `/${ctx.locale}${props.href}` : props.href;
   const children = typeof props.children === "string" ? ctx?.phraseTexts[props.children] || props.children : props.children;
   return <Link {...props} href={href}>{children}</Link>;
 }
 export function Text({ id, fallback }: { id: string; fallback: string }) { const ctx = useInternational(); return <>{ctx?.texts[id] || fallback}</>; }
+
+export function useTranslation() {
+  const ctx = useInternational();
+  const t = (idOrPhrase: string, fallback?: string): string => {
+    if (!ctx) return fallback ?? idOrPhrase;
+    return ctx.texts[idOrPhrase] || ctx.phraseTexts[idOrPhrase] || fallback || idOrPhrase;
+  };
+  return {
+    t,
+    locale: ctx?.locale || "en",
+    dir: ctx?.dir || "ltr",
+    languages: ctx?.languages || [],
+  };
+}

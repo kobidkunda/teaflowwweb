@@ -64,6 +64,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/sliders", label: "Hero Sliders", icon: Sliders, section: "Storefront & Catalog" },
       { href: "/admin/blend-lab", label: "Blend Lab (Atelier)", icon: FlaskConical, section: "Storefront & Catalog" },
       { href: "/admin/trials", label: "Trials", icon: Boxes, section: "Storefront & Catalog" },
+      { href: "/admin/trade", label: "Tea-Shop Trade", icon: Truck, badge: "B2B", section: "Storefront & Catalog" },
+      { href: "/admin/business", label: "B2B Acquisition", icon: Briefcase, badge: "B2B", section: "Storefront & Catalog" },
     ],
   },
   {

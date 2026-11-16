@@ -17,7 +17,7 @@ export function MarketSelector() {
     try {
       const r = await fetch("/api/commerce/preferences", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ country, currency, locale }) });
       const result = await r.json(); if (!r.ok) throw new Error(result.error);
-      const path = window.location.pathname.replace(/^\/(hi|bn|ar|fr|de|es|pt|ja|zh-CN)(?=\/|$)/, "") || "/";
+      const path = window.location.pathname.replace(/^\/(hi|bn|pa|mr|gu|ta|te|ar|fr|de|es|pt|ja|zh-CN)(?=\/|$)/, "") || "/";
       window.location.assign(`${locale === "en" ? "" : `/${locale}`}${path}${window.location.search}`);
     } catch (e) { setStatus(e instanceof Error ? e.message : "Unable to save preferences."); setBusy(false); }
   }

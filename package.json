@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "NEXT_DIST_DIR=.next-dev next dev -H 0.0.0.0 -p ${PORT:-3000}",
     "dev:restart": "./start.sh",
-    "build": "rm -rf .next && NEXT_PRIVATE_BUILD_WORKER=0 next build",
+    "postinstall": "node scripts/patch-next-image-cache.mjs",
+    "build": "node scripts/patch-next-image-cache.mjs && rm -rf .next && NEXT_PRIVATE_BUILD_WORKER=0 next build",
     "start": "next start -H 0.0.0.0 -p ${PORT:-3000}",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

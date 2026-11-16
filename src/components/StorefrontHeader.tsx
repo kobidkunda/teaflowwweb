@@ -1,6 +1,7 @@
 "use client";
 import { Text as StorefrontText } from "@/components/international/InternationalProvider";
 import { MarketSelector } from "@/components/international/MarketSelector";
+import { LanguageSwitcher } from "@/components/international/LanguageSwitcher";
 
 import React, { useEffect, useState } from "react";
 import { LocalizedLink as Link } from "@/components/international/InternationalProvider";
@@ -158,7 +159,15 @@ export function StorefrontHeader({
             <span className="tf-announcement-divider" aria-hidden="true">
               |
             </span>
-            <span className="tf-announcement-country"><MarketSelector /></span>
+            <span className="tf-announcement-country">
+              <MarketSelector />
+            </span>
+            <span className="tf-announcement-divider" aria-hidden="true">
+              |
+            </span>
+            <span className="tf-announcement-lang">
+              <LanguageSwitcher variant="compact" />
+            </span>
           </div>
         </div>
       )}
@@ -253,15 +262,20 @@ export function StorefrontHeader({
               </div>
             )}
             {menuOpen && (
-              <div className="ritual-mobile-market-selector mt-2 pt-2 border-t border-[#e6dfd2]">
+              <div className="ritual-mobile-market-selector mt-2 pt-2 border-t border-[#e6dfd2] flex flex-col gap-2">
+                <LanguageSwitcher variant="drawer" />
                 <MarketSelector />
               </div>
             )}
           </nav>
 
-          {/* Action Suite: Wholesale Pill, Quick Search, Shopping Bag, Customer Account */}
-          <div className="ritual-nav-actions">
+          {/* Action Suite: Wholesale Pill, Language Switcher, Quick Search, Shopping Bag, Customer Account */}
+          <div className="ritual-nav-actions flex items-center gap-2">
             <WholesaleNavButton />
+
+            <div className="hidden sm:inline-flex">
+              <LanguageSwitcher variant="header" />
+            </div>
 
             <button
               type="button"
