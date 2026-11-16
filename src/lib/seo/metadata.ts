@@ -143,7 +143,7 @@ export function constructMetadata({
       description: resolvedDescription,
       url: canonicalUrl,
       siteName: SITE_CONFIG.name,
-      locale: locale === "en" ? SITE_CONFIG.defaultLocale : locale.replace("-", "_"),
+      locale: locale === "en" ? SITE_CONFIG.defaultLocale : (["hi", "bn", "pa", "mr", "gu", "ta", "te"].includes(locale) ? `${locale}_IN` : locale.replace("-", "_")),
       type: ogType,
       images: [
         {
@@ -152,7 +152,7 @@ export function constructMetadata({
           width: 1200,
           height: 630,
           type: "image/jpeg",
-          alt: title || SITE_CONFIG.name,
+          alt: resolvedTitle || SITE_CONFIG.name,
         },
       ],
       ...(ogType === "article"
@@ -165,8 +165,8 @@ export function constructMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: title || SITE_CONFIG.name,
-      description,
+      title: resolvedTitle || SITE_CONFIG.name,
+      description: resolvedDescription,
       images: [imageUrl],
       site: "@teafloww",
       creator: "@teafloww",
