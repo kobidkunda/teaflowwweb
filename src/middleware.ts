@@ -7,7 +7,7 @@ import { SECURITY_HEADERS } from "@/lib/security";
  */
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const match = /^\/(hi|bn|ar|fr|de|es|pt|ja|zh-CN)(?=\/|$)/.exec(path);
+  const match = /^\/(hi|bn|pa|mr|gu|ta|te|ar|fr|de|es|pt|ja|zh-CN)(?=\/|$)/.exec(path);
   const headers = new Headers(request.headers);
   headers.set("x-teafloww-locale", match?.[1] || "en");
   headers.set("x-teafloww-path", path);
