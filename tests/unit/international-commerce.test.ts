@@ -24,6 +24,7 @@ import { POST as adminPOST, GET as adminGET } from "@/app/api/admin/internationa
 import { POST as webhook } from "@/app/api/webhooks/razorpay/route";
 import { POST as commercePOST } from "@/app/api/commerce/[action]/route";
 import { activeCampaign, campaignSchema } from "@/lib/international/campaigns";
+import { wrapRow } from "@/lib/postgresDriver";
 
 describe("International commerce", () => {
   let env: TestEnv, cookie: string, variant: number, product: number;
@@ -172,6 +173,11 @@ describe("International commerce", () => {
     const source = sourceFor(resource), text = { ...source, name: "Thé de test" };
     editTranslation(row.id, text, "draft"); expect(publishedTexts(resource, "fr")).toBeNull();
     editTranslation(row.id, text, "publish"); expect(localize({ name: "Test Tea" }, resource, "fr").name).toBe("Thé de test");
+    // Postgres rows are Proxy-wrapped (wrapRow); localize must not rely on structuredClone.
+    const created = new Date(0);
+    const pgRow = wrapRow({ id: product, name: "Test Tea", created_at: created } as Record<string, unknown>);
+    const localized = localize(pgRow, resource, "fr") as Record<string, unknown>;
+    expect(localized.name).toBe("Thé de test"); expect(localized.created_at).toEqual(created); expect(pgRow.name).toBe("Test Tea");
     env.db.prepare("UPDATE products SET name=? WHERE id=?").run("Updated Test Tea", product); expect(publishedTexts(resource, "fr")).toBeNull();
     expect(() => validateTexts({ x: "100 g TeaFloww" }, { x: "200 g TeaFloww" })).toThrow();
     expect(() => validateTexts({ x: "TeaFloww" }, { x: "<script>TeaFloww</script>" })).toThrow();

@@ -76,10 +76,23 @@ export function publishedTexts(resource: string, locale: string): Texts | null {
     return t?.published && t.published_hash === hash(sourceFor(t.resource)) ? JSON.parse(t.published) : null;
   } catch { return null; }
 }
+// Deep-copies into plain objects/arrays. Unlike structuredClone, this works on
+// Proxy-wrapped rows returned by the Postgres driver (see wrapRow), and unlike a
+// JSON round-trip it preserves Date instances and undefined fields.
+function plainClone<T>(value: T): T {
+  if (value === null || typeof value !== "object") return value;
+  if (value instanceof Date) return new Date(value.getTime()) as T;
+  if (Array.isArray(value)) return value.map((v) => plainClone(v)) as T;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(value as Record<string, unknown>)) {
+    out[key] = plainClone((value as Record<string, unknown>)[key]);
+  }
+  return out as T;
+}
 export function localize<T>(value: T, resource: string, locale: string): T {
   const texts = publishedTexts(resource, locale);
   if (!texts) return value;
-  const copy = structuredClone(value);
+  const copy = plainClone(value);
   for (const [path, text] of Object.entries(texts)) {
     const parts = path.split(".");
     let obj = copy as Record<string, unknown>;
