@@ -59,7 +59,7 @@ export function constructMetadata({
     }
   }
 
-  const isUntranslatedLocale = Boolean(resource && locale && locale !== "en" && !hasPublishedTranslation);
+  const isUntranslatedLocale = Boolean(resource && locale && locale !== "en" && (!hasPublishedTranslation || !publishedTexts("interface", locale)));
   const effectiveNoindex = noindex || isUntranslatedLocale;
 
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
