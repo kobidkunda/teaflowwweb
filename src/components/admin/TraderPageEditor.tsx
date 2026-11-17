@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { BusinessProductMedia } from "./BusinessProductMedia";
 import Link from "next/link";
 import type { TraderPresentation, TraderCopy } from "@/lib/business/traderPresentation";
 
@@ -15,9 +16,9 @@ export function TraderPageEditor() {
   function patch(p:Partial<TraderPresentation>) {setContent(c=>c?{...c,...p}:c);setMessage("");}
   function moveSlide(index:number,direction:number) {if(!content)return;const slides=[...content.slides];[slides[index],slides[index+direction]]=[slides[index+direction],slides[index]];patch({slides});}
   if(!content) return <div className="tf-admin-card"><p role="status">{error || "Loading Tea Traders editor…"}</p>{error && <button onClick={()=>void load()}>Retry</button>}</div>;
-  return <form onSubmit={save} className="tf-admin-card trader-editor">
+  return <><form onSubmit={save} className="tf-admin-card trader-editor">
     <div className="tf-admin-card-header"><h2>Tea Traders · slider & storefront</h2><Link href="/tea-traders" target="_blank">Preview page</Link></div>
-    <p>Product photography, prices and pack availability come directly from the backend catalogue. Change product photographs in <Link href="/admin/products">Products</Link>. Manage language versions in <Link href="/admin/translations?search=tea-traders">Translations</Link> using the <strong>Tea Traders · page, slider & enquiry</strong> resource. English source changes make older translations stale until reviewed and republished.</p>
+    <p>Product photography, prices and pack availability come directly from the backend catalogue. Upload product photographs in the image manager below, or in <Link href="/admin/products">Products</Link>. Manage language versions in <Link href="/admin/translations?search=tea-traders">Translations</Link> using the <strong>Tea Traders · page, slider & enquiry</strong> resource. English source changes make older translations stale until reviewed and republished.</p>
     <fieldset disabled={saving}>
     <h3>Hero slider</h3><p>Automatic mode shows the first three catalogue products with images. Add slides below to curate the slider. Images always follow the selected product’s current primary photo. Recommended photo: square or portrait, at least 1200 px wide.</p>
     {content.slides.length===0 && <p role="status">Automatic catalogue slider is active.</p>}
@@ -38,5 +39,5 @@ export function TraderPageEditor() {
     {error && <p role="alert" className="tf-admin-status-error">{error}</p>}{message && <p role="status">{message}</p>}
     <button type="submit" className="tf-admin-btn tf-admin-btn-primary" disabled={saving}>{saving?"Saving…":"Save Tea Traders page"}</button>
     <p className="trader-editor-help">API: GET / PUT /api/admin/business/traders · MCP: business.getTradersPage / business.saveTradersPage. Changes apply to this site only; deployment remains a separate action.</p>
-  </form>;
+  </form><BusinessProductMedia products={products} onSaved={(id, imageUrl) => setProducts(current => current.map(product => product.id === id ? { ...product, imageUrl } : product))} /></>;
 }

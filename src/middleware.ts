@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SECURITY_HEADERS } from "@/lib/security";
+import { LANGUAGES } from "@/lib/international/models";
+
+// Path-prefixed languages (`/pa/...`): every supported language except English, which has no prefix.
+const PREFIX_RE = new RegExp(`^/(${LANGUAGES.map((l) => l.code).filter((c) => c !== "en").join("|")})(?=/|$)`);
 
 /**
  * Stamp baseline security headers on every response. Runs at the edge of
@@ -7,12 +11,14 @@ import { SECURITY_HEADERS } from "@/lib/security";
  */
 export function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const match = /^\/(hi|bn|pa|mr|gu|ta|te|ar|fr|de|es|pt|ja|zh-CN)(?=\/|$)/.exec(path);
+  const match = PREFIX_RE.exec(path);
   const headers = new Headers(request.headers);
   headers.set("x-teafloww-locale", match?.[1] || "en");
   headers.set("x-teafloww-path", path);
   const url = request.nextUrl.clone();
   if (match) url.pathname = path.slice(match[0].length) || "/";
+  // `/pa/tea-shops/...` serves the Punjabi tea-shops page (`/tea-shops/pa/...`).
+  if (match && /^\/tea-shops(?:\/|$)/.test(url.pathname)) url.pathname = `/tea-shops/${match[1]}${url.pathname.slice("/tea-shops".length)}`;
   const forbiddenLocale = Boolean(match && /^\/(api|admin|mcp|feeds|purchase|order|_next|uploads)(?:\/|$)/.test(url.pathname));
   let response = forbiddenLocale ? NextResponse.json({ error: "Not found." }, { status: 404 }) : match ? NextResponse.rewrite(url, { request: { headers } }) : NextResponse.next({ request: { headers } });
   // No third-party page scripts see a signed access token in the document URL.

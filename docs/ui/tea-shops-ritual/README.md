@@ -1,5 +1,11 @@
 # Tea shops — Counter Ritual redesign
 
+## Pilot discovery refinement — 2026-11-18
+
+Mode: Persuade. Preserve the forest/paper/Georgia visual identity and genuine active collection locations. Public discovery now excludes records explicitly marked E2E, incomplete/inactive locations and duplicate normalized town/point/address combinations. Stored records remain available through unrestricted admin listing; no database rows are deleted or migrated. The public API and server-rendered page share this filtering. This is a safeguard against explicit test markers, not an automatic verification of operator claims.
+
+When genuine locations exist, use a headed, responsive two-column section with a simple ruled location list and one shared collection enquiry action. The action opens the existing consented enquiry flow. English/Hindi copy belongs to the existing trade Translation Studio resource. With no genuine locations, omit the entire section and its spacing. Local records were all E2E fixtures, so the rendered page transitions directly from the calculator to enquiry.
+
 Implemented locally for `/tea-shops/hi`, based on selected option 1 refined to include TeaFloww pouch branding and direct buying. No production deployment was performed. Conversion improvements are hypotheses; no conversion percentage is guaranteed.
 
 ## Buying and enquiry journeys
@@ -57,3 +63,6 @@ all `/tea-shops/[locale]` routes. Existing localized headings/recipe copy remain
 Reviewed full source images and browser crops at 1440 desktop and 390 mobile;
 all four loaded and mobile scrollWidth matched viewport width. Evidence:
 `brew-after-desktop.png`, `brew-after-mobile.png`.
+
+## Artwork captions — 2026-11-18
+At the user’s request, removed the visible “AI illustration · packaging concept” caption from the hero and trial artwork. Image assets and illustrative alt descriptions remain unchanged.

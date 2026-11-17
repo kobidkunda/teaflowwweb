@@ -1003,3 +1003,11 @@ dialog.tf-admin-dialog::backdrop {
 }
 
 .trader-editor>p{font-size:14px;line-height:1.6;max-width:1000px;margin:16px 0}.trader-editor fieldset{border:0;padding:0;min-width:0}.trader-editor h3{margin:32px 0 12px;font-size:20px}.trader-editor label{display:grid;gap:8px;font-size:14px;margin:15px 0}.trader-editor textarea,.trader-editor select{width:100%;border:1px solid #a8b2a6;border-radius:6px;padding:10px;background:white;color:#1d2a24;min-height:44px}.trader-editor textarea{min-height:76px}.trader-editor .trader-slide{border:1px solid #cad2c7;border-radius:8px;padding:20px;margin:22px 0}.trader-slide img{object-fit:contain}.trader-editor button{min-height:44px;padding:9px 15px;border:1px solid #65745f;border-radius:6px;margin:5px 0;cursor:pointer}.trader-editor button:disabled{opacity:.5;cursor:not-allowed}.trader-editor-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}.trader-product-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:4px 20px}.trader-product-options label{display:flex;align-items:center;gap:10px}.trader-copy-fields{margin:28px 0}.trader-copy-fields summary{cursor:pointer;font-weight:600;min-height:44px}.trader-editor-help{font-size:12px!important;overflow-wrap:anywhere}.trader-editor :focus-visible{outline:3px solid #805a2b;outline-offset:3px}
+
+/* Image controls share the existing authenticated media library. */
+.tf-business-media { min-width: 0; }
+.tf-business-media-preview { width: 100%; max-width: 240px; height: 135px; object-fit: contain; background: #f6f1e7; border-radius: 6px; }
+.tf-business-media-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.tf-business-media-actions input[type="file"] { max-width: 100%; font-size: 12px; }
+.tf-business-media > .tf-admin-input { margin-bottom: 8px; }
+.tf-business-media-actions input[type="file"][hidden] { display: none; }

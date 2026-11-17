@@ -4,6 +4,20 @@
   --paper: #f6f1e7;
   background: var(--paper);
 }
+.pilotSection { padding-block: clamp(48px, 6vw, 80px); background: #fbf8f1; color: #12372b; }
+.pilotLayout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: clamp(32px, 6vw, 88px); }
+.pilotIntro h2 { font-family: var(--serif); font-size: clamp(30px, 3vw, 42px); line-height: 1.15; font-weight: 500; margin: 0 0 16px; text-wrap: balance; }
+.pilotIntro > p { max-width: 42ch; line-height: 1.65; margin: 0 0 20px; }
+.pilotAction { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 44px; padding: 10px 0; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; text-align: start; }
+.pilotAction:hover { color: #23483a; border-bottom-width: 2px; }
+.pilotAction:focus-visible { outline: 3px solid #12372b; outline-offset: 5px; }
+.pilotList { list-style: none; padding: 0; margin: 0; }
+.pilotList li { border-top: 1px solid #c9c2b6; padding-block: 22px; overflow-wrap: anywhere; }
+.pilotList li:last-child { border-bottom: 1px solid #c9c2b6; }
+.pilotList h3 { margin: 0 0 8px; font-family: var(--serif); font-size: 26px; line-height: 1.25; font-weight: 500; }
+.pilotList p { margin: 0; font-size: 15px; line-height: 1.6; }
+.pilotList .pilotPoint { font-weight: 600; margin-bottom: 4px; }
+@media (max-width: 700px) { .pilotLayout { grid-template-columns: minmax(0, 1fr); gap: 28px; } }
 .hero {
   position: relative;
   background: #08261b;
@@ -23,6 +37,23 @@
   position: relative;
   min-height: 610px;
   padding-block: 76px 64px;
+}
+.heroMotion {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+  z-index: 2;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #e7bc72;
+  border-radius: 4px;
+  background: #08261b;
+  color: #fbf5e9;
+  cursor: pointer;
+}
+.heroMotion:focus-visible { outline: 3px solid #fbf5e9; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .heroArt[aria-hidden="true"] { display: none; }
 }
 .heroCopy {
   width: 51%;

@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { LANGUAGES } from "@/lib/international/models";
 import type { Texts, Translation } from "@/lib/international/translations";
-import { traderDefaultTexts } from "@/lib/business/traderTranslations";
 import { tradeDefaults } from "@/lib/trade/baseCopy";
 import { adminRequest, useOperation } from "./shared";
 import { PAN_INDIA_ITEMS, getLocaleDictionary } from "@/lib/international/panIndiaDictionary";
@@ -150,7 +149,6 @@ export function TranslationAdmin() {
       currentTexts = getLocaleDictionary(locale);
     }
     if (r.resource === "trade") currentTexts = { ...r.source, ...tradeDefaults(locale), ...currentTexts };
-    if (r.resource === "tea-traders") currentTexts = { ...traderDefaultTexts(locale, r.source), ...currentTexts };
     setTexts(currentTexts);
 
     if (r.translation?.id) {

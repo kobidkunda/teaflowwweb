@@ -1,5 +1,11 @@
-import { readTrackingConsent, safeTrackingUrl, trackingRouteAllowed } from "./consent";
+import {
+  collectDirectMetaPixelIds,
+  readTrackingConsent,
+  safeTrackingUrl,
+  trackingRouteAllowed,
+} from "./consent";
 import { getClientAttributionBundle } from "@/lib/funnel/clientAttribution";
+import type { ConversionRule, ConversionTriggerEvent } from "@/lib/trackingSettings";
 
 export interface TrackingItem {
   item_id: string;
@@ -46,15 +52,25 @@ function readSafeAttributionForDataLayer(): Record<string, string> {
 function googleEvent(event: string, params: Record<string, unknown>, ecommerce = false) {
   if (!canTrack()) return false;
   window.dataLayer ||= [];
-  const eventId = params.event_id || window.crypto?.randomUUID?.() || `event_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const eventId = String(
+    params.event_id || window.crypto?.randomUUID?.() || `event_${Date.now()}_${Math.random().toString(36).slice(2)}`
+  );
   const attr = readSafeAttributionForDataLayer();
   params = { ...attr, ...params, event_id: eventId };
   const config = window.__tfTracking;
-  // One transport per destination. GTM event tags consume objects; standalone GA4 consumes commands.
-  if (config?.gtmEnabled && config.gtmContainerId) {
+  const gtmActive = Boolean(config?.gtmEnabled && config.gtmContainerId);
+  const analyticsAllowed = readTrackingConsent().analytics;
+  const directGa4Allowed = Boolean(
+    config?.ga4Enabled && config.ga4MeasurementId && analyticsAllowed && (!gtmActive || config.ga4RunAlongsideGtm)
+  );
+  // One transport by default; direct GA4 can also run alongside GTM when explicitly opted into Hybrid mode.
+  if (gtmActive) {
     window.dataLayer.push({ ecommerce: null });
     window.dataLayer.push({ ...params, event });
-  } else if (config?.ga4Enabled && config.ga4MeasurementId && readTrackingConsent().analytics) {
+    if (directGa4Allowed) {
+      window.gtag?.("event", event, ecommerce ? { ...(params.ecommerce as Record<string, unknown>), event_id: eventId } : params);
+    }
+  } else if (directGa4Allowed) {
     window.gtag?.("event", event, ecommerce ? { ...(params.ecommerce as Record<string, unknown>), event_id: eventId } : params);
   } else {
     // Keep the public event contract inspectable even when no vendor is configured.
@@ -64,32 +80,52 @@ function googleEvent(event: string, params: Record<string, unknown>, ecommerce =
   return true;
 }
 
-export function ensureMetaQueue() {
+function createFbqStub() {
+  if (window.fbq) return;
+  const queue: NonNullable<Window["fbq"]> = (...args) => {
+    if (queue.callMethod) queue.callMethod(...args);
+    else queue.queue!.push(args);
+  };
+  queue.queue = [];
+  queue.loaded = true;
+  queue.version = "2.0";
+  queue.push = queue;
+  window.fbq = queue;
+}
+
+export function ensureMetaQueue(extraPixelIds: string[] = []) {
   if (typeof window === "undefined" || !readTrackingConsent().marketing) return;
   const config = window.__tfTracking;
-  if (config?.gtmEnabled && config.gtmContainerId) return;
-  if (!config?.metaPixelEnabled || !/^\d+$/.test(config.metaPixelId)) return;
-  if (!window.fbq) {
-    const queue: NonNullable<Window["fbq"]> = (...args) => {
-      if (queue.callMethod) queue.callMethod(...args);
-      else queue.queue!.push(args);
-    };
-    queue.queue = []; queue.loaded = true; queue.version = "2.0"; queue.push = queue;
-    window.fbq = queue;
-  }
-  if (!window.__tfMetaInitialized) {
-    window.__tfMetaInitialized = true;
-    window.fbq("init", config.metaPixelId);
-    // Match only explicitly reviewed data; never scrape checkout contact fields.
-    window.fbq("set", "autoConfig", false, config.metaPixelId);
+  const baseIds = config ? collectDirectMetaPixelIds(config) : [];
+  const allPixelIds = [...new Set([...baseIds, ...extraPixelIds.filter((id) => /^\d+$/.test(id))])];
+  if (allPixelIds.length === 0) return;
+
+  createFbqStub();
+  window.__tfMetaInitializedIds ||= new Set<string>();
+  for (const pixelId of allPixelIds) {
+    if (!window.__tfMetaInitializedIds.has(pixelId)) {
+      window.__tfMetaInitializedIds.add(pixelId);
+      window.__tfMetaInitialized = true;
+      window.fbq?.("init", pixelId);
+      // Match only explicitly reviewed data; never scrape checkout contact fields.
+      window.fbq?.("set", "autoConfig", false, pixelId);
+    }
   }
 }
 
 function metaEvent(event: string, params: Record<string, unknown> = {}, eventId?: string) {
   if (!canTrack() || !readTrackingConsent().marketing) return;
-  if (window.__tfTracking?.gtmEnabled && window.__tfTracking.gtmContainerId) return;
-  ensureMetaQueue();
-  // Direct Meta is a separate owner. Do not also install the same pixel in GTM.
+  const config = window.__tfTracking;
+  const gtmActive = Boolean(config?.gtmEnabled && config.gtmContainerId);
+  if (gtmActive && !config?.metaRunAlongsideGtm) return;
+  if (!config?.metaPixelEnabled || !/^\d+$/.test(config.metaPixelId)) return;
+  ensureMetaQueue([config.metaPixelId]);
+  const directCount = config ? collectDirectMetaPixelIds(config).length : 1;
+  if (directCount > 1) {
+    if (eventId) window.fbq?.("trackSingle", config.metaPixelId, event, params, { eventID: eventId });
+    else window.fbq?.("trackSingle", config.metaPixelId, event, params);
+    return;
+  }
   if (eventId) window.fbq?.("track", event, params, { eventID: eventId });
   else window.fbq?.("track", event, params);
 }
@@ -141,16 +177,197 @@ export function trackViewItemList(items: TrackingItem[], listName = "Catalog", c
 export function trackSelectItem(item: TrackingItem, listName = "Catalog", currency = "INR") {
   return pushEcommerceEvent("select_item", { item_list_name: listName, currency, items: [item] });
 }
+const VERIFIED_SETTLED_PAYMENT_STATUSES = new Set(["paid", "cod_remitted", "advance_paid"]);
+
+interface RuleDispatchContext {
+  triggerEvent: ConversionTriggerEvent;
+  eventId?: string;
+  orderTotal?: number;
+  merchandiseSubtotal?: number;
+  currency?: string;
+  transactionId?: string;
+  paymentStatus?: string;
+  leadType?: string;
+  items?: TrackingItem[];
+  searchTerm?: string;
+}
+
+function seenPurchaseKey(key: string) {
+  window.__tfPurchases ||= new Set();
+  if (window.__tfPurchases.has(key)) return true;
+  try {
+    return !!window.localStorage.getItem(key);
+  } catch {
+    return false;
+  }
+}
+
+function markPurchaseKey(key: string) {
+  window.__tfPurchases ||= new Set();
+  window.__tfPurchases.add(key);
+  try {
+    window.localStorage.setItem(key, "1");
+  } catch {}
+}
+
+function resolveRuleValue(rule: ConversionRule, ctx: RuleDispatchContext): number | undefined {
+  if (rule.value_mode === "none") return undefined;
+  if (rule.value_mode === "fixed") {
+    return typeof rule.fixed_value === "number" && Number.isFinite(rule.fixed_value) && rule.fixed_value >= 0
+      ? Number(rule.fixed_value.toFixed(2))
+      : undefined;
+  }
+  const raw =
+    rule.value_mode === "merchandise_subtotal"
+      ? ctx.merchandiseSubtotal ?? ctx.orderTotal
+      : ctx.orderTotal ?? ctx.merchandiseSubtotal;
+  return typeof raw === "number" && Number.isFinite(raw) && raw >= 0 ? Number(raw.toFixed(2)) : undefined;
+}
+
+function buildRuleEventId(ctx: RuleDispatchContext): string {
+  if (ctx.eventId) return ctx.eventId;
+  if (ctx.triggerEvent === "purchase" && ctx.transactionId) return `purchase_${ctx.transactionId}`;
+  return window.crypto?.randomUUID?.() || `conv_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
+export function dispatchConversionRules(ctx: RuleDispatchContext): number {
+  if (!canTrack()) return 0;
+  const config = window.__tfTracking;
+  const rules = config?.conversionRules;
+  if (!Array.isArray(rules) || rules.length === 0) return 0;
+
+  const consent = readTrackingConsent();
+  let fired = 0;
+
+  for (const rule of rules) {
+    if (!rule.enabled || rule.trigger_event !== ctx.triggerEvent) continue;
+    if (
+      rule.trigger_event === "generate_lead" &&
+      rule.lead_type_filter &&
+      rule.lead_type_filter !== "*" &&
+      ctx.leadType !== rule.lead_type_filter
+    ) {
+      continue;
+    }
+    if (
+      rule.trigger_event === "purchase" &&
+      rule.paid_only &&
+      ctx.paymentStatus &&
+      !VERIFIED_SETTLED_PAYMENT_STATUSES.has(ctx.paymentStatus.toLowerCase())
+    ) {
+      continue;
+    }
+
+    const platformAllowed = rule.platform === "ga4" ? consent.analytics : consent.marketing;
+    if (!platformAllowed) continue;
+
+    const dedupKey =
+      ctx.triggerEvent === "purchase" && ctx.transactionId ? `tf_rule_${rule.id}_${ctx.transactionId}` : "";
+    if (dedupKey && seenPurchaseKey(dedupKey)) continue;
+
+    const value = resolveRuleValue(rule, ctx);
+    const currency = (rule.currency && rule.currency !== "EVENT" ? rule.currency : ctx.currency || "INR").toUpperCase();
+    const eventId = buildRuleEventId(ctx);
+    let ruleDispatched = false;
+
+    if (rule.delivery === "admin_direct" || rule.delivery === "both") {
+      if (rule.platform === "google_ads") {
+        const adsId = (rule.ads_conversion_id || config?.googleAdsId || "").trim().toUpperCase();
+        const label = (rule.ads_conversion_label || "").trim();
+        if (/^AW-\d+$/.test(adsId) && label && window.gtag) {
+          window.gtag("event", "conversion", {
+            send_to: `${adsId}/${label}`,
+            ...(value !== undefined ? { value, currency } : {}),
+            ...(ctx.transactionId ? { transaction_id: ctx.transactionId } : {}),
+          });
+          ruleDispatched = true;
+        }
+      } else if (rule.platform === "meta") {
+        const pixelId = (rule.meta_pixel_id || config?.metaPixelId || "").trim();
+        const metaEventName = (rule.meta_event_name || "").trim();
+        if (/^\d+$/.test(pixelId) && metaEventName) {
+          ensureMetaQueue([pixelId]);
+          const clean = ctx.items ? cleanItems(ctx.items) : [];
+          const metaParams: Record<string, unknown> =
+            clean.length > 0
+              ? metaContents(clean, value ?? 0, currency)
+              : {
+                  ...(ctx.leadType ? { content_name: ctx.leadType } : {}),
+                  ...(ctx.searchTerm ? { search_string: ctx.searchTerm } : {}),
+                  ...(value !== undefined ? { value, currency } : {}),
+                };
+          if (value !== undefined) metaParams.value = value;
+          else if (rule.value_mode === "none") delete metaParams.value;
+          metaParams.currency = currency;
+          if (ctx.transactionId) metaParams.order_id = ctx.transactionId;
+          const cmd = rule.meta_is_custom_event ? "trackSingleCustom" : "trackSingle";
+          window.fbq?.(cmd, pixelId, metaEventName, metaParams, { eventID: eventId });
+          ruleDispatched = true;
+        }
+      } else if (rule.platform === "ga4") {
+        const ga4Event = (rule.custom_event_name || ctx.triggerEvent).trim();
+        if (ga4Event && window.gtag) {
+          window.gtag("event", ga4Event, {
+            event_id: eventId,
+            ...(value !== undefined ? { value, currency } : {}),
+            ...(ctx.transactionId ? { transaction_id: ctx.transactionId } : {}),
+            ...(ctx.leadType ? { lead_type: ctx.leadType } : {}),
+          });
+          ruleDispatched = true;
+        }
+      }
+    }
+
+    if (rule.delivery === "gtm_datalayer" || rule.delivery === "both") {
+      window.dataLayer ||= [];
+      const targetId =
+        rule.platform === "google_ads"
+          ? (rule.ads_conversion_id || config?.googleAdsId || "").trim().toUpperCase()
+          : rule.platform === "meta"
+            ? (rule.meta_pixel_id || config?.metaPixelId || "").trim()
+            : (config?.ga4MeasurementId || "").trim();
+      const targetNumeric = targetId.replace(/^AW-/i, "");
+      window.dataLayer.push({ ecommerce: null });
+      window.dataLayer.push({
+        event: (rule.custom_event_name || "tf_conversion").trim(),
+        tf_conversion_id: rule.id,
+        tf_conversion_name: rule.name,
+        tf_conversion_platform: rule.platform,
+        tf_conversion_trigger: ctx.triggerEvent,
+        tf_target_id: targetId,
+        tf_target_id_numeric: targetNumeric,
+        ...(rule.ads_conversion_label ? { tf_conversion_label: rule.ads_conversion_label } : {}),
+        ...(rule.meta_event_name ? { tf_meta_event_name: rule.meta_event_name } : {}),
+        ...(value !== undefined ? { value, currency } : {}),
+        ...(ctx.transactionId ? { transaction_id: ctx.transactionId } : {}),
+        ...(ctx.leadType ? { lead_type: ctx.leadType } : {}),
+        event_id: eventId,
+      });
+      ruleDispatched = true;
+    }
+
+    if (ruleDispatched) {
+      if (dedupKey) markPurchaseKey(dedupKey);
+      fired += 1;
+    }
+  }
+
+  return fired;
+}
+
 export function trackViewItem(item: TrackingItem, currency = "INR") {
   const sent = pushEcommerceEvent("view_item", { currency, value: item.price, items: [item] });
   metaEvent("ViewContent", { content_name: item.item_name, content_ids: [item.item_id], content_type: "product", value: item.price, currency });
+  dispatchConversionRules({ triggerEvent: "view_item", merchandiseSubtotal: item.price, orderTotal: item.price, currency, items: [item] });
   return sent;
 }
 export function trackAddToCart(item: TrackingItem, quantity = 1, currency = "INR") {
   if (quantity <= 0 || !Number.isFinite(quantity)) return false;
   const value = item.price * quantity;
-  const sent = pushEcommerceEvent("add_to_cart", { currency, value, items: [{ ...item, quantity }] });
+  const line = { ...item, quantity };
+  const sent = pushEcommerceEvent("add_to_cart", { currency, value, items: [line] });
   metaEvent("AddToCart", { content_name: item.item_name, content_ids: [item.item_id], content_type: "product", contents: [{ id: item.item_id, quantity, item_price: item.price }], value, currency });
+  dispatchConversionRules({ triggerEvent: "add_to_cart", merchandiseSubtotal: value, orderTotal: value, currency, items: [line] });
   return sent;
 }
 export function trackRemoveFromCart(item: TrackingItem, quantity = 1, currency = "INR") {
@@ -165,14 +382,18 @@ function metaContents(items: TrackingItem[], value: number, currency: string) {
 export function trackBeginCheckout(items: TrackingItem[], totalValue: number, currency = "INR") {
   const sent = pushEcommerceEvent("begin_checkout", { currency, value: totalValue, items });
   metaEvent("InitiateCheckout", metaContents(items, totalValue, currency));
+  dispatchConversionRules({ triggerEvent: "begin_checkout", merchandiseSubtotal: totalValue, orderTotal: totalValue, currency, items });
   return sent;
 }
 export function trackAddShippingInfo(shippingTier: string, items: TrackingItem[], totalValue: number, currency = "INR") {
-  return pushEcommerceEvent("add_shipping_info", { currency, value: totalValue, shipping_tier: shippingTier, items });
+  const sent = pushEcommerceEvent("add_shipping_info", { currency, value: totalValue, shipping_tier: shippingTier, items });
+  dispatchConversionRules({ triggerEvent: "add_shipping_info", merchandiseSubtotal: totalValue, orderTotal: totalValue, currency, items });
+  return sent;
 }
 export function trackAddPaymentInfo(paymentType: string, items: TrackingItem[], totalValue: number, currency = "INR") {
   const sent = pushEcommerceEvent("add_payment_info", { currency, value: totalValue, payment_type: paymentType, items });
   metaEvent("AddPaymentInfo", metaContents(items, totalValue, currency));
+  dispatchConversionRules({ triggerEvent: "add_payment_info", merchandiseSubtotal: totalValue, orderTotal: totalValue, currency, items });
   return sent;
 }
 /** Call only with server-confirmed orders (paid or accepted COD). Value excludes shipping and tax; total is full amount in currency units. */
@@ -183,31 +404,24 @@ export function trackPurchase(
   tax: number,
   items: TrackingItem[],
   currency = "INR",
-  total?: number
+  total?: number,
+  options?: { paymentStatus?: string }
 ) {
   if (!canTrack() || !transactionId || items.length === 0 || !Number.isFinite(value) || value < 0) return false;
   const consent = readTrackingConsent();
-  window.__tfPurchases ||= new Set();
-  const seen = (key: string) => {
-    if (window.__tfPurchases!.has(key)) return true;
-    try { return !!window.localStorage.getItem(key); } catch { return false; }
-  };
-  const mark = (key: string) => {
-    window.__tfPurchases!.add(key);
-    try { window.localStorage.setItem(key, "1"); } catch {}
-  };
   let sent = false;
   const googleKey = `tf_purchase_v2_google_${transactionId}`;
-  const gtmOwnsTags = window.__tfTracking?.gtmEnabled && window.__tfTracking.gtmContainerId;
+  const config = window.__tfTracking;
+  const gtmOwnsTags = Boolean(config?.gtmEnabled && config.gtmContainerId);
 
   const totalAmount =
     total !== undefined && Number.isFinite(total) && total > 0
       ? total
       : Math.max(0, value + (Number.isFinite(shipping) ? shipping : 0) + (Number.isFinite(tax) ? tax : 0));
 
-  if ((consent.analytics || (gtmOwnsTags && consent.marketing)) && !seen(googleKey)) {
+  if ((consent.analytics || (gtmOwnsTags && consent.marketing)) && !seenPurchaseKey(googleKey)) {
     if (pushEcommerceEvent("purchase", { transaction_id: transactionId, currency, value, shipping, tax, items })) {
-      mark(googleKey);
+      markPurchaseKey(googleKey);
       sent = true;
     }
     // Teafloww Custom Data Layer purchase event for Google Tag Manager & Meta Pixel
@@ -222,15 +436,26 @@ export function trackPurchase(
     });
   }
   const metaKey = `tf_purchase_v2_meta_${transactionId}`;
-  if (!gtmOwnsTags && consent.marketing && !seen(metaKey)) {
+  const directMetaAllowed = !gtmOwnsTags || Boolean(config?.metaRunAlongsideGtm);
+  if (directMetaAllowed && consent.marketing && !seenPurchaseKey(metaKey)) {
     ensureMetaQueue();
     if (window.fbq) {
       metaEvent("Purchase", metaContents(items, value, currency), `purchase_${transactionId}`);
-      mark(metaKey);
+      markPurchaseKey(metaKey);
       sent = true;
     }
   }
-  return sent;
+  const ruleCount = dispatchConversionRules({
+    triggerEvent: "purchase",
+    eventId: `purchase_${transactionId}`,
+    orderTotal: totalAmount,
+    merchandiseSubtotal: value,
+    currency,
+    transactionId,
+    paymentStatus: options?.paymentStatus,
+    items,
+  });
+  return sent || ruleCount > 0;
 }
 
 export function trackSearch(searchTerm: string) {
@@ -238,11 +463,13 @@ export function trackSearch(searchTerm: string) {
   if (!term || /@|\d[\d\s()+-]{6,}/.test(term)) return false;
   const sent = pushDataLayerEvent("search", { search_term: term });
   metaEvent("Search", { search_string: term });
+  dispatchConversionRules({ triggerEvent: "search", searchTerm: term });
   return sent;
 }
 export function trackLead(leadType: string, meta: Record<string, unknown> = {}) {
   const sent = pushDataLayerEvent("generate_lead", { ...meta, lead_type: leadType });
   metaEvent("Lead", { content_name: leadType });
+  dispatchConversionRules({ triggerEvent: "generate_lead", leadType });
   return sent;
 }
 export function trackCheckoutDiagnostic(checkoutStep: string, errorCode: string, errorField?: string) {

@@ -40,10 +40,10 @@ export const SECURITY_HEADERS: Record<string, string> = {
     "style-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://tagmanager.google.com https://fonts.googleapis.com",
     "img-src 'self' data: https:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self' https://*.ingest.de.sentry.io https://*.sentry.io https://api.razorpay.com https://checkout.razorpay.com https://pay-api.biolastic.co.in https://pay.biolastic.co.in https://pay-admin.biolastic.co.in https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://stats.g.doubleclick.net https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://ad.doubleclick.net https://www.google.com https://www.google.co.in https://connect.facebook.net https://www.facebook.com https://*.facebook.com https://cloudflareinsights.com https://*.cloudflareinsights.com " + metaCapiConnections,
+    "connect-src 'self' https://*.ingest.de.sentry.io https://*.sentry.io https://api.razorpay.com https://checkout.razorpay.com https://pay-api.biolastic.co.in https://pay.biolastic.co.in https://pay-admin.biolastic.co.in https://www.google-analytics.com https://*.google-analytics.com https://analytics.google.com https://*.analytics.google.com https://www.googletagmanager.com https://*.googletagmanager.com https://stats.g.doubleclick.net https://td.doubleclick.net https://www.googleadservices.com https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com https://ad.doubleclick.net https://www.google.com https://www.google.co.in https://connect.facebook.net https://www.facebook.com https://*.facebook.com https://cloudflareinsights.com https://*.cloudflareinsights.com " + metaCapiConnections,
     "worker-src 'self' blob:",
-    // Meta Pixel can send events through an iframe/form fallback.
-    "frame-src 'self' https://www.facebook.com https://api.razorpay.com https://checkout.razorpay.com https://pay.biolastic.co.in https://pay-admin.biolastic.co.in https://www.googletagmanager.com https://www.youtube.com https://www.youtube-nocookie.com",
+    // Meta Pixel can send events through an iframe/form fallback; Google Ads uses td.doubleclick.net frames in some regions.
+    "frame-src 'self' https://www.facebook.com https://api.razorpay.com https://checkout.razorpay.com https://pay.biolastic.co.in https://pay-admin.biolastic.co.in https://www.googletagmanager.com https://td.doubleclick.net https://www.youtube.com https://www.youtube-nocookie.com",
     "media-src 'self' https: data: blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

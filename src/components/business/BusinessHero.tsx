@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ButtonLink } from "./ButtonLink";
 import type { B2BPageContentRecord } from "@/lib/business/repository";
 import type { BusinessLocale } from "@/lib/business/schema";
+import { serverTr } from "@/lib/business/starterTexts";
 
 export function BusinessHero({
   content,
@@ -10,7 +11,7 @@ export function BusinessHero({
   content: B2BPageContentRecord;
   locale: BusinessLocale;
 }) {
-  const isHi = locale === "hi";
+  const t = serverTr(locale);
   return (
     <section className="tf-hero" aria-labelledby="business-hero-title">
       <div className="tf-container tf-hero-grid">
@@ -42,9 +43,9 @@ export function BusinessHero({
             />
           ) : null}
           <div className="tf-photo-caption" aria-hidden="true">
-            <span className="tf-photo-pill">{isHi ? "25kg थोक विकल्प" : "25kg bulk option"}</span>
-            <span className="tf-photo-pill">{isHi ? "250g–1kg रिटेल" : "250g–1kg retail"}</span>
-            <span className="tf-photo-pill">{isHi ? "प्राइवेट लेबल" : "Private label"}</span>
+            <span className="tf-photo-pill">{t("25kg bulk option")}</span>
+            <span className="tf-photo-pill">{t("250g–1kg retail")}</span>
+            <span className="tf-photo-pill">{t("Private label")}</span>
           </div>
         </div>
       </div>

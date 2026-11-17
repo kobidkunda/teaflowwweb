@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { BusinessLanguageSwitch } from "./BusinessLanguageSwitch";
 import type { BusinessLocale, Segment } from "@/lib/business/schema";
+import { serverTr } from "@/lib/business/starterTexts";
 
 export function BusinessHeader({
   segment,
@@ -8,8 +10,8 @@ export function BusinessHeader({
   segment: Segment;
   locale: BusinessLocale;
 }) {
+  const t = serverTr(locale);
   const basePath = segment === "starter" ? "/start-tea-business" : "/tea-traders";
-  const isHi = locale === "hi";
 
   return (
     <header className="tf-header">
@@ -19,38 +21,21 @@ export function BusinessHeader({
             TEAFLOWW
           </Link>
           <span className="tf-location-pill">
-            {isHi ? "सिलीगुड़ी, पश्चिम बंगाल" : "Siliguri, West Bengal"}
+            {t("Siliguri, West Bengal")}
           </span>
         </div>
 
-        <nav className="tf-nav" aria-label={isHi ? "पेज अनुभाग" : "Page sections"}>
-          <a href="#solutions">{isHi ? "सप्लाई विकल्प" : "Our solutions"}</a>
-          <a href="#process">{isHi ? "प्रक्रिया" : "How it works"}</a>
-          <a href="#proof">{isHi ? "प्रमाण" : "Proof"}</a>
-          <a href="#faq">{isHi ? "सवाल-जवाब" : "Questions"}</a>
+        <nav className="tf-nav" aria-label={t("Page sections")}>
+          <a href="#solutions">{t("Our solutions")}</a>
+          <a href="#process">{t("How it works")}</a>
+          <a href="#proof">{t("Proof")}</a>
+          <a href="#faq">{t("Questions")}</a>
         </nav>
 
         <div className="tf-header-actions">
-          <nav className="tf-lang-switch" aria-label={isHi ? "भाषा चुनें" : "Select language"}>
-            <Link
-              href={basePath}
-              lang="en"
-              hrefLang="en"
-              aria-current={locale === "en" ? "true" : undefined}
-            >
-              EN
-            </Link>
-            <Link
-              href={`${basePath}?lang=hi`}
-              lang="hi"
-              hrefLang="hi"
-              aria-current={locale === "hi" ? "true" : undefined}
-            >
-              हिन्दी
-            </Link>
-          </nav>
+          <BusinessLanguageSwitch path={basePath} locale={locale} className="tf-lang-switch" label={t("Select language")} />
           <a href="#business-quote" className="tf-button tf-button--gold" style={{ minHeight: 40, padding: "0.45rem 1rem", fontSize: "0.86rem" }}>
-            {isHi ? "कोटेशन लें" : "Get Quote"}
+            {t("Get Quote")}
           </a>
         </div>
       </div>

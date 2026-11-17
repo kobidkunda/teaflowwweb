@@ -5,7 +5,18 @@ import React, { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import type { PublicTrackingConfig } from "@/lib/trackingSettings";
-import { CONSENT_EVENT, CONSENT_KEY, gtmLoaderScript, DENIED_CONSENT, readTrackingConsent, trackingRouteAllowed, updateTrackingConsent, type TrackingConsent } from "@/lib/seo/consent";
+import {
+  CONSENT_EVENT,
+  CONSENT_KEY,
+  collectDirectGoogleIds,
+  collectDirectMetaPixelIds,
+  gtmLoaderScript,
+  DENIED_CONSENT,
+  readTrackingConsent,
+  trackingRouteAllowed,
+  updateTrackingConsent,
+  type TrackingConsent,
+} from "@/lib/seo/consent";
 import { ensureMetaQueue, trackPageView } from "@/lib/seo/tracking";
 import { X } from "lucide-react";
 
@@ -47,15 +58,21 @@ export function AnalyticsHeadScripts({ config }: { config: PublicTrackingConfig 
   };
   if (!pathname || !trackingRouteAllowed(pathname)) return null;
   const googleAllowed = consent.analytics || consent.marketing;
-  const gtm = config.gtmEnabled && /^GTM-[A-Z0-9]+$/.test(config.gtmContainerId);
-  const ga4 = config.ga4Enabled && /^G-[A-Z0-9]+$/.test(config.ga4MeasurementId);
-  const meta = config.metaPixelEnabled && /^\d+$/.test(config.metaPixelId);
+  const gtm = config.gtmEnabled && /^GTM-[A-Z0-9]+$/i.test(config.gtmContainerId);
+  const { ga4Ids, adsIds } = collectDirectGoogleIds(config);
+  const directMetaIds = collectDirectMetaPixelIds(config);
+  const directGtagId =
+    (consent.marketing && adsIds[0]) ||
+    (consent.analytics && ga4Ids[0]) ||
+    "";
   return <>
     {googleAllowed && gtm && <Script id="google-tag-manager" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: gtmLoaderScript(config.gtmContainerId) }} />}
-    {consent.analytics && !gtm && ga4 && <>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${config.ga4MeasurementId}`} strategy="afterInteractive" />
-    </>}
-    {consent.marketing && !gtm && meta && <Script src="https://connect.facebook.net/en_US/fbevents.js" strategy="afterInteractive" />}
+    {directGtagId && (
+      <Script id="google-direct-gtag" src={`https://www.googletagmanager.com/gtag/js?id=${directGtagId}`} strategy="afterInteractive" />
+    )}
+    {consent.marketing && directMetaIds.length > 0 && (
+      <Script id="meta-direct-pixel" src="https://connect.facebook.net/en_US/fbevents.js" strategy="afterInteractive" />
+    )}
     {consent.marketing && !gtm && config.customHeadScript && <Script id="custom-head-tracking" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: config.customHeadScript }} />}
     {consent.marketing && !gtm && config.customBodyScript && <div id="custom-body-tracking" dangerouslySetInnerHTML={{ __html: config.customBodyScript }} />}
     {(!chosen || settings) ? <section aria-label="Cookie preferences" className="tracking-consent-panel">

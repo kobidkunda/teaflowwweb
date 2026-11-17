@@ -4,7 +4,21 @@ import { trackCartDelta, trackPageView, trackViewItem, trackAddToCart, trackRemo
 import { readTrackingConsent, safeTrackingUrl, trackingBootstrap, updateTrackingConsent } from "@/lib/seo/consent";
 import type { PublicTrackingConfig } from "@/lib/trackingSettings";
 
-const config: PublicTrackingConfig = { gtmEnabled: true, gtmContainerId: "GTM-M5G27HSQ", ga4Enabled: true, ga4MeasurementId: "G-62FDHK0EQ6", metaPixelEnabled: true, metaPixelId: "123456789", customHeadScript: "", customBodyScript: "" };
+const config: PublicTrackingConfig = {
+  gtmEnabled: true,
+  gtmContainerId: "GTM-M5G27HSQ",
+  ga4Enabled: true,
+  ga4MeasurementId: "G-62FDHK0EQ6",
+  ga4RunAlongsideGtm: false,
+  metaPixelEnabled: true,
+  metaPixelId: "123456789",
+  metaRunAlongsideGtm: false,
+  googleAdsEnabled: false,
+  googleAdsId: "",
+  conversionRules: [],
+  customHeadScript: "",
+  customBodyScript: "",
+};
 const tea = { item_id: "TEA-100", item_name: "Tea", price: 500, quantity: 2 };
 const events = () => window.dataLayer!.filter(e => e.event);
 beforeEach(() => {
@@ -163,5 +177,74 @@ describe("commerce data quality", () => {
     expect(varNames).toContain("DLV - ecommerce.transaction_id");
     expect(varNames).toContain("CJS - Item IDs Array");
     expect(varNames).toContain("CJS - Meta Contents Array");
+  });
+
+  it("supports multi-conversion Google Ads & Meta rules alongside GTM with paid_only, lead_type filtering, and deduplication", () => {
+    const fbCalls: unknown[][] = [];
+    window.fbq = vi.fn((...args: unknown[]) => fbCalls.push(args)) as unknown as Window["fbq"];
+    window.__tfTracking = {
+      ...config,
+      googleAdsEnabled: true,
+      googleAdsId: "AW-18566488412",
+      conversionRules: [
+        {
+          id: "gads-paid",
+          name: "Google Ads Paid Purchase",
+          enabled: true,
+          platform: "google_ads",
+          delivery: "both",
+          trigger_event: "purchase",
+          ads_conversion_label: "spfzCJDFu7UdENzCmJVF",
+          value_mode: "order_total",
+          currency: "INR",
+          paid_only: true,
+        },
+        {
+          id: "meta-wholesale",
+          name: "Meta Wholesale Lead",
+          enabled: true,
+          platform: "meta",
+          delivery: "admin_direct",
+          trigger_event: "generate_lead",
+          lead_type_filter: "wholesale_inquiry",
+          meta_pixel_id: "29619022431117471",
+          meta_event_name: "Lead",
+          value_mode: "fixed",
+          fixed_value: 250,
+          currency: "INR",
+        },
+      ],
+    };
+
+    // Unpaid COD should skip paid_only rule
+    trackPurchase("ord-cod-1", 1000, 50, 50, [tea], "INR", 1100, { paymentStatus: "cod_due" });
+    expect(window.gtag).not.toHaveBeenCalledWith("event", "conversion", expect.anything());
+
+    // Verified paid order should fire both gtag conversion and GTM tf_conversion once
+    trackPurchase("ord-paid-1", 1000, 50, 50, [tea], "INR", 1100, { paymentStatus: "paid" });
+    trackPurchase("ord-paid-1", 1000, 50, 50, [tea], "INR", 1100, { paymentStatus: "paid" });
+    expect(window.gtag).toHaveBeenCalledTimes(1);
+    expect(window.gtag).toHaveBeenCalledWith("event", "conversion", {
+      send_to: "AW-18566488412/spfzCJDFu7UdENzCmJVF",
+      value: 1100,
+      currency: "INR",
+      transaction_id: "ord-paid-1",
+    });
+    const tfConv = events().filter((e) => e.event === "tf_conversion");
+    expect(tfConv).toHaveLength(1);
+    expect(tfConv[0]).toMatchObject({
+      tf_conversion_platform: "google_ads",
+      tf_target_id: "AW-18566488412",
+      tf_target_id_numeric: "18566488412",
+      tf_conversion_label: "spfzCJDFu7UdENzCmJVF",
+      value: 1100,
+      transaction_id: "ord-paid-1",
+    });
+
+    // Lead filtering: newsletter does not match wholesale_inquiry; wholesale_inquiry does
+    trackLead("newsletter");
+    expect(fbCalls).toHaveLength(0);
+    trackLead("wholesale_inquiry");
+    expect(fbCalls.some((args) => args[0] === "trackSingle" && args[1] === "29619022431117471" && args[2] === "Lead")).toBe(true);
   });
 });

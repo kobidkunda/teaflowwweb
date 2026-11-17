@@ -1,6 +1,6 @@
 {
   "exportFormatVersion": 2,
-  "exportTime": "2026-11-11T15:50:26.225Z",
+  "exportTime": "2026-11-17T21:30:38.402Z",
   "containerVersion": {
     "path": "accounts/6382131376/containers/266900144/versions/7",
     "accountId": "6382131376",
@@ -810,6 +810,152 @@
       {
         "accountId": "6382131376",
         "containerId": "266900144",
+        "tagId": "9630",
+        "name": "Google Ads - Conversion Linker",
+        "type": "gclidw",
+        "parameter": [
+          {
+            "type": "BOOLEAN",
+            "key": "enableCookieOverwrite",
+            "value": "false"
+          }
+        ],
+        "firingTriggerId": [
+          "2147479573"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "tagId": "9631",
+        "name": "Google Ads - Conversion - Purchase",
+        "type": "awct",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "conversionId",
+            "value": "{{Const - Google Ads Conversion ID}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionLabel",
+            "value": "{{Const - Google Ads Purchase Label}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionValue",
+            "value": "{{DLV - ecommerce.value}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "currencyCode",
+            "value": "{{DLV - ecommerce.currency}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "orderId",
+            "value": "{{DLV - ecommerce.transaction_id}}"
+          }
+        ],
+        "firingTriggerId": [
+          "9620"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_personalization"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "tagId": "9632",
+        "name": "Google Ads - Custom Conversion (Admin DataLayer)",
+        "type": "awct",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "conversionId",
+            "value": "{{DLV - TF Conversion Target Numeric}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionLabel",
+            "value": "{{DLV - TF Conversion Label}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "conversionValue",
+            "value": "{{DLV - TF Conversion Value}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "currencyCode",
+            "value": "{{DLV - TF Conversion Currency}}"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "orderId",
+            "value": "{{DLV - TF Conversion Transaction ID}}"
+          }
+        ],
+        "firingTriggerId": [
+          "9621"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "ad_storage"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_user_data"
+              },
+              {
+                "type": "TEMPLATE",
+                "value": "ad_personalization"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
         "tagId": "9530",
         "name": "TF Meta - ViewContent",
         "type": "cvt_5RM3Q",
@@ -1540,6 +1686,103 @@
       {
         "accountId": "6382131376",
         "containerId": "266900144",
+        "triggerId": "9620",
+        "name": "CE - Google Ads Purchase",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "purchase"
+              }
+            ]
+          }
+        ],
+        "filter": [
+          {
+            "type": "MATCH_REGEX",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{Page Hostname}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "^(www\\.)?teafloww\\.com$"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "triggerId": "9621",
+        "name": "CE - Admin Google Ads Conversion",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "tf_conversion"
+              }
+            ]
+          }
+        ],
+        "filter": [
+          {
+            "type": "MATCH_REGEX",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{Page Hostname}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "^(www\\.)?teafloww\\.com$"
+              }
+            ]
+          },
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{DLV - TF Conversion Platform}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "google_ads"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
         "triggerId": "9520",
         "name": "TF Meta - view_item",
         "type": "CUSTOM_EVENT",
@@ -2121,6 +2364,205 @@
             "type": "TEMPLATE",
             "key": "name",
             "value": "marketing_consent"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9600",
+        "name": "Const - Google Ads Conversion ID",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "18566488412"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9601",
+        "name": "Const - Google Ads Purchase Label",
+        "type": "c",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "value",
+            "value": "spfzCJDFu7UdENzCmJVF"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9602",
+        "name": "DLV - ecommerce.value",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ecommerce.value"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9603",
+        "name": "DLV - ecommerce.currency",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ecommerce.currency"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9604",
+        "name": "DLV - ecommerce.transaction_id",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "ecommerce.transaction_id"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9605",
+        "name": "DLV - TF Conversion Label",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tf_conversion_label"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9606",
+        "name": "DLV - TF Conversion Target Numeric",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tf_target_id_numeric"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9607",
+        "name": "DLV - TF Conversion Value",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "value"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9608",
+        "name": "DLV - TF Conversion Currency",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "currency"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9609",
+        "name": "DLV - TF Conversion Transaction ID",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "transaction_id"
+          }
+        ]
+      },
+      {
+        "accountId": "6382131376",
+        "containerId": "266900144",
+        "variableId": "9610",
+        "name": "DLV - TF Conversion Platform",
+        "type": "v",
+        "parameter": [
+          {
+            "type": "INTEGER",
+            "key": "dataLayerVersion",
+            "value": "2"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "name",
+            "value": "tf_conversion_platform"
           }
         ]
       },

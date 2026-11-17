@@ -38,7 +38,8 @@ export function PurchaseStatus({
           analytics.tax,
           analytics.items,
           analytics.currency,
-          analytics.total
+          analytics.total,
+          { paymentStatus: status }
         );
       }
     };

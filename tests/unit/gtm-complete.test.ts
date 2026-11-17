@@ -31,4 +31,14 @@ describe("Combined Google and Meta import", () => {
     const variable = version.variable.find((v: Entity) => v.name === "TF Meta - Event properties");
     expect(version.customTemplate.some((t: { containerId: string; templateId: string }) => variable.type === `cvt_${t.containerId}_${t.templateId}`)).toBe(true);
   });
+  it("includes Google Ads Conversion Linker, Purchase, and Admin DataLayer conversion tags without bogus AW-7896752784", () => {
+    const linker = version.tag.find((t: Entity) => t.name === "Google Ads - Conversion Linker");
+    const purchase = version.tag.find((t: Entity) => t.name === "Google Ads - Conversion - Purchase");
+    const custom = version.tag.find((t: Entity) => t.name === "Google Ads - Custom Conversion (Admin DataLayer)");
+    expect(linker?.type).toBe("gclidw");
+    expect(purchase?.type).toBe("awct");
+    expect(custom?.type).toBe("awct");
+    expect(JSON.stringify(version)).toContain("18566488412");
+    expect(JSON.stringify(version)).not.toContain("7896752784");
+  });
 });

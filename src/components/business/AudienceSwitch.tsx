@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { localizedHref } from "@/lib/i18n/locale";
 import type { BusinessLocale, Segment } from "@/lib/business/schema";
+import { serverTr } from "@/lib/business/starterTexts";
 
 export function AudienceSwitch({
   segment,
@@ -8,21 +10,20 @@ export function AudienceSwitch({
   segment: Segment;
   locale: BusinessLocale;
 }) {
-  const isHi = locale === "hi";
-  const suffix = locale === "hi" ? "?lang=hi" : "";
+  const t = serverTr(locale);
 
   const destinations: Array<{ segment: Segment; label: string; sub: string; href: string }> = [
     {
       segment: "starter",
-      label: isHi ? "मैं नया बिज़नेस शुरू कर रहा हूँ" : "I'm just starting",
-      sub: isHi ? "पहला ऑर्डर, पैक और ब्रांडिंग गाइड" : "Supply, packs & brand guidance",
-      href: `/start-tea-business${suffix}`,
+      label: t("I'm just starting"),
+      sub: t("Supply, packs & brand guidance"),
+      href: localizedHref("/start-tea-business", locale),
     },
     {
       segment: "trader",
-      label: isHi ? "मैं पहले से चाय का व्यापार करता हूँ" : "I already trade tea",
-      sub: isHi ? "ग्रेड, थोक मात्रा और ट्रेड कोटेशन" : "Bulk lots, grades & trade pricing",
-      href: `/tea-traders${suffix}`,
+      label: t("I already trade tea"),
+      sub: t("Bulk lots, grades & trade pricing"),
+      href: localizedHref("/tea-traders", locale),
     },
   ];
 
@@ -30,7 +31,7 @@ export function AudienceSwitch({
     <div className="tf-container tf-switch-wrap">
       <nav
         className="tf-switch"
-        aria-label={isHi ? "अपना चाय व्यापार चरण चुनें" : "Choose your tea business stage"}
+        aria-label={t("Choose your tea business stage")}
       >
         {destinations.map((item) => (
           <Link

@@ -3,6 +3,7 @@
 import { trackBusinessEvent } from "@/lib/business/events";
 import type { BusinessLocale, OfferCode, Segment } from "@/lib/business/schema";
 import { buildWhatsAppLink } from "@/lib/business/whatsapp";
+import { useTr } from "./BusinessI18n";
 
 export function StickyLeadBar({
   segment,
@@ -17,8 +18,8 @@ export function StickyLeadBar({
   whatsappE164?: string | null;
   hidden: boolean;
 }) {
+  const t = useTr();
   if (hidden) return null;
-  const isHi = locale === "hi";
   const waUrl = buildWhatsAppLink(whatsappE164, {
     segment,
     interest: selectedOffer ?? "unsure",
@@ -26,9 +27,9 @@ export function StickyLeadBar({
   });
 
   return (
-    <div className="tf-mobile-bar" role="region" aria-label={isHi ? "त्वरित संपर्क" : "Quick quote actions"}>
+    <div className="tf-mobile-bar" role="region" aria-label={t("Quick quote actions")}>
       <a href="#business-quote" className="tf-button tf-button--forest" style={{ minHeight: 46, fontSize: "0.9rem" }}>
-        {isHi ? "कोटेशन लें" : "Get Quote"}
+        {t("Get Quote")}
       </a>
       {waUrl ? (
         <a

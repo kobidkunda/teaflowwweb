@@ -17,8 +17,13 @@ describe("Tracking & Analytics Settings (GTM, Meta, GA4)", () => {
       gtm_enabled: true,
       ga4_measurement_id: "",
       ga4_enabled: false,
+      ga4_run_alongside_gtm: false,
       meta_pixel_id: "",
       meta_pixel_enabled: false,
+      meta_run_alongside_gtm: false,
+      google_ads_id: "",
+      google_ads_enabled: false,
+      conversion_rules: [],
       custom_head_script: "",
       custom_body_script: "",
     });
@@ -95,5 +100,54 @@ describe("Tracking & Analytics Settings (GTM, Meta, GA4)", () => {
     expect(pub.ga4MeasurementId).toBe("");
     expect(pub.metaPixelEnabled).toBe(false);
     expect(pub.metaPixelId).toBe("");
+  });
+
+  it("persists Google Ads, Hybrid mode flags, and multi-conversion rules while filtering disabled rules from public config", () => {
+    const updated = updateTrackingSettings({
+      google_ads_id: "aw-18566488412",
+      google_ads_enabled: true,
+      ga4_run_alongside_gtm: true,
+      meta_run_alongside_gtm: true,
+      conversion_rules: [
+        {
+          id: "gads-purchase",
+          name: "Google Ads Purchase",
+          enabled: true,
+          platform: "google_ads",
+          delivery: "both",
+          trigger_event: "purchase",
+          ads_conversion_label: "spfzCJDFu7UdENzCmJVF",
+          value_mode: "order_total",
+          currency: "INR",
+          paid_only: true,
+        },
+        {
+          id: "meta-wholesale-disabled",
+          name: "Disabled Lead Rule",
+          enabled: false,
+          platform: "meta",
+          delivery: "admin_direct",
+          trigger_event: "generate_lead",
+          lead_type_filter: "wholesale_inquiry",
+          meta_pixel_id: "29619022431117471",
+          meta_event_name: "Lead",
+          value_mode: "none",
+        },
+      ],
+    });
+
+    expect(updated.google_ads_id).toBe("AW-18566488412");
+    expect(updated.google_ads_enabled).toBe(true);
+    expect(updated.ga4_run_alongside_gtm).toBe(true);
+    expect(updated.meta_run_alongside_gtm).toBe(true);
+    expect(updated.conversion_rules).toHaveLength(2);
+
+    const pub = getPublicTrackingConfig();
+    expect(pub.googleAdsId).toBe("AW-18566488412");
+    expect(pub.googleAdsEnabled).toBe(true);
+    expect(pub.ga4RunAlongsideGtm).toBe(true);
+    expect(pub.metaRunAlongsideGtm).toBe(true);
+    expect(pub.conversionRules).toHaveLength(1);
+    expect(pub.conversionRules[0].id).toBe("gads-purchase");
   });
 });

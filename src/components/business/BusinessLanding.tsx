@@ -16,19 +16,40 @@ import { ProcessTimeline } from "./ProcessTimeline";
 import { ProofGallery } from "./ProofGallery";
 import { Section } from "./Section";
 import { StarterLanding } from "./starter/StarterLanding";
+import { serverTr, starterDict } from "@/lib/business/starterTexts";
+import { translateStarterContent } from "@/lib/business/starterSource";
+import { BusinessI18nProvider } from "./BusinessI18n";
 
-export function BusinessLanding({
+/** All text is English source translated from Admin → Translations (resource: starter). */
+export function BusinessLanding(props: { segment: Segment; locale: BusinessLocale }) {
+  return (
+    <BusinessI18nProvider dict={starterDict(props.locale)}>
+      <BusinessLandingBody {...props} />
+    </BusinessI18nProvider>
+  );
+}
+
+function BusinessLandingBody({
   segment,
   locale,
 }: {
   segment: Segment;
   locale: BusinessLocale;
 }) {
+  const t = serverTr(locale);
   const settings = getB2BSettings();
-  const content = getB2BPageContent(segment, locale);
-  const offers = listPublicB2BOffers(locale);
+  const source = getB2BPageContent(segment, "en");
+  const content = source ? translateStarterContent(source, t) : null;
+  const offers = listPublicB2BOffers("en").map((o) => ({
+    ...o,
+    eyebrow: t(o.eyebrow),
+    title: t(o.title),
+    description: t(o.description),
+    ctaLabel: t(o.ctaLabel),
+    imageAlt: o.imageAlt ? t(o.imageAlt) : o.imageAlt,
+    moqText: o.moqText ? t(o.moqText) : o.moqText,
+  }));
   const claims = listPublicB2BClaims("web");
-  const isHi = locale === "hi";
 
   if (!content || !settings.business_landing_enabled) {
     return (
@@ -36,11 +57,9 @@ export function BusinessLanding({
         <BusinessHeader segment={segment} locale={locale} />
         <main className="tf-section">
           <div className="tf-container">
-            <h1>{isHi ? "TeaFloww बिज़नेस पोर्टल" : "TeaFloww Business Portal"}</h1>
+            <h1>{t("TeaFloww Business Portal")}</h1>
             <p className="tf-copy">
-              {isHi
-                ? "यह पेज अभी अपडेट किया जा रहा है। कृपया कुछ समय बाद पुनः प्रयास करें।"
-                : "This business page is currently being updated. Please check back shortly."}
+              {t("This business page is currently being updated. Please check back shortly.")}
             </p>
           </div>
         </main>
@@ -49,18 +68,14 @@ export function BusinessLanding({
   }
 
   const claimMap = new Map(
-    claims.map((c) => [c.claim_key, isHi ? c.exact_copy_hi : c.exact_copy_en])
+    claims.map((c) => [c.claim_key, t(c.exact_copy_en)])
   );
   const quoteNotice =
     claimMap.get("quote_terms_notice") ??
-    (isHi
-      ? "कीमत, भाड़ा, टैक्स और डिलीवरी तारीख आपके लिखित कोटेशन में कन्फर्म की जाती है।"
-      : "Prices, freight, tax and delivery dates are confirmed in your written quotation.");
+    (t("Prices, freight, tax and delivery dates are confirmed in your written quotation."));
   const siliguriClaim =
     claimMap.get("siliguri_origin") ??
-    (isHi
-      ? "सिलीगुड़ी से चाय सोर्सिंग और पैकेजिंग के विकल्प।"
-      : "Tea sourcing and packaging options from Siliguri.");
+    (t("Tea sourcing and packaging options from Siliguri."));
 
   if (segment === "starter") {
     return <StarterLanding content={content} settings={settings} offers={offers} locale={locale} quoteNotice={quoteNotice} siliguriClaim={siliguriClaim} />;
@@ -70,8 +85,8 @@ export function BusinessLanding({
     <Section
       id="process"
       tone="almond"
-      eyebrow={isHi ? "स्पष्ट प्रक्रिया" : "A CLEAR PROCESS"}
-      title={isHi ? "आपकी जानकारी से वास्तविक कोटेशन तक।" : "From your brief to a real quotation."}
+      eyebrow={t("A CLEAR PROCESS")}
+      title={t("From your brief to a real quotation.")}
       summary={content.process_intro}
     >
       <ProcessTimeline steps={content.steps} />
@@ -81,7 +96,7 @@ export function BusinessLanding({
   const proofSection = (
     <Section
       id="proof"
-      eyebrow={isHi ? "चाय से पैक तक" : "BEYOND THE TEA LEAF"}
+      eyebrow={t("BEYOND THE TEA LEAF")}
       title={content.proof_title}
       summary={content.proof_body}
     >
@@ -93,7 +108,7 @@ export function BusinessLanding({
     <Section
       id="faq"
       eyebrow="FAQ"
-      title={isHi ? "शुरुआत करने से पहले" : "Before you get started"}
+      title={t("Before you get started")}
     >
       <FaqAccordion items={content.faq} locale={locale} />
     </Section>

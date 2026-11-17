@@ -1,5 +1,19 @@
 # Prioritized Development Checklist
 
+## Tea shops pilot discovery — 2026-11-18
+- [x] Hide explicit E2E fixtures, deduplicate public locations and preserve genuine active/admin records.
+- [x] Replace repeated articles/actions with a localized responsive list and single enquiry action; omit empty section.
+- [x] Add five regression tests, review desktop/mobile, run the Impeccable detector (no findings) and pass full `npm run check` (3,195 tests; six skips; production build).
+- [ ] Deploy only on explicit request.
+
+## Tea business launch studio — 2026-11-18
+- [x] Extend the established brand with a five-decision planner, editable enquiry handoff, text download, seven-category capital estimator, chai costs and progressive guides.
+- [x] Preserve catalogue-backed samples, admin offers, enquiry validation and idempotency; document refresh resets and estimate limitations.
+- [x] Verify 20 focused tests, 3,173 full-suite passes (six PostgreSQL-only skips), browser interactions and mobile English/Hindi layouts. See `docs/ui/start-tea-business/launch-studio.md` for evidence and validation limits.
+- [x] `npm run check` completed successfully, including TypeScript, ESLint, all unit tests and the optimized production build (130 pages).
+- [ ] Future scope: live trade pricing, carrier serviceability, legal determination, saved progress, sensitivity scenarios, CRM follow-ups and verified new case studies.
+
+
 ## Live Translation Records & Model Context Protocol (MCP) Translation Studio Suite — 2026-11-17
 - [x] **Translation Studio MCP Tools Suite (`src/lib/international/mcpTools.ts`)**:
   - Implemented 9 dedicated MCP tools for Translation Studio:
@@ -1376,3 +1390,32 @@ product API/MCP suite passed 26 tests. No deployment was needed.
 - [x] Complete typecheck/lint, 3,136 passing tests excluding the unrelated subscription suite, and production build.
 - [ ] Resolve the unrelated late-evening subscription date/test failure before claiming a green complete `npm run check`.
 - [ ] Deploy only upon explicit request.
+
+## Tea shops adaptive hero — 2026-11-18
+
+- [x] Remove visible “AI illustration · packaging concept” captions from the hero and trial artwork at user request.
+
+- [x] Retry initially hidden/ineligible pages when visible or eligible; cover recovery and duplicate-download prevention with a regression test.
+
+- [x] Keep the initial still and load the supplied GIF after page load on capable devices/networks.
+- [x] Respect Data Saver/reduced motion, missing capability signals and failed loading; provide pause/play.
+- [x] Verify policy tests, focused lint and actual desktop/mobile browser behavior.
+- [ ] Deploy only on explicit request.
+
+## Tea Traders studio — 2026-11-18
+
+- [x] Add four audience journeys, progressive planner/TXT/enquiry handoff, catalogue-tier economics with three scenarios, comparison, worksheets, roadmap and searchable FAQs.
+- [x] Preserve existing consent, attribution, Zod validation, idempotency and checkout authority; add compatible Hindi tool-copy defaults.
+- [x] Pass seven new math/default tests and seven existing trader integration tests; verify planner download, private-label handoff and mocked retry-key reuse.
+- [x] Verify comparison/calculator/Hindi browser paths, keyboard focus, final typecheck/scoped lint, 3,189 full-suite tests on isolated SQLite and a separate production build. Initial shared-database `npm run check` failed; see validation record.
+- [ ] Deferred: live wholesale freight, negotiated pricing, verified new evidence, advanced cashflow, CRM follow-ups and new funnel-event taxonomy. See `docs/ui/tea-traders-redesign/trader-studio.md`.
+
+## Business admin media uploads — 2026-11-18
+
+- [x] Add upload/library/path controls to settings, offers, locale-specific heroes and every proof item.
+- [x] Embed catalogue image uploads/primary image/variant assignments for Tea Traders.
+- [x] Verify real local image upload, invalid-format retry, save and reload; restore original settings.
+- [ ] Deploy only on explicit request.
+
+- [x] Refine startup-budget worksheet, pending summary, completion feedback and field errors; verify responsive English/Hindi and calculator behavior (2026-11-18).
+- [ ] Budget refinement full-check gate: resolve unrelated `traderPresentation.ts:8` TS2352 error and rerun `npm run check`.

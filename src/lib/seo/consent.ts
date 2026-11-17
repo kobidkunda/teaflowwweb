@@ -58,16 +58,58 @@ export function safeTrackingUrl(value: string, base = "https://teafloww.com") {
   } catch { return base; }
 }
 
+export function collectDirectGoogleIds(config: PublicTrackingConfig): { ga4Ids: string[]; adsIds: string[] } {
+  const gtmActive = Boolean(config.gtmEnabled && /^GTM-[A-Z0-9]+$/i.test(config.gtmContainerId));
+  const ga4Ids = new Set<string>();
+  const adsIds = new Set<string>();
+
+  if (config.ga4Enabled && /^G-[A-Z0-9]+$/i.test(config.ga4MeasurementId) && (!gtmActive || config.ga4RunAlongsideGtm)) {
+    ga4Ids.add(config.ga4MeasurementId.toUpperCase());
+  }
+  if (config.googleAdsEnabled && /^AW-\d+$/i.test(config.googleAdsId)) {
+    adsIds.add(config.googleAdsId.toUpperCase());
+  }
+  for (const rule of config.conversionRules || []) {
+    if (!rule.enabled || rule.delivery === "gtm_datalayer") continue;
+    if (rule.platform === "google_ads") {
+      const target = (rule.ads_conversion_id || config.googleAdsId || "").trim().toUpperCase();
+      if (/^AW-\d+$/.test(target)) adsIds.add(target);
+    } else if (rule.platform === "ga4" && /^G-[A-Z0-9]+$/i.test(config.ga4MeasurementId)) {
+      ga4Ids.add(config.ga4MeasurementId.toUpperCase());
+    }
+  }
+  return { ga4Ids: [...ga4Ids], adsIds: [...adsIds] };
+}
+
+export function collectDirectMetaPixelIds(config: PublicTrackingConfig): string[] {
+  const gtmActive = Boolean(config.gtmEnabled && /^GTM-[A-Z0-9]+$/i.test(config.gtmContainerId));
+  const ids = new Set<string>();
+  if (config.metaPixelEnabled && /^\d+$/.test(config.metaPixelId) && (!gtmActive || config.metaRunAlongsideGtm)) {
+    ids.add(config.metaPixelId);
+  }
+  for (const rule of config.conversionRules || []) {
+    if (!rule.enabled || rule.delivery === "gtm_datalayer" || rule.platform !== "meta") continue;
+    const target = (rule.meta_pixel_id || config.metaPixelId || "").trim();
+    if (/^\d+$/.test(target)) ids.add(target);
+  }
+  return [...ids];
+}
+
 /** Runs synchronously before GTM or React effects. No vendor requests before consent. */
 export function trackingBootstrap(config: PublicTrackingConfig) {
   const encoded = JSON.stringify(config).replace(/</g, "\\u003c");
+  const { ga4Ids, adsIds } = collectDirectGoogleIds(config);
+  const directConfigs = [
+    ...ga4Ids.map((id) => `window.gtag('config','${id}',{send_page_view:false});`),
+    ...adsIds.map((id) => `window.gtag('config','${id}',{send_page_view:false,allow_enhanced_conversions:false});`),
+  ];
   return `window.__tfTracking=${encoded};
 window.dataLayer=window.dataLayer||[];
 window.gtag=window.gtag||function(){window.dataLayer.push(arguments);};
 window.gtag('consent','default',{analytics_storage:'denied',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
 try{var c=JSON.parse(localStorage.getItem('${CONSENT_KEY}')||'null');if(c&&c.version===1&&typeof c.analytics==='boolean'&&typeof c.marketing==='boolean'){window.__tfConsent={analytics:c.analytics,marketing:c.marketing};window.gtag('consent','update',{analytics_storage:c.analytics?'granted':'denied',ad_storage:c.marketing?'granted':'denied',ad_user_data:c.marketing?'granted':'denied',ad_personalization:c.marketing?'granted':'denied'});}}catch(e){}
 window.gtag('set',{ads_data_redaction:true,url_passthrough:false,send_page_view:false});
-${!config.gtmEnabled && config.ga4Enabled && /^G-[A-Z0-9]+$/.test(config.ga4MeasurementId) ? `window.gtag('js',new Date());window.gtag('config','${config.ga4MeasurementId}',{send_page_view:false});` : ""}`;
+${directConfigs.length ? `window.gtag('js',new Date());${directConfigs.join("")}` : ""}`;
 }
 
 declare global {
@@ -76,6 +118,7 @@ declare global {
     __tfConsent?: TrackingConsent;
     __tfPurchases?: Set<string>;
     __tfMetaInitialized?: boolean;
+    __tfMetaInitializedIds?: Set<string>;
   }
 }
 

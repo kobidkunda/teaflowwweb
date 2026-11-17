@@ -1,5 +1,15 @@
 # Full Implementation Plan
 
+## Tea shops pilot discovery — 2026-11-18
+Removed repeated E2E pilot locations from public discovery while preserving admin data and genuine active locations. Added normalized deduplication, empty-section omission, responsive ruled list and one localized collection enquiry action. Existing consented enquiry flow remains authoritative; no deployment or schema change.
+
+## Tea shops adaptive hero — 2026-11-18
+Implemented locally: preserve the existing still hero; defer the supplied chai GIF until after page load and capability checks; preload/decode before displaying; retain the still for slow/unknown devices, Data Saver, reduced motion and failures; provide pause/play. Shared across tea-shops locale pages. No deployment, dependencies or database changes.
+
+## Tea business launch studio — 2026-11-18
+Implemented locally: five-decision planner with live preview, text download and editable consented enquiry handoff; seven-category user-input capital estimator; prepared-chai contribution costs; progressive launch guidance and existing business-journey links. The surface extends the established forest/ivory/Georgia/Arial system. Catalogue samples, admin copy/offers and enquiry validation/idempotency remain authoritative. No schema, dependency or deployment changes. Live pricing, carrier serviceability, legal determination, saved progress, sensitivity scenarios, CRM follow-ups and new verified case studies remain deferred. See `ui/start-tea-business/launch-studio.md` for the surface brief and verification limits.
+
+
 ## Objective
 Build an editorial, mobile-first, high-performance premium tea DTC storefront with trustworthy sourcing, strong discovery and an uncomplicated checkout. The included code implements a functional development baseline. Production features are clearly separated below.
 
@@ -228,3 +238,15 @@ Implemented the selected warm-paper editorial design on `/start-tea-business`: t
 Calculator amounts use integer paise and are explicitly illustrative, with loss, invalid-input, zero-contribution and undefined-margin states. Financial inputs stay in component memory; the optional analytics event contains only segment/locale, never inputs/results. Published sample contents, prices and availability come from TrialService's public projection. Missing/empty/error catalogue and paused enquiry states are covered.
 
 Two optimized local WebP still lifes are disclosed as conceptual illustrations. No new dependency, schema, migration, payment change or production deployment. Source, screenshot comparisons, prompts and verification are recorded in `docs/ui/start-tea-business/README.md` and the appended entry in `design-qa.md`.
+
+## Business admin media uploads — 2026-11-18
+
+Implemented upload, media-library selection, preview and manual paths for every
+existing business settings, offer, page hero and proof-item image field. Tea Traders
+includes an in-page catalogue image manager using existing upload, primary-image
+and variant-assignment controls. Upload and error status are announced; optional
+offer images can be cleared. No schema or dependency changes, and no deployment.
+
+## Tea Traders studio — 2026-11-18
+
+Implemented locally: four audience choices, progressive business planner with TXT download and editable enquiry handoff, public catalogue-tier economics with three scenarios, format filters and three-tea comparison, blank CSV worksheets, checkable preparation roadmap and seven searchable FAQs. Hindi tools use compatible additive defaults through existing copy management. The established visual identity and authoritative commerce/enquiry contracts remain in place. No schema, dependency or deployment changes. Live freight, negotiated rates, verified new evidence, advanced cashflow, CRM follow-ups and new funnel-event taxonomy remain deferred. See `ui/tea-traders-redesign/trader-studio.md` for implementation and verification limits.

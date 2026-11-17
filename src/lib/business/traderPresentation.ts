@@ -1,10 +1,11 @@
 import { z } from "zod";
 import traderCopy from "./traderCopy.json";
+import toolsCopy from "./traderToolsCopy.json";
 
-export const TRADER_COPY = traderCopy;
+export const TRADER_COPY = { ...traderCopy, ...toolsCopy };
 export type TraderCopy = { [K in keyof typeof TRADER_COPY]: string };
 const text = z.string().trim().min(1).max(800).refine(v => !/[<>]/.test(v), "Use plain text.");
-const copySchema = z.object(Object.fromEntries(Object.keys(TRADER_COPY).map(k => [k, text])) as { [K in keyof TraderCopy]: typeof text }).strict();
+const copySchema = z.object(Object.fromEntries(Object.entries(TRADER_COPY).map(([key, value]) => [key, key in traderCopy ? text : text.default(value)])) as { [K in keyof TraderCopy]: z.ZodType<string> }).strict();
 export const traderPresentationSchema = z.object({
   copy: copySchema,
   // Empty arrays intentionally use the live catalogue automatically.

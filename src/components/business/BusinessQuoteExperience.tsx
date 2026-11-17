@@ -8,6 +8,7 @@ import { BusinessLeadForm } from "./BusinessLeadForm";
 import { OfferGrid } from "./OfferGrid";
 import { Section } from "./Section";
 import { StickyLeadBar } from "./StickyLeadBar";
+import { useTr } from "./BusinessI18n";
 
 export function BusinessQuoteExperience({
   segment,
@@ -34,9 +35,9 @@ export function BusinessQuoteExperience({
   proofSection: React.ReactNode;
   faqSection: React.ReactNode;
 }) {
+  const t = useTr();
   const [selectedOffer, setSelectedOffer] = useState<OfferCode | undefined>();
   const [formFocused, setFormFocused] = useState(false);
-  const isHi = locale === "hi";
 
   useEffect(() => {
     trackBusinessEvent("business_page_view", { segment, locale });
@@ -46,12 +47,10 @@ export function BusinessQuoteExperience({
     <>
       <Section
         id="solutions"
-        eyebrow={isHi ? "साझेदारी के 3 विकल्प" : "THREE WAYS TO PARTNER"}
-        title={isHi ? "अपने बाज़ार के अनुसार सही फॉर्मेट चुनें।" : "Choose the format that fits your market."}
+        eyebrow={t("THREE WAYS TO PARTNER")}
+        title={t("Choose the format that fits your market.")}
         summary={
-          isHi
-            ? "थोक सप्लाई, तैयार रिटेल पैक या आपका अपना ब्रांड। हर विकल्प का कोटेशन आपकी आवश्यकता के अनुसार दिया जाता है।"
-            : "Bulk supply, ready retail packs or your own label. Every option is quoted to your requirements."
+          t("Bulk supply, ready retail packs or your own label. Every option is quoted to your requirements.")
         }
       >
         <OfferGrid
@@ -69,7 +68,7 @@ export function BusinessQuoteExperience({
         <div className="tf-form-panel">
           <div>
             <span className="tf-eyebrow">
-              {isHi ? "आपका बिज़नेस कोटेशन" : "YOUR BUSINESS QUOTE"}
+              {t("YOUR BUSINESS QUOTE")}
             </span>
             <h2 className="tf-section-heading">{formHeading}</h2>
             <p className="tf-copy">{formSubhead}</p>

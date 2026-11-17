@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Package, PenTool, ShoppingBag } from "lucide-react";
 import type { PublicOfferView } from "@/lib/business/repository";
 import type { BusinessLocale, OfferCode } from "@/lib/business/schema";
+import { useTr } from "./BusinessI18n";
 
 const ICONS = {
   package: Package,
@@ -22,7 +23,7 @@ export function OfferGrid({
   locale: BusinessLocale;
   onSelect: (offerCode: OfferCode) => void;
 }) {
-  const isHi = locale === "hi";
+  const t = useTr();
 
   return (
     <div className="tf-card-grid">
@@ -35,7 +36,7 @@ export function OfferGrid({
             className={`tf-card ${isSelected ? "tf-card--selected" : ""}`.trim()}
           >
             {isSelected ? (
-              <span className="tf-card__badge">{isHi ? "चयनित विकल्प" : "Selected"}</span>
+              <span className="tf-card__badge">{t("Selected")}</span>
             ) : null}
 
             <div className="tf-card__illustration" aria-hidden={offer.imageUrl ? undefined : true}>

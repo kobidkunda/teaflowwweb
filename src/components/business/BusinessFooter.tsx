@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { BusinessLocale } from "@/lib/business/schema";
+import { serverTr } from "@/lib/business/starterTexts";
 
 export function BusinessFooter({
   locale,
@@ -10,7 +11,7 @@ export function BusinessFooter({
   supportHours: string;
   siliguriClaim: string;
 }) {
-  const isHi = locale === "hi";
+  const t = serverTr(locale);
 
   return (
     <footer className="tf-footer">
@@ -23,12 +24,12 @@ export function BusinessFooter({
           </p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "1.2rem", alignItems: "center" }}>
-          <Link href="/wholesale">{isHi ? "थोक पोर्टल" : "Wholesale"}</Link>
-          <Link href="/private-label">{isHi ? "प्राइवेट लेबल" : "Private Label"}</Link>
-          <Link href="/blend-lab">{isHi ? "ब्लेंड लैब" : "Blend Lab"}</Link>
-          <Link href="/shop">{isHi ? "स्टोर" : "Shop"}</Link>
-          <Link href="/privacy">{isHi ? "गोपनीयता" : "Privacy"}</Link>
-          <Link href="/terms">{isHi ? "शर्तें" : "Terms"}</Link>
+          <Link href="/wholesale">{t("Wholesale")}</Link>
+          <Link href="/private-label">{t("Private Label")}</Link>
+          <Link href="/blend-lab">{t("Blend Lab")}</Link>
+          <Link href="/shop">{t("Shop")}</Link>
+          <Link href="/privacy">{t("Privacy")}</Link>
+          <Link href="/terms">{t("Terms")}</Link>
         </div>
       </div>
     </footer>

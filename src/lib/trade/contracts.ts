@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { SITE_LOCALES } from "@/lib/i18n/locale";
 import { attributionBundleSchema } from "@/lib/funnel/types";
 
-export const TRADE_LOCALES = ["en", "bn", "hi", "gu", "mr", "pa", "ta", "te"] as const;
+export const TRADE_LOCALES = SITE_LOCALES;
 export const STAGED_TRADE_LOCALES = ["kn"] as const;
 export const ALL_TRADE_LOCALES = [...TRADE_LOCALES, ...STAGED_TRADE_LOCALES] as const;
 

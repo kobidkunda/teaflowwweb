@@ -1,4 +1,5 @@
 import { tradeImage } from "./media";
+import { publicTradePilots } from "./publicPilots";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/lib/db";
 import { enabledProductCondition } from "@/lib/productAvailability";
@@ -792,7 +793,7 @@ export function listTradeSharedPilots(activeOnly = false): TradeSharedPilotRecor
           .all()
   ) as Array<Record<string, unknown>>;
 
-  return rows.map((r) => ({
+  const records: TradeSharedPilotRecord[] = rows.map((r) => ({
     id: String(r.id),
     town_name: String(r.town_name),
     pin_prefix: String(r.pin_prefix),
@@ -808,6 +809,7 @@ export function listTradeSharedPilots(activeOnly = false): TradeSharedPilotRecor
     created_at: String(r.created_at),
     updated_at: String(r.updated_at),
   }));
+  return activeOnly ? publicTradePilots(records) : records;
 }
 
 export function upsertTradeSharedPilot(raw: unknown): TradeSharedPilotRecord {

@@ -99,7 +99,7 @@ export function TradeContentTab({
               <span>Update Localised Copy, Audio &amp; Transcript</span>
             </h2>
             <p className="tf-trade-card-desc">
-              Override storefront strings or attach regional voice-guide audio and transcripts.
+              Attach regional voice-guide audio and transcripts. Page text is edited only in Admin → Translations.
             </p>
           </div>
         </div>

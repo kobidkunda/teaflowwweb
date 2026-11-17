@@ -4,7 +4,8 @@ import { localeSchema } from "@/lib/international/models";
 export const SEGMENTS = ["starter", "trader"] as const;
 export type Segment = (typeof SEGMENTS)[number];
 
-export const LOCALES = ["en", "hi"] as const;
+import { SITE_LOCALES } from "@/lib/i18n/locale";
+export const LOCALES = SITE_LOCALES;
 export type BusinessLocale = (typeof LOCALES)[number];
 
 export const OFFER_CODES = ["bulk_supply", "ready_retail", "private_label"] as const;

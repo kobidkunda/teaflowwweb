@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const ROUTES = [
-  { path: "/start-tea-business", heading: /tea business starts with a better first step/i },
-  { path: "/tea-traders", heading: /source tea/i },
+  { path: "/start-tea-business", heading: /tea business with a plan/i },
+  { path: "/tea-traders", heading: /tea business/i },
 ];
 
 for (const route of ROUTES) {

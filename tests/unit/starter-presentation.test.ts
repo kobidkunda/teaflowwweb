@@ -29,12 +29,12 @@ describe("starter landing content boundaries", () => {
   beforeEach(() => listPublic.mockReturnValue({ trials: [], error: false }));
   it("keeps operator content and maps only the old starter headline/image", () => {
     const html = render();
-    expect(html).toContain("Your tea business starts with a better first step.");
+    expect(html).toContain("Start your tea business with a plan, not guesswork.");
     expect(html).toContain("Operator approved introduction");
     expect(html).toContain("Operator question?");
     expect(html).toContain("starter-tea-table.webp");
     expect(html).toContain("Conceptual illustration");
-    expect(html).toContain('href="#samples"');
+    expect(html).toContain('href="#planner"');
     expect(html).toContain('href="/trials#top"');
   });
   it("does not overwrite a custom headline or uploaded hero", () => {
@@ -62,7 +62,7 @@ describe("starter landing content boundaries", () => {
   it("preserves paused quotation intake and Hindi supporting content", () => {
     expect(render({ settings: { ...settings, leads_enabled: false } })).toContain("Quotation intake paused");
     const html = render({ locale: "hi" });
-    expect(html).toContain("अपना मार्जिन देखें");
+    expect(html).toContain("लागत और मार्जिन");
     expect(html).toContain("सैंपल किट देखें");
     expect(html).toContain('lang="hi"');
   });

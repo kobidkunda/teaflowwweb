@@ -19,7 +19,9 @@ import { GET as getArdCatalog } from "@/app/.well-known/ard.json/route";
 
 const config: PublicTrackingConfig = {
   gtmEnabled: true, gtmContainerId: "GTM-EXAMPLE", ga4Enabled: true,
-  ga4MeasurementId: "G-EXAMPLE", metaPixelEnabled: false, metaPixelId: "",
+  ga4MeasurementId: "G-EXAMPLE", ga4RunAlongsideGtm: false,
+  metaPixelEnabled: false, metaPixelId: "", metaRunAlongsideGtm: false,
+  googleAdsEnabled: false, googleAdsId: "", conversionRules: [],
   customHeadScript: "", customBodyScript: "",
 };
 const render = (overrides: Partial<PublicTrackingConfig> = {}) =>

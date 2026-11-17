@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import type { B2BFaqItem } from "@/lib/business/repository";
 import type { BusinessLocale } from "@/lib/business/schema";
+import { useTr } from "./BusinessI18n";
 
 export function FaqAccordion({
   items,
@@ -11,7 +12,7 @@ export function FaqAccordion({
   items: B2BFaqItem[];
   locale?: BusinessLocale;
 }) {
-  const isHi = locale === "hi";
+  const t = useTr();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [allExpanded, setAllExpanded] = useState(false);
 
@@ -43,12 +44,8 @@ export function FaqAccordion({
             onClick={toggleAll}
           >
             {allExpanded
-              ? isHi
-                ? "सभी उत्तर बंद करें"
-                : "Collapse all"
-              : isHi
-                ? "सभी उत्तर खोलें"
-                : "Expand all"}
+              ? t("Collapse all")
+              : t("Expand all")}
           </button>
         </div>
       ) : null}

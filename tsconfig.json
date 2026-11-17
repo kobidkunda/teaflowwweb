@@ -34,6 +34,7 @@
     ".next-build/types/**/*.ts",
     ".next-deploy-check/types/**/*.ts",
     ".next-dev/types/**/*.ts",
+    ".next-hero-dev/types/**/*.ts",
     ".next-home-check/types/**/*.ts",
     ".next-home-preview/types/**/*.ts",
     ".next-home-trials-check/types/**/*.ts",
@@ -49,6 +50,7 @@
     ".next-publish-images-check/types/**/*.ts",
     ".next-quality-check/types/**/*.ts",
     ".next-quality-final/types/**/*.ts",
+    ".next-ritual-admin-final/types/**/*.ts",
     ".next-ritual-admin/types/**/*.ts",
     ".next-ritual-validation/types/**/*.ts",
     ".next-scroll-check/types/**/*.ts",
@@ -60,7 +62,7 @@
     ".next-trials-check/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-ritual-admin-final/types/**/*.ts"
+    ".next-trader-studio-build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

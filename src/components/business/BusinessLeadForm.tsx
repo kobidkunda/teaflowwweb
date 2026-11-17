@@ -13,6 +13,7 @@ import {
   type Segment,
 } from "@/lib/business/schema";
 import { buildWhatsAppLink } from "@/lib/business/whatsapp";
+import { useTr } from "./BusinessI18n";
 
 type Draft = {
   segment: Segment;
@@ -35,6 +36,7 @@ export function BusinessLeadForm({
   leadsEnabled,
   whatsappE164,
   onFocusChange,
+  initialNote,
 }: {
   segment: Segment;
   locale: BusinessLocale;
@@ -42,8 +44,9 @@ export function BusinessLeadForm({
   leadsEnabled: boolean;
   whatsappE164?: string | null;
   onFocusChange?: (focused: boolean) => void;
+  initialNote?: string;
 }) {
-  const isHi = locale === "hi";
+  const t = useTr();
   const [form, setForm] = useState<Draft>({
     segment,
     interest: selectedOffer ?? "unsure",
@@ -66,6 +69,9 @@ export function BusinessLeadForm({
   const [hasTrackedStart, setHasTrackedStart] = useState(false);
 
   const idempotencyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialNote) setForm(current => ({ ...current, note: initialNote, interest: selectedOffer ?? "unsure" }));
+  }, [initialNote, selectedOffer]);
   const errorSummaryRef = useRef<HTMLDivElement | null>(null);
   const announceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -196,7 +202,7 @@ export function BusinessLeadForm({
         if (data.fieldErrors) setFieldErrors(data.fieldErrors);
         throw new Error(
           data.error ||
-            (isHi ? "आपकी जानकारी सहेजी नहीं जा सकी। कृपया पुनः प्रयास करें।" : "We could not submit your enquiry.")
+            (t("We could not submit your enquiry."))
         );
       }
 
@@ -213,9 +219,7 @@ export function BusinessLeadForm({
       setServerError(
         err instanceof Error
           ? err.message
-          : isHi
-            ? "कनेक्शन में समस्या है। कृपया दोबारा प्रयास करें।"
-            : "Connection error. Please try again."
+          : t("Connection error. Please try again.")
       );
     }
   }
@@ -223,11 +227,9 @@ export function BusinessLeadForm({
   if (!leadsEnabled) {
     return (
       <div className="tf-success-box" role="status">
-        <h3>{isHi ? "कोटेशन फॉर्म अस्थायी रूप से बंद है" : "Quotation intake paused"}</h3>
+        <h3>{t("Quotation intake paused")}</h3>
         <p className="tf-note">
-          {isHi
-            ? "कृपया थोड़ी देर बाद पुनः प्रयास करें या हमारे संपर्क पृष्ठ पर जाएं।"
-            : "Please retry shortly or reach out through our contact page."}
+          {t("Please retry shortly or reach out through our contact page.")}
         </p>
       </div>
     );
@@ -243,15 +245,13 @@ export function BusinessLeadForm({
 
     return (
       <div className="tf-success-box" role="status" aria-live="polite">
-        <h3>{isHi ? "आपकी पूछताछ प्राप्त हुई।" : "Enquiry received."}</h3>
+        <h3>{t("Enquiry received.")}</h3>
         <p className="tf-note" style={{ fontSize: "1rem", marginBottom: "0.75rem" }}>
-          {isHi ? "धन्यवाद। आपकी संदर्भ संख्या: " : "Thank you. Your reference is "}
+          {t("Thank you. Your reference is ")}
           <strong style={{ color: "#fffbf3" }}>{reference}</strong>
         </p>
         <p className="tf-note" style={{ marginBottom: "1rem" }}>
-          {isHi
-            ? "हमारी टीम आपकी आवश्यकता की समीक्षा कर आपसे संपर्क करेगी। MOQ, कीमत, टैक्स, भाड़ा और समय की पुष्टि लिखित कोटेशन में की जाएगी।"
-            : "We will review your requirements and contact you. MOQ, pricing, taxes, freight and timings are confirmed in your written quotation."}
+          {t("We will review your requirements and contact you. MOQ, pricing, taxes, freight and timings are confirmed in your written quotation.")}
         </p>
         {waUrl ? (
           <a
@@ -267,7 +267,7 @@ export function BusinessLeadForm({
               })
             }
           >
-            {isHi ? "WhatsApp पर संदर्भ साझा करें ↗" : "Continue on WhatsApp ↗"}
+            {t("Continue on WhatsApp ↗")}
           </a>
         ) : null}
       </div>
@@ -306,7 +306,7 @@ export function BusinessLeadForm({
           className="tf-error-summary"
         >
           <strong>
-            {isHi ? "कृपया निम्नलिखित विवरण जांचें:" : "Please check the highlighted fields:"}
+            {t("Please check the highlighted fields:")}
           </strong>
           <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.2rem" }}>
             {errorEntries.map(([field, msg]) => {
@@ -334,67 +334,65 @@ export function BusinessLeadForm({
       ) : null}
 
       <div className="tf-field">
-        <label htmlFor="tf-stage">{isHi ? "आपका बिज़नेस चरण" : "Your business stage"}</label>
+        <label htmlFor="tf-stage">{t("Your business stage")}</label>
         <select
           id="tf-stage"
           value={form.segment}
           onChange={(e) => updateField("segment", e.target.value as Segment)}
         >
           <option value="starter">
-            {isHi ? "मैं नया चाय बिज़नेस शुरू करना चाहता हूँ" : "I want to start a business"}
+            {t("I want to start a business")}
           </option>
           <option value="trader">
-            {isHi ? "मैं पहले से चाय का व्यापार करता हूँ" : "I already trade tea"}
+            {t("I already trade tea")}
           </option>
         </select>
       </div>
 
       <div className="tf-field">
         <label htmlFor="tf-interest">
-          {isHi ? "आप किस विकल्प में रुचि रखते हैं?" : "What are you interested in?"}
+          {t("What are you interested in?")}
         </label>
         <select
           id="tf-interest"
           value={form.interest}
           onChange={(e) => updateField("interest", e.target.value as BusinessInterest)}
         >
-          <option value="unsure">{isHi ? "सही विकल्प चुनने में मदद करें" : "Help me choose"}</option>
-          <option value="bulk_supply">{isHi ? "थोक चाय / 25kg बोरी" : "Bulk tea / 25kg sacks"}</option>
+          <option value="unsure">{t("Help me choose")}</option>
+          <option value="bulk_supply">{t("Bulk tea / 25kg sacks")}</option>
           <option value="ready_retail">
-            {isHi ? "250g–1kg तैयार रिटेल पैक" : "250g–1kg ready retail packs"}
+            {t("250g–1kg ready retail packs")}
           </option>
           <option value="private_label">
-            {isHi ? "मेरा अपना चाय ब्रांड / प्राइवेट लेबल" : "My own tea brand / private label"}
+            {t("My own tea brand / private label")}
           </option>
         </select>
       </div>
 
       <div className="tf-field">
         <label htmlFor="tf-quantity">
-          {isHi ? "पहले ऑर्डर की अनुमानित मात्रा" : "Your planned first-order quantity"}
+          {t("Your planned first-order quantity")}
         </label>
         <select
           id="tf-quantity"
           value={form.quantityBand}
           onChange={(e) => updateField("quantityBand", e.target.value as QuantityBand)}
         >
-          <option value="unsure">{isHi ? "अभी तय नहीं है" : "Not sure yet"}</option>
+          <option value="unsure">{t("Not sure yet")}</option>
           <option value="25-49">25–49 kg</option>
           <option value="50-99">50–99 kg</option>
           <option value="100-249">100–249 kg</option>
-          <option value="250-plus">{isHi ? "250 kg या अधिक" : "250 kg or more"}</option>
+          <option value="250-plus">{t("250 kg or more")}</option>
         </select>
         <small className="tf-note">
-          {isHi
-            ? "यह केवल अनुमान के लिए है, निश्चित MOQ कोटेशन में तय होता है।"
-            : "This is a planning range, not a guaranteed MOQ."}
+          {t("This is a planning range, not a guaranteed MOQ.")}
         </small>
       </div>
 
       <div className="tf-field">
-        <label htmlFor="tf-pincode">{isHi ? "डिलीवरी पिन कोड *" : "Delivery pincode *"}</label>
+        <label htmlFor="tf-pincode">{t("Delivery pincode *")}</label>
         <span id="tf-pincode-hint" className="tf-field-hint">
-          {isHi ? "6 अंकों का भारतीय पिन कोड, जैसे 734001" : "6-digit Indian pincode, e.g. 734001"}
+          {t("6-digit Indian pincode, e.g. 734001")}
         </span>
         <input
           id="tf-pincode"
@@ -420,7 +418,7 @@ export function BusinessLeadForm({
 
       <div className="tf-form-row">
         <div className="tf-field">
-          <label htmlFor="tf-name">{isHi ? "आपका नाम *" : "Your name *"}</label>
+          <label htmlFor="tf-name">{t("Your name *")}</label>
           <input
             id="tf-name"
             type="text"
@@ -441,9 +439,9 @@ export function BusinessLeadForm({
         </div>
 
         <div className="tf-field">
-          <label htmlFor="tf-phone">{isHi ? "मोबाइल नंबर *" : "Mobile number *"}</label>
+          <label htmlFor="tf-phone">{t("Mobile number *")}</label>
           <span id="tf-phone-hint" className="tf-field-hint">
-            {isHi ? "10 अंकों का मोबाइल नंबर, जैसे 9876543210" : "10-digit Indian mobile, e.g. 9876543210"}
+            {t("10-digit Indian mobile, e.g. 9876543210")}
           </span>
           <input
             id="tf-phone"
@@ -467,19 +465,25 @@ export function BusinessLeadForm({
         </div>
       </div>
 
-      {form.segment === "trader" ? (
+      {form.segment === "trader" || initialNote ? (
         <div className="tf-field">
           <label htmlFor="tf-note">
-            {isHi ? "चाय ग्रेड या पैकिंग नोट्स (वैकल्पिक)" : "Target tea grade or notes (optional)"}
+            {form.segment === "starter" ? (t("Your plan (editable)")) : (t("Target tea grade or notes (optional)"))}
           </label>
-          <input
+          {form.segment === "starter" ? <textarea
+            id="tf-note"
+            rows={6}
+            maxLength={500}
+            value={form.note}
+            onChange={(event) => updateField("note", event.target.value)}
+          /> : <input
             id="tf-note"
             type="text"
             maxLength={500}
             value={form.note}
             onChange={(e) => updateField("note", e.target.value)}
-            placeholder={isHi ? "जैसे: असम CTC BP/OF, मासिक आवश्यकता" : "e.g. Assam CTC BP/OF, monthly requirement"}
-          />
+            placeholder={t("e.g. Assam CTC BP/OF, monthly requirement")}
+          />}
         </div>
       ) : null}
 
@@ -494,9 +498,7 @@ export function BusinessLeadForm({
           onChange={(e) => updateField("contactConsent", e.target.checked)}
         />
         <span>
-          {isHi
-            ? "मैं सहमत हूँ कि TeaFloww इस कोटेशन पूछताछ के लिए मुझसे संपर्क कर सकता है। *"
-            : "I agree TeaFloww may contact me about this enquiry. *"}
+          {t("I agree TeaFloww may contact me about this enquiry. *")}
         </span>
       </label>
       {fieldErrors.contactConsent ? (
@@ -512,9 +514,7 @@ export function BusinessLeadForm({
           onChange={(e) => updateField("marketingConsent", e.target.checked)}
         />
         <span>
-          {isHi
-            ? "वैकल्पिक: मुझे भविष्य के बिज़नेस ऑफर और अपडेट भेजें।"
-            : "Optional: send me relevant future business offers."}
+          {t("Optional: send me relevant future business offers.")}
         </span>
       </label>
 
@@ -535,12 +535,8 @@ export function BusinessLeadForm({
         disabled={status === "submitting"}
       >
         {status === "submitting"
-          ? isHi
-            ? "भेजा जा रहा है…"
-            : "Submitting…"
-          : isHi
-            ? "मेरा कोटेशन प्राप्त करें →"
-            : "Request My Quote →"}
+          ? t("Submitting…")
+          : t("Request My Quote →")}
       </button>
 
       {serverError ? (
@@ -550,11 +546,9 @@ export function BusinessLeadForm({
       ) : null}
 
       <p className="tf-note">
-        {isHi ? "यह पूछताछ कोई ऑर्डर नहीं है। हमारी " : "Your enquiry is not an order. See our "}
-        <Link href="/privacy">{isHi ? "गोपनीयता नीति" : "Privacy Policy"}</Link>
-        {isHi
-          ? " देखें। व्यावसायिक शर्तें अलग से कन्फर्म की जाती हैं।"
-          : ". Commercial terms are confirmed separately."}
+        {t("Your enquiry is not an order. See our ")}
+        <Link href="/privacy">{t("Privacy Policy")}</Link>
+        {t(". Commercial terms are confirmed separately.")}
       </p>
     </form>
   );

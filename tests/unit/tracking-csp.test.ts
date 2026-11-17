@@ -27,6 +27,8 @@ describe("Tracking CSP resource boundaries", () => {
     const frames = sources("frame-src");
     const forms = sources("form-action");
     expect(frames).toContain("https://www.facebook.com");
+    expect(frames).toContain("https://td.doubleclick.net");
+    expect(sources("connect-src")).toContain("https://td.doubleclick.net");
     expect(forms).toContain("https://www.facebook.com/tr/");
     expect(forms).toContain("https://pay.biolastic.co.in");
     for (const broad of ["*", "https:", "https://*.facebook.com", "https://facebook.com"]) {

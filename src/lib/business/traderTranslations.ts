@@ -1,5 +1,9 @@
-import english from "./traderCopy.json";
-import hindi from "./traderHindi.json";
+import coreEnglish from "./traderCopy.json";
+import coreHindi from "./traderHindi.json";
+import toolsEnglish from "./traderToolsCopy.json";
+import toolsHindi from "./traderToolsHindi.json";
+const english = { ...coreEnglish, ...toolsEnglish };
+const hindi = { ...coreHindi, ...toolsHindi };
 
 // Match the source text as well as its key: custom admin copy must be translated
 // explicitly rather than silently receiving an unrelated starter translation.

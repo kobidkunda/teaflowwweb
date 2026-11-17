@@ -1,5 +1,21 @@
 # Testing and Screenshot Guide
 
+## Tea shops pilot discovery cleanup — 2026-11-18
+Five focused regression tests pass for explicit E2E exclusion, active/complete records, normalized deduplication, genuinely different locations, empty rendering, one accessible enquiry action and shared Hindi copy. Scoped ESLint passed and the required Impeccable detector returned no findings. Real in-app browser review at 1440px, 455px and 320px confirms no E2E pilot copy, no empty pilot section and no horizontal overflow; the calculator leads directly into enquiry. Public API returned `{"pilots":[]}`. Stored pilot records were not edited. The current local dataset contains only E2E fixtures; genuine-list markup is covered by unit rendering, not represented as a live collection location. The full `npm run check` completed with exit zero: TypeScript, lint (existing warnings), 3,195 tests passed, six PostgreSQL-only skips, and an optimized production build generating all 130 pages. No deployment was performed.
+
+## Tea shops adaptive hero — 2026-11-18
+Desktop playback follow-up: fixed the one-shot loading check that permanently skipped animation when initially hidden or ineligible. Visibility, pageshow and connection changes now retry loading after document completion, with one download attempt per mount. Added a hidden-to-visible regression verifying retry, duplicate prevention and listener cleanup. Real in-app Chromium at 1440px showed the decoded GIF and Pause animation control; original viewport restored after verification.
+
+Nine policy unit tests and focused ESLint passed. Real Chromium verified no overlay while a GIF request was held, request only after document load, successful decode/display, pause/play, live reduced-motion fallback, and zero GIF requests with Data Saver or unknown memory. Reviewed 1440px/390px browser captures in `output/playwright/tea-hero-{animated-desktop,animated-mobile,still-desktop}.png`; mobile has no horizontal overflow. GIF network failure also retains the always-mounted still by construction. No deployment or database changes.
+
+`npm run check` was executed and stopped at unrelated concurrent Tea Traders TypeScript errors: `TraderEconomics.tsx` passed undefined to a numeric state setter and `TraderLanding.tsx` could not resolve `TraderResources`. A subsequent standalone typecheck still failed on the numeric setter in `TraderEconomics.tsx`. Full check/build is not reported as passing for this change.
+
+## Tea business launch studio — 2026-11-18
+`npm run check` completed successfully: TypeScript, ESLint (existing warnings), 3,173 tests passed, six PostgreSQL-only tests skipped, and the optimized production build (130 pages). Twenty focused unit tests passed across starter presentation, calculator, samples and launch capital. Scoped lint and typecheck were also rerun after the enquiry adjustment. Browser checks additionally verified the downloaded plan contents and selected-offer handoff.
+
+Browser checks passed planner-to-editable-enquiry, prepared-chai 500-cup break-even (₹15 price, ₹9 variable cost, ₹3,000 fixed costs), ₹10,000 capital and missing-freight pending state. English/Hindi at 320px had no horizontal overflow. Actual 1440px/390px screenshots are under `output/playwright/tea-launch-{desktop,mobile}{,-hero,-planner}.png`. No live quote or production mutation was performed. Development-only Sentry monitoring 500 and Next.js preload/speculation warnings were observed without an interaction exception. See `ui/start-tea-business/launch-studio.md` for scope and limitations.
+
+
 ## Meta catalogue matching — 11 November 2026
 
 Executed the Purchase regression before the fix: it failed because the emitted
@@ -777,3 +793,46 @@ were not changed by this image refresh. Build stage was therefore not reached.
 - Updated the existing starter E2E headline expectation. Terminal Playwright was not run; browser interaction checks used the selected in-app browser. Screen-reader announcements/labels were inspected, but no assistive-technology audit or field Core Web Vitals measurement is claimed.
 
 Evidence and accepted differences from the visual concept: `docs/ui/start-tea-business`. No deployment.
+
+## Business admin image upload controls — 2026-11-18
+
+Focused validation: `admin-uploads`, `uploads-route`, `tea-traders-presentation`
+and `business-acquisition`: 45 tests passed. Focused ESLint and a subsequent full
+TypeScript run passed. The first full check encountered a concurrently edited
+`TraderEconomics.tsx` type error; a later typecheck passed without changing that file.
+
+Real Chromium on local SQLite verified invalid SVG rejection followed by a valid
+JPEG upload, commercial-settings save, API readback and reload persistence. Original
+settings were restored and the temporary upload and session removed. Offer media
+library selection, page hero/proof upload controls and the embedded catalogue
+image manager were exercised. Desktop and 390px captures were reviewed; the mobile
+page has no horizontal overflow. Existing missing library-image requests produce
+404s in the test data; they do not prevent selecting assets. Screenshots:
+`output/playwright/business-uploads-desktop.png`, `business-uploads-mobile.png`,
+`business-trader-media-desktop.png`. No production services or payment flows touched.
+
+Full `npm run check` rerun: TypeScript and repository lint passed; Vitest finished
+with 3,139 passed, 50 failed and six skipped (13 failed files). Failures include
+brochure, customer auth, lead capture, business lead lifecycle, notifications,
+product reviews and multiple trials suites. The focused 45-test run above passed;
+the complete check is not green and did not reach its build stage. No broad
+non-media test remediation was attempted as part of this change.
+
+## Tea Traders studio — 2026-11-18
+
+Final TypeScript and scoped ESLint checks pass. Fourteen focused trader tests pass after the compatibility refinement. Initial `npm run check` passed typecheck/lint but stopped with 40 failures caused by shared local database contention. The full suite on an isolated SQLite copy then passed: 3,189 tests, six PostgreSQL-only skips; 215 passing files and one skipped. A separate production build on its own database/output (`.next-trader-studio-build`) passed, generating 130 pages. The original full-check invocation is not reported as green.
+
+Browser checks passed planner TXT contents, private-label handoff, invalid-PIN recovery, comparison, scenario independence, missing-freight pending state, FAQ search and actual CSV downloads. Mocked failure followed by success reused the same enquiry retry key; this does not establish an actual saved lead reference. No real lead, order, payment or WhatsApp message was sent. English/Hindi 320px and 1440px/390px layouts showed no overflow. Keyboard focus on forest uses verified light brass after the independent review fix. Current screenshots are under `output/playwright/trader-studio-*`; see `ui/tea-traders-redesign/trader-studio.md`. Older screenshot evidence in that directory is historical.
+
+Separate isolated production build passed:
+`NEXT_DIST_DIR=.next-business-media-check npx next build` (130 static pages).
+TypeScript/lint were run separately as reported above; Next's build configuration
+skips those embedded checks. Temporary build-directory additions were removed from
+`tsconfig.json`, preserving other concurrent workspace changes.
+
+
+## Startup budget UI refinement — 18 November 2026
+
+Refined only the starting-capital section: closer label/amount grouping, visible rupee prefixes, explicit pending total, valid-category count and field-specific linked errors. Mobile reads introduction, estimates, then summary. Existing integer-paise calculation, required categories, confirmed zero handling and local-only/reset disclosure remain intact. No dependencies, schema changes or deployment.
+
+Reviewed real Chromium captures at 1440px, 768px and 390px, plus Hindi at 320px, with no horizontal overflow. Browser checks verified ₹1,200.30 from decimal estimates, missing freight returning to pending, negative-value errors and sequential keyboard focus. Three launch-capital unit tests and focused ESLint passed. The mechanical detector only flagged the incumbent Arial font, retained per the approved design system. `npm run check` was executed but stopped at an unrelated TS2352 error in `src/lib/business/traderPresentation.ts:8`; full check/build is not reported as passing. Captures: `output/playwright/startup-budget-{desktop,tablet,mobile,mobile-summary,hindi-mobile}.png`.

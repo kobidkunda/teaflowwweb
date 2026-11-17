@@ -1,5 +1,19 @@
 # Architecture and Data Flow
 
+## Public trade pilot discovery — 2026-11-18
+`publicTradePilots` excludes explicit E2E titles, inactive/incomplete locations and duplicate town/collection-point/address combinations without mutating stored records. `listTradeSharedPilots(true)` applies it for public API/page parity; admin `false` listing keeps all records. `TradePilotLocations` repeats the display guard and renders one accessible collection-enquiry action for a localized location list, or no section when empty. No schema or deployment changes.
+
+## Tea shops optional hero animation — 2026-11-18
+The deferred loader retries on visibility, pageshow and connection changes if its initial check was skipped, while preventing duplicate download attempts.
+
+`TradeHeroArt` keeps the existing priority still image and its layout. After window load plus a 500ms yield, it preloads `/images/tea-shops/masala-chai-pour-loop.gif` only on visible pages reporting at least 4GB device memory, four logical processors, a 4g effective connection and 5 Mbps downlink, without Data Saver or reduced motion. Unknown capability signals retain the still (including browsers without these APIs). The supplied GIF is copied unchanged from `docs/logo/Animated Masala Chai Pour Loop.gif`. Successful decoding enables a decorative overlay; failure retains the still. A keyboard-accessible English/Hindi pause/play button switches back to the still. Changes to reduced motion or connection eligibility remove the overlay. No dependencies, schema or production changes.
+
+## Tea business launch studio — 2026-11-18
+`src/components/business/starter/` composes the existing business landing experience with small client-side planner and budget interactions. Planner state renders a live preview, supports a text download, and enters the existing editable enquiry note only when the visitor chooses that handoff. Existing consent, API validation and idempotency govern submission. State resets on refresh; there is no saved-progress store. Budget values stay local and are excluded from enquiry payloads.
+
+`src/lib/business/launchCapital.ts` validates user amount strings and sums integer paise. All seven budget categories must be complete; unknown freight/tax remain pending. The existing contribution calculator supports prepared-chai unit costs. Neither calculator supplies authoritative trade prices. Server catalogue samples, administrator copy/offers and commerce validation retain their existing authority. No database/schema, dependency or deployment changes are required. Product and surface context: `../PRODUCT.md` and `ui/start-tea-business/launch-studio.md`.
+
+
 Browser → Next.js App Router → server-side product queries → SQLite.
 Browser cart is localStorage-based; it is a convenience cache, not a pricing authority.
 Browser demo checkout → POST /api/checkout → Zod validation → SQLite transaction → order ID.
@@ -248,3 +262,24 @@ The existing B2B form endpoint retains idempotency, consent and rate limits; its
 `b2b_leads` records now appear in the unified Responses inbox under Bulk orders.
 Lead validation accepts supported storefront locales; legacy EN/HI B2B page-content
 constraints remain unchanged. See `docs/ui/tea-traders-redesign/README.md`.
+
+## Business admin media uploads — 2026-11-18
+
+`BusinessMediaField` replaces URL-only fields in `/admin/business` for the four
+landing settings images, each offer image, locale-specific page hero and every
+proof item. It uploads through the existing authenticated `/api/admin/media`
+endpoint and reuses `MediaPicker`. Existing section saves remain the publishing
+boundary; no new API, schema or dependency is introduced. Images accept JPEG,
+PNG, WebP and AVIF up to 5 MB, with server content validation unchanged.
+
+Tea Traders embeds the existing `ProductImagesEditor` in `BusinessProductMedia`.
+Operators can select any available catalogue product, upload/library-select photos,
+set primary images and variant assignments, and save through the existing protected
+product-images API. These are shared catalogue updates across all surfaces, with
+an explicit notice in the editor. Page copy remains an independent save.
+
+## Tea Traders studio — 2026-11-18
+
+Audience and planner interactions compose the existing trader surface; the first configured hero is static while other stored slides remain intact. Catalogue products, variants and public quantity tiers supply comparison and economics. Integer-money calculations distinguish partial-stock COGS from full upfront funding including operating reserve; unknown expenses remain pending. Credit period is context rather than a full cashflow model. Planner TXT, blank CSV worksheets and roadmap TXT are local downloads; the planner can hand an editable summary of at most 500 characters to the existing enquiry flow.
+
+The four-stage form retains the actual backend, Zod validation, UTMs, consent and retry idempotency. Existing cart, gateway and checkout remain authoritative. Additive trader presentation defaults keep older documents compatible; Hindi tool text uses the existing Translation Studio/admin/MCP workflow and other locales use source fallback until published. No schema or dependency changes. Surface scope: `ui/tea-traders-redesign/trader-studio.md`.

@@ -4,9 +4,10 @@ import React, { useState, useRef, useEffect, useId } from "react";
 import { Globe, ChevronDown, Check } from "lucide-react";
 import { useInternational } from "./InternationalProvider";
 import { LANGUAGES } from "@/lib/international/models";
+import { SITE_LOCALES } from "@/lib/i18n/locale";
 
 // Define the primary Pan-India languages to present first
-const PAN_INDIA_CODES = ["en", "hi", "bn", "pa", "mr", "gu", "ta", "te"];
+const PAN_INDIA_CODES: readonly string[] = SITE_LOCALES;
 
 interface LanguageSwitcherProps {
   variant?: "header" | "compact" | "drawer";

@@ -18,12 +18,14 @@ import {
   Sliders,
   Code,
 } from "lucide-react";
-import type { TrackingSettings } from "@/lib/trackingSettings";
+import type { ConversionRule, TrackingSettings } from "@/lib/trackingSettings";
 import {
+  dispatchConversionRules,
   pushDataLayerEvent,
   pushEcommerceEvent,
   type TrackingItem,
 } from "@/lib/seo/tracking";
+import { ConversionRulesSection } from "./ConversionRulesSection";
 
 export function TrackingSettingsForm() {
   const [loading, setLoading] = useState(true);
@@ -39,9 +41,16 @@ export function TrackingSettingsForm() {
 
   const [ga4MeasurementId, setGa4MeasurementId] = useState("");
   const [ga4Enabled, setGa4Enabled] = useState(false);
+  const [ga4RunAlongsideGtm, setGa4RunAlongsideGtm] = useState(false);
 
   const [metaPixelId, setMetaPixelId] = useState("");
   const [metaPixelEnabled, setMetaPixelEnabled] = useState(false);
+  const [metaRunAlongsideGtm, setMetaRunAlongsideGtm] = useState(false);
+
+  const [googleAdsId, setGoogleAdsId] = useState("");
+  const [googleAdsEnabled, setGoogleAdsEnabled] = useState(false);
+
+  const [conversionRules, setConversionRules] = useState<ConversionRule[]>([]);
 
   const [customHeadScript, setCustomHeadScript] = useState("");
   const [customBodyScript, setCustomBodyScript] = useState("");
@@ -67,8 +76,13 @@ export function TrackingSettingsForm() {
         setGtmEnabled(data.settings.gtm_enabled ?? true);
         setGa4MeasurementId(data.settings.ga4_measurement_id || "");
         setGa4Enabled(data.settings.ga4_enabled ?? false);
+        setGa4RunAlongsideGtm(data.settings.ga4_run_alongside_gtm ?? false);
         setMetaPixelId(data.settings.meta_pixel_id || "");
         setMetaPixelEnabled(data.settings.meta_pixel_enabled ?? false);
+        setMetaRunAlongsideGtm(data.settings.meta_run_alongside_gtm ?? false);
+        setGoogleAdsId(data.settings.google_ads_id || "");
+        setGoogleAdsEnabled(data.settings.google_ads_enabled ?? false);
+        setConversionRules(Array.isArray(data.settings.conversion_rules) ? data.settings.conversion_rules : []);
         setCustomHeadScript(data.settings.custom_head_script || "");
         setCustomBodyScript(data.settings.custom_body_script || "");
       }
@@ -110,6 +124,33 @@ export function TrackingSettingsForm() {
       errs.metaPixelId = "Meta Pixel ID must contain digits only.";
     }
 
+    const cleanAds = googleAdsId.trim().toUpperCase();
+    if (googleAdsEnabled && !cleanAds) {
+      errs.googleAdsId = "Google Ads Conversion ID is required when enabled.";
+    } else if (cleanAds && !/^AW-\d+$/i.test(cleanAds)) {
+      errs.googleAdsId = "Google Ads ID must follow format AW-18566488412.";
+    }
+
+    conversionRules.forEach((rule, index) => {
+      if (!rule.name.trim()) {
+        errs[`rule_${index}`] = "Conversion name is required.";
+      } else if (rule.enabled && rule.platform === "google_ads") {
+        const adsTarget = (rule.ads_conversion_id || cleanAds).trim();
+        if (rule.delivery !== "gtm_datalayer" && !/^AW-\d+$/i.test(adsTarget)) {
+          errs[`rule_${index}`] = "Enter a valid Google Ads ID (AW-...) on this rule or in the Google Ads card.";
+        } else if (rule.delivery !== "gtm_datalayer" && !rule.ads_conversion_label?.trim()) {
+          errs[`rule_${index}`] = "Google Ads Conversion Label is required for Admin Direct delivery.";
+        }
+      } else if (rule.enabled && rule.platform === "meta") {
+        const pixelTarget = (rule.meta_pixel_id || cleanMeta).trim();
+        if (rule.delivery !== "gtm_datalayer" && !/^\d+$/.test(pixelTarget)) {
+          errs[`rule_${index}`] = "Enter a valid numeric Meta Pixel ID on this rule or in the Meta Pixel card.";
+        } else if (!rule.meta_event_name?.trim()) {
+          errs[`rule_${index}`] = "Meta Event Name is required.";
+        }
+      }
+    });
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -133,8 +174,13 @@ export function TrackingSettingsForm() {
         gtm_enabled: gtmEnabled,
         ga4_measurement_id: ga4MeasurementId.trim(),
         ga4_enabled: ga4Enabled,
+        ga4_run_alongside_gtm: ga4RunAlongsideGtm,
         meta_pixel_id: metaPixelId.trim(),
         meta_pixel_enabled: metaPixelEnabled,
+        meta_run_alongside_gtm: metaRunAlongsideGtm,
+        google_ads_id: googleAdsId.trim().toUpperCase(),
+        google_ads_enabled: googleAdsEnabled,
+        conversion_rules: conversionRules,
         custom_head_script: customHeadScript,
         custom_body_script: customBodyScript,
       };
@@ -250,6 +296,16 @@ export function TrackingSettingsForm() {
         tf_purchase_event_id: `purchase_${ref}`,
       });
     }
+    const fired = dispatchConversionRules({
+      triggerEvent: "purchase",
+      eventId: `purchase_${ref}`,
+      orderTotal: 1995.0,
+      merchandiseSubtotal: 1900.0,
+      currency: "INR",
+      transactionId: ref,
+      paymentStatus: "paid",
+      items: sampleItems,
+    });
     logTestEvent("purchase (standard + teafloww_purchase)", {
       transaction_id: ref,
       currency: "INR",
@@ -261,16 +317,21 @@ export function TrackingSettingsForm() {
       tf_purchase_currency: "INR",
       tf_purchase_order_id: ref,
       tf_purchase_event_id: `purchase_${ref}`,
+      admin_rules_evaluated: fired,
     });
   };
 
   const handleTestLead = () => {
     const payload = {
-      lead_type: "newsletter",
+      lead_type: "wholesale_inquiry",
       source: "admin_test",
     };
-    pushDataLayerEvent("lead", payload);
-    logTestEvent("lead", payload);
+    pushDataLayerEvent("generate_lead", payload);
+    const fired = dispatchConversionRules({
+      triggerEvent: "generate_lead",
+      leadType: "wholesale_inquiry",
+    });
+    logTestEvent("generate_lead (wholesale_inquiry)", { ...payload, admin_rules_evaluated: fired });
   };
 
   if (loading) {
@@ -370,6 +431,30 @@ export function TrackingSettingsForm() {
           </p>
         </div>
 
+        {/* Google Ads status */}
+        <div className="bg-white border border-[#e5e0d8] rounded-lg p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#555f50]">
+              Google Ads Direct
+            </span>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                googleAdsEnabled && googleAdsId
+                  ? "bg-[#e8f5e9] text-[#2e7d32]"
+                  : "bg-[#f5f5f5] text-[#757575]"
+              }`}
+            >
+              {googleAdsEnabled && googleAdsId ? "Active" : "GTM / Off"}
+            </span>
+          </div>
+          <div className="text-xl font-mono font-bold text-[#18231c]">
+            {googleAdsId || "Not set"}
+          </div>
+          <p className="text-xs text-[#555f50] mt-1">
+            {conversionRules.filter((r) => r.enabled).length} active conversion rule(s)
+          </p>
+        </div>
+
         {/* Meta Pixel status */}
         <div className="bg-white border border-[#e5e0d8] rounded-lg p-5 shadow-xs">
           <div className="flex items-center justify-between mb-2">
@@ -383,7 +468,7 @@ export function TrackingSettingsForm() {
                   : "bg-[#f5f5f5] text-[#757575]"
               }`}
             >
-              {metaPixelEnabled && metaPixelId ? "Active" : "Disabled"}
+              {metaPixelEnabled && metaPixelId ? (metaRunAlongsideGtm ? "Hybrid" : "Active") : "Disabled"}
             </span>
           </div>
           <div className="text-xl font-mono font-bold text-[#18231c]">
@@ -407,7 +492,7 @@ export function TrackingSettingsForm() {
                   : "bg-[#f5f5f5] text-[#757575]"
               }`}
             >
-              {ga4Enabled && ga4MeasurementId ? "Active" : "Disabled"}
+              {ga4Enabled && ga4MeasurementId ? (ga4RunAlongsideGtm ? "Hybrid" : "Active") : "Disabled"}
             </span>
           </div>
           <div className="text-xl font-mono font-bold text-[#18231c]">
@@ -415,18 +500,6 @@ export function TrackingSettingsForm() {
           </div>
           <p className="text-xs text-[#555f50] mt-1">
             Optional direct gtag.js stream
-          </p>
-        </div>
-
-        {/* Privacy badge */}
-        <div className="bg-[#f7f5ef] border border-[#e5e0d8] rounded-lg p-5 shadow-xs">
-          <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#2c4e38] mb-2">
-            <ShieldCheck className="w-4 h-4 text-[#2c4e38]" />
-            <span>Zero-PII Governance</span>
-          </div>
-          <div className="text-lg font-bold text-[#18231c]">100% Privacy Compliant</div>
-          <p className="text-xs text-[#555f50] mt-1">
-            Customer names, addresses & payment info are never passed to tracking tags.
           </p>
         </div>
       </div>
@@ -508,6 +581,80 @@ export function TrackingSettingsForm() {
           </div>
         </section>
 
+        {/* Card: Google Ads (Direct gtag.js) */}
+        <section className="bg-white border border-[#e5e0d8] rounded-lg p-6 shadow-xs space-y-5">
+          <div className="flex items-center justify-between border-b border-[#f0ece1] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#eef6ff] flex items-center justify-center text-[#1a73e8]">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[#18231c]">Google Ads (Direct gtag.js)</h2>
+                <p className="text-xs text-[#555f50]">
+                  Run Google Ads conversion tracking directly from Admin (works alongside GTM or standalone)
+                </p>
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#555f50]">
+                {googleAdsEnabled ? "Enabled" : "Disabled"}
+              </span>
+              <input
+                type="checkbox"
+                checked={googleAdsEnabled}
+                onChange={(e) => setGoogleAdsEnabled(e.target.checked)}
+                className="w-4 h-4 text-[#2c4e38] rounded border-gray-300 focus:ring-[#2c4e38]"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label
+                htmlFor="google_ads_id"
+                className="block text-xs font-bold uppercase tracking-wider text-[#18231c] mb-1.5"
+              >
+                Primary Google Ads Conversion ID
+              </label>
+              <input
+                id="google_ads_id"
+                type="text"
+                value={googleAdsId}
+                onChange={(e) => setGoogleAdsId(e.target.value)}
+                placeholder="AW-18566488412"
+                className={`w-full px-3 py-2 text-sm border rounded-md font-mono ${
+                  errors.googleAdsId ? "border-red-500 bg-red-50" : "border-[#ded8cb]"
+                }`}
+              />
+              {errors.googleAdsId && (
+                <p className="text-xs text-red-600 mt-1">{errors.googleAdsId}</p>
+              )}
+              <p className="text-xs text-[#555f50] mt-1.5">
+                Format: <code className="bg-[#ede9df] px-1 py-0.5 rounded text-[11px]">AW-18566488412</code>. Used as the default destination for Google Ads conversion rules below.
+              </p>
+            </div>
+
+            <div className="bg-[#fbfaf8] border border-[#e8e4dc] rounded-md p-4 text-xs text-[#555f50] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#18231c]">Google Ads Console</span>
+                <a
+                  href="https://ads.google.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[#1a73e8] hover:underline font-semibold"
+                >
+                  <span>Open Google Ads</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              <p>
+                Avoid URL-load rules on <code className="bg-[#ede9df] px-1 py-0.5 rounded">/purchase*</code>. Use event-based conversion labels below (or in GTM) so only verified orders fire with dynamic INR value and <code className="bg-[#ede9df] px-1 py-0.5 rounded">transaction_id</code>.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Card: Meta / Facebook Pixel */}
         <section className="bg-white border border-[#e5e0d8] rounded-lg p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between border-b border-[#f0ece1] pb-4">
@@ -558,11 +705,20 @@ export function TrackingSettingsForm() {
                 <p className="text-xs text-red-600 mt-1">{errors.metaPixelId}</p>
               )}
               <p className="text-xs text-[#555f50] mt-1.5">
-                Standalone fallback when GTM is disabled. With GTM enabled, configure Meta in that container; this direct pixel is suppressed. Supported events:{" "}
+                Standalone fallback when GTM is disabled, or active alongside GTM when Hybrid Mode is enabled below. Supported events:{" "}
                 <code className="text-[11px]">PageView</code>, <code className="text-[11px]">ViewContent</code>,{" "}
                 <code className="text-[11px]">AddToCart</code>, <code className="text-[11px]">InitiateCheckout</code>,{" "}
                 <code className="text-[11px]">Purchase</code>, <code className="text-[11px]">Lead</code>.
               </p>
+              <label className="mt-3 inline-flex items-center gap-2 text-xs text-[#18231c] font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={metaRunAlongsideGtm}
+                  onChange={(e) => setMetaRunAlongsideGtm(e.target.checked)}
+                  className="w-3.5 h-3.5 text-[#2c4e38] rounded border-gray-300"
+                />
+                <span>Also run this direct Meta Pixel alongside GTM (Hybrid Mode)</span>
+              </label>
             </div>
 
             <div className="bg-[#fbfaf8] border border-[#e8e4dc] rounded-md p-4 text-xs text-[#555f50] space-y-2">
@@ -639,6 +795,15 @@ export function TrackingSettingsForm() {
                 Format: <code className="bg-[#ede9df] px-1 py-0.5 rounded text-[11px]">G-XXXXXXXXXX</code>.
                 Found in Google Analytics &gt; Admin &gt; Data Streams.
               </p>
+              <label className="mt-3 inline-flex items-center gap-2 text-xs text-[#18231c] font-medium cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={ga4RunAlongsideGtm}
+                  onChange={(e) => setGa4RunAlongsideGtm(e.target.checked)}
+                  className="w-3.5 h-3.5 text-[#2c4e38] rounded border-gray-300"
+                />
+                <span>Also send direct GA4 events alongside GTM (Hybrid Mode)</span>
+              </label>
             </div>
 
             <div className="bg-[#fbfaf8] border border-[#e8e4dc] rounded-md p-4 text-xs text-[#555f50] space-y-2">
@@ -661,6 +826,16 @@ export function TrackingSettingsForm() {
             </div>
           </div>
         </section>
+
+        {/* Card: Multi-Conversion Rules Manager (Google Ads, Meta & GA4) */}
+        <ConversionRulesSection
+          rules={conversionRules}
+          onChange={setConversionRules}
+          gtmEnabled={gtmEnabled}
+          googleAdsId={googleAdsId}
+          metaPixelId={metaPixelId}
+          errors={errors}
+        />
 
         {/* Card: Custom Scripts (Advanced) */}
         <section className="bg-white border border-[#e5e0d8] rounded-lg p-6 shadow-xs space-y-4">

@@ -38,6 +38,8 @@ import {
 import { TradeShell } from "./TradeShell";
 import { TradeEnquiryForm } from "./TradeEnquiryForm";
 import { CupCalculator } from "./CupCalculator";
+import { TradeHeroArt } from "./TradeHeroArt";
+import { TradePilotLocations } from "./TradePilotLocations";
 import styles from "./trade.module.css";
 import ui from "./ritual.module.css";
 
@@ -305,8 +307,6 @@ export function TradeStorefrontClient({
   );
   const heroImage = settings.hero_image_url;
   const pouchesImage = settings.trial_image_url;
-  const isGeneratedHero = heroImage.includes("counter-ritual-");
-  const isGeneratedPouches = pouchesImage.includes("counter-ritual-");
   const knownOrder = [
     "Rozana Kadak — Daily Stall Tea",
     "Elaichi Tea — Cardamom Chai",
@@ -352,15 +352,7 @@ export function TradeStorefrontClient({
     >
       <div className={ui.ritual}>
         <section className={ui.hero} aria-labelledby="tradeHeroTitle">
-          <Image
-            className={ui.heroArt}
-            src={heroImage}
-            alt={t("heroAlt")}
-            width={1920}
-            height={1080}
-            priority
-            sizes="100vw"
-          />
+          <TradeHeroArt key={heroImage} src={heroImage} alt={t("heroAlt")} hindi={locale === "hi"} />
           <div className={`${styles.wrap} ${ui.heroInner}`}>
             <div className={ui.heroCopy}>
               <div className={styles.kickerDark}>{dict["hero.kicker"]}</div>
@@ -404,9 +396,6 @@ export function TradeStorefrontClient({
                 />
               </div>
             </div>
-            {isGeneratedHero && (
-              <small className={ui.heroDisclosure}>{t("illustration")}</small>
-            )}
           </div>
         </section>
         <section
@@ -461,9 +450,6 @@ export function TradeStorefrontClient({
                     </span>
                   ))}
                 </figcaption>
-              )}
-              {isGeneratedPouches && (
-                <small className={ui.imageCaption}>{t("illustration")}</small>
               )}
             </figure>
             <div className={ui.deliveryNote}>
@@ -802,23 +788,7 @@ export function TradeStorefrontClient({
           selectedProductName={product ? productName(product) : ""}
           onEnquireCoverage={() => openEnquiry()}
         />
-        {sharedPilots.length > 0 && (
-          <section className={styles.section}>
-            <div className={styles.wrap}>
-              {sharedPilots.map((p) => (
-                <article key={p.id}>
-                  <h3>
-                    {p.town_name} · {p.collection_point}
-                  </h3>
-                  <p>{p.collection_address}</p>
-                  <ActionButton onClick={() => openEnquiry()}>
-                    {t("help")}
-                  </ActionButton>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
+        <TradePilotLocations pilots={sharedPilots} dict={dict} onEnquire={() => openEnquiry()} />
         <section
           className={`${styles.section} ${ui.enquiry}`}
           id="enquiry"

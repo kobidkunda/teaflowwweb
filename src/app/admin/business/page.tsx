@@ -3,7 +3,7 @@ import { TraderPageEditor } from "@/components/admin/TraderPageEditor";
 
 import "./admin-business.css";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { BusinessMediaField } from "@/components/admin/BusinessMediaField";
 import {
   DISQUALIFICATION_REASONS,
   LEAD_STATUSES,
@@ -37,7 +37,6 @@ import {
   Eye,
   Check,
   Tag,
-  ImageIcon,
   TrendingUp,
   DollarSign,
 } from "lucide-react";
@@ -58,36 +57,6 @@ type OverviewPayload = {
     pendingOutbox: number;
   };
 };
-
-function ImagePreview({ url, alt = "Preview" }: { url?: string | null; alt?: string }) {
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    setHasError(false);
-  }, [url]);
-
-  if (!url || hasError) {
-    return (
-      <div className="tf-admin-image-preview" title="No image preview available">
-        <ImageIcon size={20} color="#8c9b88" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="tf-admin-image-preview">
-      <Image
-        src={url}
-        alt={alt}
-        width={64}
-        height={64}
-        sizes="64px"
-        unoptimized
-        onError={() => setHasError(true)}
-      />
-    </div>
-  );
-}
 
 export default function AdminBusinessPage() {
   const [tab, setTab] = useState<TabId>("traders");
@@ -818,81 +787,12 @@ export default function AdminBusinessPage() {
                     Landing Page Media Assets
                   </h3>
                   <div className="tf-admin-grid-2">
-                    <div className="tf-admin-field">
-                      <label htmlFor="settings-starter-hero" className="tf-admin-label">
-                        Starter Hero Image URL
-                      </label>
-                      <div className="tf-admin-image-field">
-                        <ImagePreview url={settingsDraft.starter_hero_image_url} alt="Starter Hero" />
-                        <div style={{ flex: 1 }}>
-                          <input
-                            id="settings-starter-hero"
-                            className="tf-admin-input"
-                            value={settingsDraft.starter_hero_image_url}
-                            onChange={(e) =>
-                              setSettingsDraft({ ...settingsDraft, starter_hero_image_url: e.target.value })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="tf-admin-field">
-                      <label htmlFor="settings-trader-hero" className="tf-admin-label">
-                        Trader Hero Image URL
-                      </label>
-                      <div className="tf-admin-image-field">
-                        <ImagePreview url={settingsDraft.trader_hero_image_url} alt="Trader Hero" />
-                        <div style={{ flex: 1 }}>
-                          <input
-                            id="settings-trader-hero"
-                            className="tf-admin-input"
-                            value={settingsDraft.trader_hero_image_url}
-                            onChange={(e) =>
-                              setSettingsDraft({ ...settingsDraft, trader_hero_image_url: e.target.value })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="tf-admin-field">
-                      <label htmlFor="settings-proof-1" className="tf-admin-label">
-                        Proof Gallery Image 1
-                      </label>
-                      <div className="tf-admin-image-field">
-                        <ImagePreview url={settingsDraft.proof_image_1_url} alt="Proof 1" />
-                        <div style={{ flex: 1 }}>
-                          <input
-                            id="settings-proof-1"
-                            className="tf-admin-input"
-                            value={settingsDraft.proof_image_1_url}
-                            onChange={(e) =>
-                              setSettingsDraft({ ...settingsDraft, proof_image_1_url: e.target.value })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="tf-admin-field">
-                      <label htmlFor="settings-proof-2" className="tf-admin-label">
-                        Proof Gallery Image 2
-                      </label>
-                      <div className="tf-admin-image-field">
-                        <ImagePreview url={settingsDraft.proof_image_2_url} alt="Proof 2" />
-                        <div style={{ flex: 1 }}>
-                          <input
-                            id="settings-proof-2"
-                            className="tf-admin-input"
-                            value={settingsDraft.proof_image_2_url}
-                            onChange={(e) =>
-                              setSettingsDraft({ ...settingsDraft, proof_image_2_url: e.target.value })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    {([
+                      ["starter_hero_image_url", "Starter Hero Image"],
+                      ["trader_hero_image_url", "Trader Hero Image"],
+                      ["proof_image_1_url", "Proof Gallery Image 1"],
+                      ["proof_image_2_url", "Proof Gallery Image 2"],
+                    ] as const).map(([field, label]) => <BusinessMediaField key={field} label={label} value={settingsDraft[field]} onChange={url => setSettingsDraft(current => current ? { ...current, [field]: url } : current)} />)}
                   </div>
 
                   <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #e6e1d6" }}>
@@ -1041,19 +941,7 @@ export default function AdminBusinessPage() {
                 </div>
 
                 <div className="tf-admin-grid-2" style={{ marginBottom: 16 }}>
-                  <div className="tf-admin-field">
-                    <label className="tf-admin-label">Offer Image URL</label>
-                    <div className="tf-admin-image-field">
-                      <ImagePreview url={offerDraft.image_url} alt={offerDraft.title_en} />
-                      <div style={{ flex: 1 }}>
-                        <input
-                          className="tf-admin-input"
-                          value={offerDraft.image_url ?? ""}
-                          onChange={(e) => setOfferDraft({ ...offerDraft, image_url: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <BusinessMediaField key={offerDraft.code} label="Offer Image" value={offerDraft.image_url ?? ""} optional onChange={url => setOfferDraft(current => current?.code === offerDraft.code ? { ...current, image_url: url } : current)} />
                   <div className="tf-admin-field">
                     <label className="tf-admin-label">Sort Order (display sequence)</label>
                     <input
@@ -1234,19 +1122,7 @@ export default function AdminBusinessPage() {
                 </div>
 
                 <div className="tf-admin-grid-2" style={{ marginBottom: 14 }}>
-                  <div className="tf-admin-field">
-                    <label className="tf-admin-label">Hero Image URL</label>
-                    <div className="tf-admin-image-field">
-                      <ImagePreview url={contentDraft.hero_image_url} alt={contentDraft.headline} />
-                      <div style={{ flex: 1 }}>
-                        <input
-                          className="tf-admin-input"
-                          value={contentDraft.hero_image_url}
-                          onChange={(e) => setContentDraft({ ...contentDraft, hero_image_url: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  <BusinessMediaField key={`${contentDraft.segment}:${contentDraft.locale}`} label="Hero Image" value={contentDraft.hero_image_url} onChange={url => setContentDraft(current => current?.segment === contentDraft.segment && current?.locale === contentDraft.locale ? { ...current, hero_image_url: url } : current)} />
                   <div className="tf-admin-field">
                     <label className="tf-admin-label">Hero Image Alt Text</label>
                     <input
@@ -1457,24 +1333,7 @@ export default function AdminBusinessPage() {
                         </div>
                       </div>
                       <div className="tf-admin-grid-2">
-                        <div className="tf-admin-field">
-                          <label className="tf-admin-label">Image URL</label>
-                          <div className="tf-admin-image-field">
-                            <ImagePreview url={item.imageUrl} alt={item.title} />
-                            <div style={{ flex: 1 }}>
-                              <input
-                                className="tf-admin-input"
-                                value={item.imageUrl}
-                                placeholder="Image URL"
-                                onChange={(e) => {
-                                  const next = [...contentDraft.proof_items];
-                                  next[idx] = { ...item, imageUrl: e.target.value };
-                                  setContentDraft({ ...contentDraft, proof_items: next });
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
+                        <BusinessMediaField key={`${contentDraft.segment}:${contentDraft.locale}:${idx}`} label={`Proof Image ${idx + 1}`} value={item.imageUrl} onChange={url => setContentDraft(current => current?.segment === contentDraft.segment && current?.locale === contentDraft.locale ? { ...current, proof_items: current.proof_items.map((proof, i) => i === idx ? { ...proof, imageUrl: url } : proof) } : current)} />
                         <div className="tf-admin-field">
                           <label className="tf-admin-label">Alt Text</label>
                           <input

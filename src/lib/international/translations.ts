@@ -1,5 +1,5 @@
 import { getPublicTradeTrial, getTradeSettings, listTradeLanes } from "@/lib/trade/catalogue";
-import { traderDefaultTexts } from "@/lib/business/traderTranslations";
+import { starterTranslationSource } from "@/lib/business/starterSource";
 import { traderTranslationSource } from "@/lib/business/traderRepository";
 import { TRADE_EN } from "@/lib/trade/baseCopy";
 import { TRADE_COPY_EN } from "@/lib/trade/copy";
@@ -13,7 +13,7 @@ import { LANGUAGES, CommerceError } from "./models";
 import { hash } from "./quotes";
 import { config, enqueue } from "./store";
 import { providerFetch } from "./providers";
-import { PAN_INDIA_ITEMS, getLocaleDictionary } from "./panIndiaDictionary";
+import { PAN_INDIA_ITEMS } from "./panIndiaDictionary";
 
 export const UI_SOURCE: Record<string, string> = {
   ...storefrontCopy,
@@ -48,6 +48,7 @@ export function extractTexts(value: unknown, prefix = ""): Texts {
 }
 export function sourceFor(resource: string): Texts {
   if (resource === "tea-traders") return traderTranslationSource();
+  if (resource === "starter") return starterTranslationSource();
   if (resource === "trade") {
     const texts: Texts = { ...TRADE_EN, ...TRADE_COPY_EN };
     const trial = getPublicTradeTrial();
@@ -76,7 +77,7 @@ export function sourceFor(resource: string): Texts {
 }
 export function resourceList(): { resource: string; title: string }[] {
   const db = getDb();
-  const result = [{ resource: "tea-traders", title: "Tea Traders · page, slider & enquiry" }, { resource: "trade", title: "Tea shops · page, checkout & calculator" }, { resource: "interface", title: "Storefront interface" }, { resource: "homepage", title: "Homepage" }, { resource: "shell", title: "Navigation & announcements" }];
+  const result = [{ resource: "tea-traders", title: "Tea Traders · page, slider & enquiry" }, { resource: "starter", title: "Start a tea business · page, planner & enquiry" }, { resource: "trade", title: "Tea shops · page, checkout & calculator" }, { resource: "interface", title: "Storefront interface" }, { resource: "homepage", title: "Homepage" }, { resource: "shell", title: "Navigation & announcements" }];
   for (const [kind, table] of [["product", "products"], ["category", "categories"], ["page", "site_pages"], ["blog", "blog_posts"], ["email", "email_templates"], ["slider", "sliders"], ["block", "site_content_blocks"], ["placement", "site_placements"], ["campaign", "commerce_campaigns"]]) {
     try {
       const rows = db.prepare(`SELECT * FROM ${table}`).all() as Record<string, unknown>[];
@@ -88,19 +89,12 @@ export function resourceList(): { resource: string; title: string }[] {
 export function translation(resource: string, locale: string): Translation | null {
   return (getDb().prepare("SELECT * FROM commerce_translations WHERE resource=? AND locale=?").get(resource, locale) as Translation | undefined) || null;
 }
-const PAN_INDIA_LOCALES = new Set(["hi", "bn", "pa", "mr", "gu", "ta", "te"]);
+const PER_KEY_RESOURCES = new Set(["starter", "trade", "interface", "shell", "tea-traders"]);
 
 export function publishedTexts(resource: string, locale: string): Texts | null {
   if (locale === "en" && resource !== "trade" && resource !== "tea-traders") return null;
   try {
     let t = translation(resource, locale);
-    if (resource === "tea-traders") {
-      const source = sourceFor(resource);
-      const defaults = traderDefaultTexts(locale, source);
-      const published = t?.published && t.published_hash === hash(source) ? JSON.parse(t.published) : {};
-      const texts = { ...defaults, ...published };
-      return Object.keys(texts).length ? texts : null;
-    }
     if (!t) {
       const match = /^(product|category|page|blog):([a-zA-Z0-9_-]+)$/.exec(resource);
       if (match && !/^\d+$/.test(match[2])) {
@@ -109,20 +103,17 @@ export function publishedTexts(resource: string, locale: string): Texts | null {
         if (row) t = translation(`${match[1]}:${row.id}`, locale);
       }
     }
-    const hasPanIndiaFallback = (resource === "interface" || resource === "shell") && PAN_INDIA_LOCALES.has(locale);
+    if (t?.published && PER_KEY_RESOURCES.has(resource)) {
+      // Fixed UI copy: a changed English line only invalidates its own translation.
+      const current = sourceFor(resource), at = JSON.parse(t.source || "{}") as Texts, published = JSON.parse(t.published) as Texts;
+      const fresh = Object.fromEntries(Object.entries(published).filter(([k, v]) => v && current[k] !== undefined && at[k] === current[k]));
+      return Object.keys(fresh).length ? fresh : null;
+    }
     if (t?.published) {
       const isStale = t.published_hash !== hash(sourceFor(t.resource));
       if (isStale) return null;
       const dbPublished = JSON.parse(t.published);
-      if (hasPanIndiaFallback) {
-        const panIndia = getLocaleDictionary(locale);
-        return { ...panIndia, ...dbPublished };
-      }
       return dbPublished;
-    }
-    if (hasPanIndiaFallback) {
-      const panIndia = getLocaleDictionary(locale);
-      if (Object.keys(panIndia).length > 0) return panIndia;
     }
     return null;
   } catch { return null; }
