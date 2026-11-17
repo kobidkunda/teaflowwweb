@@ -445,7 +445,7 @@ export function getCatalogSitemapEntries(): MetadataRoute.Sitemap {
       } catch { /* Optional or un-migrated collection. */ }
     }
     if (!resource) continue;
-    const translatedLocales = otherLanguages.filter(language => Boolean(publishedTexts(resource!, language.code)));
+    const translatedLocales = otherLanguages.filter(language => Boolean(publishedTexts("interface", language.code) && publishedTexts(resource!, language.code)));
     if (!translatedLocales.length) continue;
     const languages: Record<string, string> = { en: entry.url, "x-default": entry.url };
     for (const locale of translatedLocales) languages[locale.code] = `${siteUrl}/${locale.code}${pathname === "/" ? "" : pathname}`;
