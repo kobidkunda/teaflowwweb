@@ -107,6 +107,7 @@ describe("mcp 100% capabilities: full specification suite", () => {
   // -------------------------------------------------------------------------
   it("exposes the full tool surface including media tools", () => {
     expect(listToolDefinitions().map((t) => t.name)).toEqual([
+      "translations.list", "translations.get", "translations.queue", "translations.publishReviewed",
       "subscriptions.list", "subscriptions.savePolicy",
       "store.listProducts", "store.getProduct", "store.getProductSpecs",
       "store.listCategories", "store.getCategory",
@@ -178,6 +179,23 @@ describe("mcp 100% capabilities: full specification suite", () => {
       "private_label_validate_publish_gate",
       "private_label_check_compatibility",
     ]);
+  });
+
+  it("supports Pan-India translation status reads and blocks unreviewed publishing", () => {
+    const records = call<{locale: string; resources: Array<{resource: string}>; counts: Record<string, number>}>(
+      "translations.list", { locale: "gu", limit: 20 }
+    );
+    expect(records.locale).toBe("gu");
+    expect(records.resources.some(item => item.resource === "interface")).toBe(true);
+
+    expect(failsWith("translations.list", { locale: "xx" })).toBe(-32602);
+    expect(failsWith("translations.queue", { locale: "en", resources: ["interface"] })).toBe(-32602);
+    expect(failsWith("translations.publishReviewed", {
+      locale: "gu", resource: "interface", expected_revision: 0, reviewed: false, texts: {}
+    })).toBe(-32602);
+    expect(failsWith("translations.publishReviewed", {
+      locale: "gu", resource: "interface", expected_revision: 0, reviewed: true, texts: {}
+    })).toBe(-32004);
   });
 
   it("rejects unknown tools and malformed arguments", () => {
