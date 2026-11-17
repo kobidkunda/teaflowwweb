@@ -1419,3 +1419,5 @@ product API/MCP suite passed 26 tests. No deployment was needed.
 
 - [x] Refine startup-budget worksheet, pending summary, completion feedback and field errors; verify responsive English/Hindi and calculator behavior (2026-11-18).
 - [ ] Budget refinement full-check gate: resolve unrelated `traderPresentation.ts:8` TS2352 error and rerun `npm run check`.
+
+- [x] Add and verify three illustrative business-format images for ready retail, bulk sacks and private-label packaging (2026-11-18).

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, Leaf, Package, Tag, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+import Image from "next/image";
 import type { PublicOfferView } from "@/lib/business/repository";
 import type { BusinessLocale, OfferCode } from "@/lib/business/schema";
 import { trackBusinessEvent } from "@/lib/business/events";
@@ -38,9 +39,9 @@ export function StarterConversion({ offers, locale, leadsEnabled, whatsappE164, 
     };
   }, [locale]);
   const details = {
-    ready_retail: { icon: Package, fit: t("Retailers & local resellers"), work: t("Choose packs, find customers and manage selling."), channel: t("Local shops, direct customers") },
-    bulk_supply: { icon: Leaf, fit: t("Buyers planning their own packing"), work: t("Plan packing, storage and your sales channel."), channel: t("Trade supply, local packing") },
-    private_label: { icon: Tag, fit: t("Founders building a tea brand"), work: t("Confirm blend, pack, artwork and print commitments."), channel: t("Your brand’s chosen channels") },
+    ready_retail: { image: "starter-model-retail.webp", alt: locale === "hi" ? "छोटे, मध्यम और बड़े तैयार चाय पाउच का उदाहरण" : "Illustration of small, medium and large ready-to-sell tea pouches", fit: t("Retailers & local resellers"), work: t("Choose packs, find customers and manage selling."), channel: t("Local shops, direct customers") },
+    bulk_supply: { image: "starter-model-bulk.webp", alt: locale === "hi" ? "खुली चाय और रीपैकिंग के पाउच के साथ बड़े चाय बोरे का उदाहरण" : "Illustration of large tea sacks with loose tea and small pouches for repacking", fit: t("Buyers planning their own packing"), work: t("Plan packing, storage and your sales channel."), channel: t("Trade supply, local packing") },
+    private_label: { image: "starter-model-private-label.webp", alt: locale === "hi" ? "अपने ब्रांड के चाय पाउच, लेबल और रंगों की डिज़ाइन मेज़ का उदाहरण" : "Illustration of custom tea pouches, label artwork and colour swatches on a design table", fit: t("Founders building a tea brand"), work: t("Confirm blend, pack, artwork and print commitments."), channel: t("Your brand’s chosen channels") },
   };
   // Approved offers and their operator-authored descriptions remain authoritative.
   const ordered = [...offers].sort((a, b) => ["ready_retail", "bulk_supply", "private_label"].indexOf(a.code) - ["ready_retail", "bulk_supply", "private_label"].indexOf(b.code));
@@ -53,9 +54,12 @@ export function StarterConversion({ offers, locale, leadsEnabled, whatsappE164, 
         <p className={styles.intro}>{t("The right format depends on your customers, your budget and how much you want to manage yourself.")}</p>
         <div className={styles.models}>
           {ordered.map(offer => {
-            const d = details[offer.code]; const Icon = d.icon;
+            const d = details[offer.code];
             return <article key={offer.id} className={styles.model} data-selected={selected === offer.code}>
-              <Icon size={38} strokeWidth={1.35} aria-hidden="true" />
+              <figure className={styles.modelMedia}>
+                <Image src={`/images/business/${d.image}`} alt={d.alt} width={960} height={640} sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1100px) 30vw, 390px" />
+                <figcaption>{locale === "hi" ? "पैकेजिंग का काल्पनिक उदाहरण" : "Illustrative packaging concept"}</figcaption>
+              </figure>
               <h3>{offer.title}</h3><p>{offer.description}</p>
               <dl><div><dt>{t("Best suited to")}</dt><dd>{d.fit}</dd></div>
                 <div><dt>{t("Your role")}</dt><dd>{d.work}</dd></div>

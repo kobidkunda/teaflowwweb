@@ -54,7 +54,9 @@
 .model { min-width: 0; padding: 4px 32px 0; border-right: 1px solid #d4cbb9; display: flex; flex-direction: column; }
 .model:first-child { padding-left: 0; }
 .model:last-child { padding-right: 0; border: 0; }
-.model > svg { color: #8a6628; margin-bottom: 5px; }
+.modelMedia { margin: 0 0 8px; }
+.modelMedia img { display: block; width: 100%; height: clamp(160px, 18vw, 254px); aspect-ratio: 3 / 2; object-fit: cover; background: #eee8da; }
+.modelMedia figcaption { margin-top: 8px; font-size: .72rem; color: var(--tf-ink-muted); line-height: 1.5; }
 .model > p { font-size: .9rem; color: #455044; }
 .model dl { margin: 8px 0 22px; font-size: .82rem; }
 .model dl > div { border-top: 1px solid #d4cbb9; padding-block: 13px; display: grid; grid-template-columns: 94px 1fr; gap: 12px; }
@@ -238,10 +240,11 @@
   .heroCopy .eyebrow { font-size: .64rem; } .heroIntro { font-size: .94rem; }
   .actions { gap: 10px; } .actions > a { padding: 12px 18px; }
   .heroMedia { height: 320px; } .heroMedia img { object-position: 70% 58%; }
+  .modelMedia img { height: auto; }
   .models { grid-template-columns: 1fr; margin-top: 26px; gap: 30px; }
   .model, .model:first-child, .model:last-child { padding: 0 0 30px; border: 0; border-bottom: 1px solid #d4cbb9; }
   .model dl > div { grid-template-columns: 100px 1fr; gap: 12px; }
-  .model h3 { margin-top: 10px; } .model > svg { width: 32px; height: 32px; }
+  .model h3 { margin-top: 10px; }
   .calculator { padding-block: 48px; } .calcGrid { grid-template-columns: 1fr; gap: 24px; }
   .results { border-left: 0; border-top: 1px solid #78907f; padding: 24px 0 0; }
   .results .bigResult dd { font-size: 2rem; } .inputRow { grid-template-columns: 1fr 110px; gap: 6px 12px; }
