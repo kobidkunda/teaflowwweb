@@ -93,6 +93,14 @@ import {
   checkDimensionMatch,
 } from "@/lib/imageRequirements";
 import { getDb } from "@/lib/db";
+import { localeSchema } from "@/lib/international/models";
+import {
+  studio as translationStudio,
+  sourceFor as translationSourceFor,
+  queueTranslation,
+  editTranslation,
+  translation as getTranslation,
+} from "@/lib/international/translations";
 import { updateInventoryStock } from "@/lib/inventory";
 import {
   listAbandonedCarts,
@@ -1780,6 +1788,142 @@ const trialHistoryArgs = z.object({
 });
 
 export const TOOL_DEFINITIONS: ToolDef[] = [
+  {
+    name: "translations.list",
+    description: "Read Pan-India translation coverage and publishing status without modifying storefront content. Filter by locale/status and paginate; published does not guarantee that every literal in a page is localized.",
+    annotations: { title: "List Translation Coverage", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    inputSchema: {
+      type: "object",
+      properties: {
+        locale: { type: "string", description: "BCP 47 language code such as hi, bn, pa, mr, gu, ta, te." },
+        status: { type: "string", enum: ["all", "missing", "queued", "processing", "draft", "published", "stale", "failed"] },
+        offset: { type: "integer", minimum: 0 },
+        limit: { type: "integer", minimum: 1, maximum: 100 },
+      },
+      required: ["locale"],
+      additionalProperties: false,
+    },
+    run: args => {
+      const p = parse(z.object({
+        locale: localeSchema,
+        status: z.enum(["all", "missing", "queued", "processing", "draft", "published", "stale", "failed"]).default("all"),
+        offset: z.number().int().min(0).default(0),
+        limit: z.number().int().min(1).max(100).default(50),
+      }).strict(), args);
+      const all = translationStudio(p.locale);
+      const items = all.filter(item => p.status === "all" || item.status === p.status);
+      return {
+        locale: p.locale,
+        total: items.length,
+        offset: p.offset,
+        next_offset: p.offset + p.limit < items.length ? p.offset + p.limit : null,
+        counts: all.reduce<Record<string, number>>((counts, item) => {
+          counts[item.status] = (counts[item.status] || 0) + 1;
+          return counts;
+        }, {}),
+        resources: items.slice(p.offset, p.offset + p.limit).map(item => ({
+          resource: item.resource,
+          title: item.title,
+          status: item.status,
+          error: item.error,
+          translation_id: item.translation?.id ?? null,
+          revision: item.translation?.revision ?? null,
+          source_fields: Object.keys(translationSourceFor(item.resource)).length,
+        })),
+      };
+    },
+  },
+  {
+    name: "translations.get",
+    description: "Read the exact English source plus existing translation draft/published fields for one resource and language. Use before editing; includes revision for optimistic concurrency.",
+    annotations: { title: "Get Translation", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    inputSchema: {
+      type: "object",
+      properties: {
+        locale: { type: "string" },
+        resource: { type: "string", maxLength: 100 },
+      },
+      required: ["locale", "resource"],
+      additionalProperties: false,
+    },
+    run: args => {
+      const p = parse(z.object({ locale: localeSchema, resource: z.string().min(1).max(100) }).strict(), args);
+      const item = translationStudio(p.locale).find(row => row.resource === p.resource);
+      if (!item) throw new McpError(-32004, "Translation resource not found");
+      return { locale: p.locale, resource: p.resource, title: item.title, status: item.status,
+        source: translationSourceFor(p.resource), translation_id: item.translation?.id ?? null,
+        revision: item.translation?.revision ?? null,
+        draft: item.translation?.draft ? JSON.parse(item.translation.draft) : null,
+        published: item.translation?.published ? JSON.parse(item.translation.published) : null,
+      };
+    },
+  },
+  {
+    name: "translations.queue",
+    description: "Queue draft translations for at most 25 specified resources in one language. Never publishes automatically. Already published or reviewed draft records are skipped unless force=true. Respect translation-provider limits and review before publication.",
+    annotations: { title: "Queue Translation Drafts", readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    inputSchema: {
+      type: "object",
+      properties: {
+        locale: { type: "string" },
+        resources: { type: "array", minItems: 1, maxItems: 25, items: { type: "string", maxLength: 100 } },
+        force: { type: "boolean", description: "Allow regenerating an existing draft or published resource (draft only; does not unpublish)." },
+      },
+      required: ["locale", "resources"],
+      additionalProperties: false,
+    },
+    run: args => {
+      const p = parse(z.object({
+        locale: localeSchema.refine(code => code !== "en", "Choose a non-English language."),
+        resources: z.array(z.string().min(1).max(100)).min(1).max(25).refine(value => new Set(value).size === value.length),
+        force: z.boolean().default(false),
+      }).strict(), args);
+      const current = new Map(translationStudio(p.locale).map(item => [item.resource, item]));
+      const queued: string[] = [], skipped: { resource: string; reason: string }[] = [];
+      for (const resource of p.resources) {
+        const row = current.get(resource);
+        if (!row) { skipped.push({ resource, reason: "Unknown resource" }); continue; }
+        if (["queued", "processing"].includes(row.status)) { skipped.push({ resource, reason: row.status }); continue; }
+        if (!p.force && ["published", "draft"].includes(row.status)) { skipped.push({ resource, reason: "Existing published or draft translation" }); continue; }
+        if (!Object.keys(translationSourceFor(resource)).length) { skipped.push({ resource, reason: "No translatable source fields" }); continue; }
+        queueTranslation(resource, p.locale);
+        queued.push(resource);
+      }
+      return { locale: p.locale, queued, skipped, publication: "None; drafts require review." };
+    },
+  },
+  {
+    name: "translations.publishReviewed",
+    description: "Publish one explicitly human-reviewed native-language translation after strict source-field validation. Requires current revision and explicit reviewed=true; never auto-translates. Protected numbers, URLs, brands and placeholders must remain unchanged.",
+    annotations: { title: "Publish Reviewed Translation", readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    inputSchema: {
+      type: "object",
+      properties: {
+        locale: { type: "string" },
+        resource: { type: "string", maxLength: 100 },
+        expected_revision: { type: "integer", minimum: 0 },
+        reviewed: { type: "boolean", enum: [true] },
+        texts: { type: "object", additionalProperties: { type: "string" } },
+      },
+      required: ["locale", "resource", "expected_revision", "reviewed", "texts"],
+      additionalProperties: false,
+    },
+    run: args => {
+      const p = parse(z.object({
+        locale: localeSchema.refine(code => code !== "en"),
+        resource: z.string().min(1).max(100),
+        expected_revision: z.number().int().min(0),
+        reviewed: z.literal(true),
+        texts: z.record(z.string(), z.string().min(1)),
+      }).strict(), args);
+      const current = getTranslation(p.resource, p.locale);
+      if (!current) throw new McpError(-32004, "Queue the resource for this locale before publication.");
+      if (current.revision !== p.expected_revision) throw new McpError(-32009, "Translation revision changed; reload before publishing.");
+      editTranslation(current.id, p.texts, "publish");
+      const updated = getTranslation(p.resource, p.locale);
+      return { locale: p.locale, resource: p.resource, status: "published", revision: updated?.revision, published_fields: Object.keys(p.texts).length };
+    },
+  },
   {
     name: "subscriptions.list", description: "List private customer replenishment plans and renewal states. Administrative access only.",
     annotations: { title: "List subscriptions", readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
