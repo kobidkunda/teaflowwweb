@@ -1,4 +1,5 @@
 export type BusinessEvent =
+  | "business_calculator_use"
   | "business_page_view"
   | "business_quote_start"
   | "business_quote_submit"

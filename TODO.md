@@ -1365,3 +1365,14 @@ product API/MCP suite passed 26 tests. No deployment was needed.
 - [ ] Production deployment only on explicit user request; no real gateway payment executed here.
 
 - [x] Tea Traders Hindi: publish 84 starter fields locally, prefill Translation Studio, retain admin overrides/custom-source safety, and verify seven feature + 22 shared translation tests and responsive browser rendering.
+
+- [x] Tea shops brewing-image refresh: four new coordinated TeaFloww-branded WebP scenes, installed across locales and reviewed at desktop/mobile sizes (2026-11-17).
+
+
+## Start Your Tea Business — selected option 1 (2026-11-17)
+- [x] Implement selected editorial layout, bilingual business guidance, sample-first journey and existing quote flow.
+- [x] Add private editable contribution/break-even calculator with truthful example disclosure and 17 passing focused tests.
+- [x] Verify real desktop/mobile browser rendering, Hindi, quote success, sample links and sticky control behavior.
+- [x] Complete typecheck/lint, 3,136 passing tests excluding the unrelated subscription suite, and production build.
+- [ ] Resolve the unrelated late-evening subscription date/test failure before claiming a green complete `npm run check`.
+- [ ] Deploy only upon explicit request.

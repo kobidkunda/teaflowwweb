@@ -219,3 +219,12 @@ WhatsApp enquiry after lead persistence. Added `trade` Translation Studio resour
 shared with MCP/API, preserving reviewed legacy defaults and operator media URLs.
 Operations, screenshot evidence and limits: `docs/ui/tea-shops-ritual/README.md`.
 No production deployment or task-specific schema migration performed.
+
+
+## Start Your Tea Business — selected option 1 (2026-11-17)
+
+Implemented the selected warm-paper editorial design on `/start-tea-business`: tea-table hero, approved business-model comparison, editable contribution/break-even calculator, public sample-kit shelf, five-stage launch roadmap, startup essentials, service-scope guidance, quotation checklist and expanded FAQs. English/Hindi support and the existing consent, validation, attribution, idempotency and feature flags remain in use. Existing operator text, offer records, uploaded hero and proof references are retained; only exact known default headlines and the original seeded hero receive the selected presentation. New copy is local bilingual presentation content; no new admin fields or public API.
+
+Calculator amounts use integer paise and are explicitly illustrative, with loss, invalid-input, zero-contribution and undefined-margin states. Financial inputs stay in component memory; the optional analytics event contains only segment/locale, never inputs/results. Published sample contents, prices and availability come from TrialService's public projection. Missing/empty/error catalogue and paused enquiry states are covered.
+
+Two optimized local WebP still lifes are disclosed as conceptual illustrations. No new dependency, schema, migration, payment change or production deployment. Source, screenshot comparisons, prompts and verification are recorded in `docs/ui/start-tea-business/README.md` and the appended entry in `design-qa.md`.

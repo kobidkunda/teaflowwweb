@@ -752,3 +752,28 @@ admin Responses inbox (`admin-responses.png`).
 `NEXT_DIST_DIR=.next-ritual-validation npm run check` completed successfully,
 including the optimized production build and all 130 static pages. Follow-up
 final typecheck/lint also completed successfully after the MCP English edit.
+
+### Four brewing images refresh — 2026-11-17 evening
+
+Generated and installed four new TeaFloww-branded raster assets; browser verified
+all four loaded at desktop/mobile widths, no horizontal overflow and no console
+errors. Component ESLint passed. Full `NEXT_DIST_DIR=.next-brew-validation npm run check`
+passed typecheck/lint, then stopped in tests: 3,129 passed, 6 skipped, 24 failed
+(all in `tests/unit/subscriptions.test.ts`). Those tests pass today's `istDate()`
+as dispatch date and hit the existing service's 12-hour past-date rejection later
+in the day (`Choose a dispatch date within the next year`). Subscription files
+were not changed by this image refresh. Build stage was therefore not reached.
+
+
+## Start Your Tea Business — option 1 verification (2026-11-17)
+
+- `npm run typecheck` and `npm run lint` completed successfully (existing repository lint warnings remain).
+- All 17 focused tests pass across `starter-calculator`, `starter-presentation` and `starter-samples`: integer monetary arithmetic, decimal inputs, losses, no sales, no break-even, rounding, limits, operator overrides, catalogue truth, empty/error states, disabled intake and Hindi content.
+- `npx vitest run --exclude tests/unit/subscriptions.test.ts`: **3,136 passed, 6 skipped; 211 files passed, 1 skipped**.
+- `npm run build` completed successfully, generating 130 pages. TypeScript and lint were run separately because the existing build configuration skips those checks.
+- `npm run check` was executed but did not pass: the full suite found 24 unrelated subscription failures after the late-evening cutoff. Its tests use `istDate()` for today; `futureDate()` rejects today's 10:00 IST timestamp once it is more than 12 hours old. Those files were not modified. An initial new sample-error test also failed because a throwing mock was recorded by the runner; the final boundary test uses a throwing result getter and all 17 focused tests pass. The final broad run above includes the corrected tests.
+- In-app browser verification: 1440×1000, 390×844 and 320×740; no horizontal overflow. Checked English/Hindi, calculator loss/invalid/reset, default ₹40 contribution / ₹9,000 operating surplus / 75-pack break-even, private-label selection prefill/focus, mobile bar hiding during input focus and footer visibility, FAQ expand-all and the sample detail destination. A local synthetic quotation saved reference `TFB-20261117-18DFFF`; no WhatsApp message, payment or production lead was sent.
+- Built app opened locally on port 3013 with no browser console errors. Early dev-cache script errors disappeared after a cache-bypassing reload; final production checks use production assets.
+- Updated the existing starter E2E headline expectation. Terminal Playwright was not run; browser interaction checks used the selected in-app browser. Screen-reader announcements/labels were inspected, but no assistive-technology audit or field Core Web Vitals measurement is claimed.
+
+Evidence and accepted differences from the visual concept: `docs/ui/start-tea-business`. No deployment.

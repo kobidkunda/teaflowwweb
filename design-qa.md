@@ -299,3 +299,70 @@ Tea shops final verification addendum: the isolated browser lead
 evidence `docs/ui/tea-shops-ritual/admin-responses.png`.
 Full `npm run check` completed successfully with an isolated build output directory.
 Final result for Tea shops Counter Ritual remains: passed.
+
+## Tea shops — four brewing image refresh — 2026-11-17
+
+Scope: replace the four assets below “One test pan. A clearer decision.”
+Generated source rasters: `exec-c4bae05d-4523-43fb-ac7f-be90ce971179.png`
+(measure), `exec-e516e3b9-4c93-4265-ad71-4ffd412853cf.png` (simmer),
+`exec-6d53ea5d-b395-4c5c-a4fb-e35d70ef36e8.png` (compare),
+`exec-c7efdeb3-4d20-4c58-9163-354dd24d9d5d.png` (strain), under the session
+`/Users/biolastic/.codex/generated_images/01a1e800-71f1-73a0-b4bd-7be72057f8ff/`.
+All four sources were visually inspected. Installed as 1200×828 WebP files in
+`public/images/trade/`. Browser section captures:
+`docs/ui/tea-shops-ritual/brew-after-desktop.png` at 1440 CSS px and
+`brew-after-mobile.png` at 390 CSS px, deviceScaleFactor 1. Four images loaded;
+mobile document scrollWidth is 390 px. Full source actions and image crops remain
+clear; logos appear on every pouch. Warm forest/brass lighting matches the page.
+Typography, spacing, colors and editable copy are unchanged by this asset-only
+refresh. No actionable P0/P1/P2 findings. The full mobile section capture retains
+the normal sticky buying bar. No deployment performed.
+
+final result: passed
+
+
+---
+
+# Start Your Tea Business — option 1, 2026-11-17
+
+## Visual truth and evidence
+
+- Source: `docs/ui/start-tea-business/selected-option-1.png`, 837×1880 pixels; generated desktop concept, no device chrome. The prompt specified a 1440px-wide landing page, so the source is normalized to 1440px width (about 3234px tall) for comparison.
+- Implementation: `docs/ui/start-tea-business/production-desktop.jpg`, 1440×7609 pixels, CSS viewport 1440×1000, browser screenshot density 1×. Idle quotation state, default calculator, closed FAQs. Built application at localhost port 3013; no dev overlay.
+- Full-view comparison: `comparison-full.jpg`, both columns normalized to 600px width, source left and implementation right. Extra required content is retained rather than vertically distorting the source.
+- Focused comparison: `comparison-hero.jpg`, corresponding top 1440×1000 frames shown at 720px each; `comparison-calculator.jpg`, source calculator crop and actual 1440×1000 calculator viewport normalized to equal widths.
+- Responsive evidence: `production-mobile-390.jpg`, `production-mobile-320.jpg`, `implementation-hindi-320.jpg`, and `implementation-mobile-calculator-390.jpg`.
+
+## Findings and comparison history
+
+1. [P1, fixed] Initial console overlay from unkeyed React section slots. Added stable keys to server-provided section children; clean reload and final built-app console have no errors. Historical capture: `implementation-desktop-initial.jpg`; post-fix captures: `production-desktop.jpg` and `production-calculator-desktop.jpg`.
+2. [P2, fixed] Tasting-banner supporting copy reached the photo’s foreground bowl. Constrained supporting text to 36ch; final full screenshot retains a readable left column.
+3. [P2, fixed] Mobile action controls needed to yield to calculator and quote input focus as well as the footer. Added focus listeners and footer intersection detection. Browser inspection confirms `hidden=true` for active calculator input and visible footer; mobile input-state evidence is saved.
+4. [Accepted product constraint] More vertical content than the concept: authoritative sample products, all six calculator outputs, startup essentials, service scope, full working enquiry form and operator FAQs are required by the approved plan. These preserve the concept’s section sequence and visual language.
+5. [Accepted content correction] Removed the concept’s inaccurate suggestion that resold TeaFloww packs carry the buyer’s own brand. Existing approved operator text/terms and actual catalogue prices replace generated sample prose.
+
+## Five fidelity surfaces
+
+- Typography: Georgia editorial headings and Arial commerce body; strong serif hierarchy, comfortable body line lengths, no truncated headings. Hindi has appropriate system fallbacks. UI/body sizing uses practical production dimensions rather than mechanically enlarging every mock label.
+- Spacing/layout: split hero, three open comparison columns, ruled cost/result columns, wide sampling photo and five-step roadmap preserved. Mobile stacks content; 320/390/1440 widths have no horizontal overflow. Additional real content accounts for page-height differences.
+- Colors/tokens: warm paper, forest #193c30, brass/gold accents; readable ivory on dark sections and dark ink on gold buttons. Focus outlines remain visible; error text contrasts on forest.
+- Image quality: two generated, optimized local WebPs match the selected still-life subject, materials and light. Real catalogue image references remain unchanged. Decorative art and the known seeded illustrative sample package have visible disclosures.
+- Copy/content: approved admin headline/image overrides preserved except exact known defaults; live public sample contents/prices/stock used; clear illustrative-margin assumptions and no promised earnings, free services, scarcity or delivery times.
+
+## Interactions and limits
+
+Verified default ₹40 contribution, ₹9,000 operating surplus, 75-pack break-even; loss and invalid fractional pack states; reset; selected private-label interest and focus; enquiry validation and saved local reference; English/Hindi switch; FAQ expand-all; sample product detail destination; mobile bar focus/footer hiding. Production browser console is empty. Native semantic controls, field errors and live result announcements are present. No full screen-reader audit, field performance claim or terminal Playwright run.
+
+Typecheck/lint, 17 focused tests, broad non-subscription suite (3,136 passed; six skipped), and production build passed. Complete `npm run check` is separately blocked by the unrelated subscription suite’s late-evening date cutoff; this does not change the visual QA result.
+
+## Implementation checklist
+
+- [x] Selected composition, local assets and truthful copy integrated.
+- [x] Core interactions and error/empty/disabled states verified.
+- [x] Full-view and focused comparisons reviewed.
+- [x] No actionable P0/P1/P2 visual findings remain.
+- [ ] Independently resolve the existing subscription-date check failure before a full-repository green release gate.
+
+Follow-up polish: none blocking; the longer page is intentional.
+
+final result: passed

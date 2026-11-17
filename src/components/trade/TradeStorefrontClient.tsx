@@ -708,22 +708,22 @@ export function TradeStorefrontClient({
                 {
                   title: "measure",
                   body: "measureBody",
-                  image: "/images/trials/discovery-dry-leaf.webp",
+                  image: "/images/trade/brew-measure-v2.webp",
                 },
                 {
                   title: "boil",
                   body: "boilBody",
-                  image: "/images/ctc-brew/method-01-kadak-chai.webp",
+                  image: "/images/trade/brew-simmer-v2.webp",
                 },
                 {
                   title: "liquor",
                   body: "liquorBody",
-                  image: "/images/trials/discovery-liquor.webp",
+                  image: "/images/trade/brew-compare-v2.webp",
                 },
                 {
                   title: "serve",
                   body: "serveBody",
-                  image: "/images/trials/discovery-milk-tea.webp",
+                  image: "/images/trade/brew-strain-v2.webp",
                 },
               ].map((s, i) => (
                 <article key={s.title}>

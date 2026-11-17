@@ -15,6 +15,7 @@ import { FaqAccordion } from "./FaqAccordion";
 import { ProcessTimeline } from "./ProcessTimeline";
 import { ProofGallery } from "./ProofGallery";
 import { Section } from "./Section";
+import { StarterLanding } from "./starter/StarterLanding";
 
 export function BusinessLanding({
   segment,
@@ -60,6 +61,10 @@ export function BusinessLanding({
     (isHi
       ? "सिलीगुड़ी से चाय सोर्सिंग और पैकेजिंग के विकल्प।"
       : "Tea sourcing and packaging options from Siliguri.");
+
+  if (segment === "starter") {
+    return <StarterLanding content={content} settings={settings} offers={offers} locale={locale} quoteNotice={quoteNotice} siliguriClaim={siliguriClaim} />;
+  }
 
   const processSection = (
     <Section

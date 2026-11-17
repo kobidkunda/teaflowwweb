@@ -44,3 +44,16 @@ normal admin authentication/origin controls; do not embed admin credentials in s
 Final browser verification also submitted `Isolated Ritual Inbox QA` through the
 isolated storefront and visibly found reference `ENQ-19703A7F58` in
 `/admin/responses`, status `new`, locale `hi` (`admin-responses.png`).
+
+## Brewing image refresh — 2026-11-17
+
+Replaced all four images beneath “One test pan. A clearer decision.” with a
+coordinated generated tea-counter series: measure CTC, simmer milk chai, compare
+two equal servings, and strain to taste. Each uses TeaFloww-branded kraft packaging.
+Files: `public/images/trade/brew-{measure,simmer,compare,strain}-v2.webp`.
+Each is 1200×828; approximately 98–168 KB per image. These are illustrative scenes,
+not claims about physical packaging or test results. The shared component updates
+all `/tea-shops/[locale]` routes. Existing localized headings/recipe copy remain.
+Reviewed full source images and browser crops at 1440 desktop and 390 mobile;
+all four loaded and mobile scrollWidth matched viewport width. Evidence:
+`brew-after-desktop.png`, `brew-after-mobile.png`.
