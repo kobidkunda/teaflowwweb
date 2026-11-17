@@ -12,6 +12,20 @@ export interface SeoControlsProps {
   onCanonicalOverrideChange: (val: string) => void;
   noindex?: number | boolean;
   onNoindexChange: (val: boolean) => void;
+  shippingFeePaiseOverride?: number | null;
+  onShippingFeePaiseOverrideChange?: (val: number | null) => void;
+  handlingDaysMinOverride?: number | null;
+  onHandlingDaysMinOverrideChange?: (val: number | null) => void;
+  handlingDaysMaxOverride?: number | null;
+  onHandlingDaysMaxOverrideChange?: (val: number | null) => void;
+  transitDaysMinOverride?: number | null;
+  onTransitDaysMinOverrideChange?: (val: number | null) => void;
+  transitDaysMaxOverride?: number | null;
+  onTransitDaysMaxOverrideChange?: (val: number | null) => void;
+  returnWindowDaysOverride?: number | null;
+  onReturnWindowDaysOverrideChange?: (val: number | null) => void;
+  returnFeesOverride?: string | null;
+  onReturnFeesOverrideChange?: (val: string | null) => void;
   defaultTitle: string;
   defaultDescription: string;
   defaultPath: string;
@@ -26,6 +40,20 @@ export function SeoControlsSection({
   onCanonicalOverrideChange,
   noindex = false,
   onNoindexChange,
+  shippingFeePaiseOverride,
+  onShippingFeePaiseOverrideChange,
+  handlingDaysMinOverride,
+  onHandlingDaysMinOverrideChange,
+  handlingDaysMaxOverride,
+  onHandlingDaysMaxOverrideChange,
+  transitDaysMinOverride,
+  onTransitDaysMinOverrideChange,
+  transitDaysMaxOverride,
+  onTransitDaysMaxOverrideChange,
+  returnWindowDaysOverride,
+  onReturnWindowDaysOverrideChange,
+  returnFeesOverride,
+  onReturnFeesOverrideChange,
   defaultTitle,
   defaultDescription,
   defaultPath,
@@ -233,6 +261,145 @@ export function SeoControlsSection({
             </div>
           </label>
         </div>
+
+        {/* Optional Per-Product Search Policy Overrides */}
+        {onReturnWindowDaysOverrideChange && (
+          <div className="pt-4 border-t border-[#f0ede6] space-y-3">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#18231c]">
+                Delivery &amp; Return Policy Overrides (Optional)
+              </h4>
+              <p className="text-[11px] text-[#73786f]">
+                Leave blank to inherit store-wide delivery and return rules in Google / ChatGPT feeds and JSON-LD.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor="shipping_fee_override" className="block text-[11px] font-semibold text-[#18231c] mb-1">
+                  Shipping Fee Override (₹)
+                </label>
+                <input
+                  id="shipping_fee_override"
+                  type="number"
+                  min={0}
+                  value={shippingFeePaiseOverride != null ? Math.round(shippingFeePaiseOverride / 100) : ""}
+                  onChange={(e) =>
+                    onShippingFeePaiseOverrideChange?.(
+                      e.target.value === "" ? null : Math.max(0, Math.round(Number(e.target.value) * 100))
+                    )
+                  }
+                  placeholder="Inherit store rate"
+                  className="w-full px-3 py-1.5 text-sm bg-white border border-[#cfc8b8] rounded-md"
+                />
+              </div>
+              <div>
+                <label htmlFor="return_days_override" className="block text-[11px] font-semibold text-[#18231c] mb-1">
+                  Return Window Override (Days)
+                </label>
+                <input
+                  id="return_days_override"
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={returnWindowDaysOverride ?? ""}
+                  onChange={(e) =>
+                    onReturnWindowDaysOverrideChange?.(
+                      e.target.value === "" ? null : Math.max(1, parseInt(e.target.value, 10))
+                    )
+                  }
+                  placeholder="Inherit store days"
+                  className="w-full px-3 py-1.5 text-sm bg-white border border-[#cfc8b8] rounded-md"
+                />
+              </div>
+              <div>
+                <label htmlFor="return_fees_override" className="block text-[11px] font-semibold text-[#18231c] mb-1">
+                  Return Fees Override
+                </label>
+                <select
+                  id="return_fees_override"
+                  value={returnFeesOverride || ""}
+                  onChange={(e) => onReturnFeesOverrideChange?.(e.target.value ? e.target.value : null)}
+                  className="w-full px-3 py-1.5 text-sm bg-white border border-[#cfc8b8] rounded-md"
+                >
+                  <option value="">Inherit store rule</option>
+                  <option value="FreeReturn">Free Return</option>
+                  <option value="ReturnShippingFees">Return Shipping Fees</option>
+                  <option value="ReturnFeesCustomerResponsibility">Customer Responsibility</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="handling_min_override" className="block text-[11px] font-semibold text-[#18231c] mb-1">
+                  Handling Days (Min / Max)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="handling_min_override"
+                    type="number"
+                    min={0}
+                    max={30}
+                    value={handlingDaysMinOverride ?? ""}
+                    onChange={(e) =>
+                      onHandlingDaysMinOverrideChange?.(
+                        e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10))
+                      )
+                    }
+                    placeholder="Min"
+                    className="w-1/2 px-2.5 py-1.5 text-sm bg-white border border-[#cfc8b8] rounded-md"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    aria-label="Max handling days override"
+                    value={handlingDaysMaxOverride ?? ""}
+                    onChange={(e) =>
+                      onHandlingDaysMaxOverrideChange?.(
+                        e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10))
+                      )
+                    }
+                    placeholder="Max"
+                    className="w-1/2 px-2.5 py-1.5 text-sm bg-white border border-[#cfc8b8] rounded-md"
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="transit_min_override" className="block text-[11px] font-semibold text-[#18231c] mb-1">
+                  Transit Days (Min / Max)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="transit_min_override"
+                    type="number"
+                    min={0}
+                    max={30}
+                    value={transitDaysMinOverride ?? ""}
+                    onChange={(e) =>
+                      onTransitDaysMinOverrideChange?.(
+                        e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10))
+                      )
+                    }
+                    placeholder="Min"
+                    className="w-1/2 px-2.5 py-1.5 text-sm bg-white border border-[#cfc8b8] rounded-md"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={60}
+                    aria-label="Max transit days override"
+                    value={transitDaysMaxOverride ?? ""}
+                    onChange={(e) =>
+                      onTransitDaysMaxOverrideChange?.(
+                        e.target.value === "" ? null : Math.max(0, parseInt(e.target.value, 10))
+                      )
+                    }
+                    placeholder="Max"
+                    className="w-1/2 px-2.5 py-1.5 text-sm bg-white border border-[#cfc8b8] rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

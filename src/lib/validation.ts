@@ -150,6 +150,13 @@ export const productSchema = z.object({
   seo_description: z.string().trim().max(500).nullable().optional(),
   canonical_override: z.string().trim().max(500).nullable().optional(),
   noindex: boolInt.default(0),
+  shipping_fee_paise_override: z.number().int().min(0).max(500000).nullable().optional(),
+  handling_days_min_override: z.number().int().min(0).max(30).nullable().optional(),
+  handling_days_max_override: z.number().int().min(0).max(60).nullable().optional(),
+  transit_days_min_override: z.number().int().min(0).max(30).nullable().optional(),
+  transit_days_max_override: z.number().int().min(0).max(60).nullable().optional(),
+  return_window_days_override: z.number().int().min(1).max(365).nullable().optional(),
+  return_fees_override: z.enum(["FreeReturn", "ReturnShippingFees", "ReturnFeesCustomerResponsibility"]).nullable().optional(),
   idempotencyKey: idempotencyKeySchema,
 });
 export type ProductInput = z.input<typeof productSchema>;

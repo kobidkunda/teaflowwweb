@@ -3,6 +3,8 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { LANGUAGES } from "@/lib/international/models";
 import type { Texts, Translation } from "@/lib/international/translations";
+import { traderDefaultTexts } from "@/lib/business/traderTranslations";
+import { tradeDefaults } from "@/lib/trade/baseCopy";
 import { adminRequest, useOperation } from "./shared";
 import { PAN_INDIA_ITEMS, getLocaleDictionary } from "@/lib/international/panIndiaDictionary";
 import { Search, Save, Globe, RefreshCw, CheckCircle, ArrowLeft } from "lucide-react";
@@ -21,6 +23,8 @@ type HistoryRow = { id: string; document: string; created_ms: number };
 
 const CONTENT_TYPES = [
   "all",
+  "trade",
+  "tea-traders",
   "interface",
   "homepage",
   "shell",
@@ -42,7 +46,7 @@ const UI_CATEGORIES = [
 ] as const;
 
 function getContentType(resource: string): string {
-  if (resource === "interface" || resource === "homepage" || resource === "shell") return resource;
+  if (resource === "interface" || resource === "homepage" || resource === "shell" || resource === "trade") return resource;
   return resource.split(":")[0] || "other";
 }
 
@@ -145,6 +149,8 @@ export function TranslationAdmin() {
     if (r.resource === "interface" && Object.keys(currentTexts).length === 0) {
       currentTexts = getLocaleDictionary(locale);
     }
+    if (r.resource === "trade") currentTexts = { ...r.source, ...tradeDefaults(locale), ...currentTexts };
+    if (r.resource === "tea-traders") currentTexts = { ...traderDefaultTexts(locale, r.source), ...currentTexts };
     setTexts(currentTexts);
 
     if (r.translation?.id) {
@@ -223,7 +229,7 @@ export function TranslationAdmin() {
                 onChange={(e) => setLocale(e.target.value)}
                 className="font-medium text-base"
               >
-                {LANGUAGES.filter((l) => l.code !== "en").map((l) => (
+                {LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>
                     {l.name} ({l.code.toUpperCase()})
                   </option>

@@ -1,3 +1,4 @@
+import { tradeImage } from "./media";
 import { randomUUID } from "node:crypto";
 import { getDb } from "@/lib/db";
 import { enabledProductCondition } from "@/lib/productAvailability";
@@ -153,8 +154,8 @@ export function getTradeSettings(): TradeSettings {
     return {
       id: "default",
       channel_enabled: true,
-      enabled_locales: ["en", "bn", "hi", "gu", "mr"],
-      staged_locales: ["pa", "ta", "te", "kn"],
+      enabled_locales: ["en", "hi", "bn", "pa", "mr", "gu", "ta", "te"],
+      staged_locales: ["kn"],
       featured_trial_id: null,
       trial_parcel_rate_paise: 0,
       trial_credit_paise: 0,
@@ -163,10 +164,10 @@ export function getTradeSettings(): TradeSettings {
       whatsapp_number: "+917001304853",
       support_hours: "Mon-Sat 9:00 AM - 7:00 PM IST",
       dispatch_cutoff_label: "Dispatched next business day from Siliguri",
-      hero_image_url: "/images/trials/discovery-shelf-hero.webp",
+      hero_image_url: tradeImage(null, "hero"),
       hero_video_url: null,
       hero_video_poster_url: null,
-      trial_image_url: "/images/trials/discovery-shelf-hero.webp",
+      trial_image_url: tradeImage(null, "trial"),
       updated_at: new Date().toISOString(),
     };
   }
@@ -192,12 +193,12 @@ export function getTradeSettings(): TradeSettings {
     dispatch_cutoff_label: String(
       row.dispatch_cutoff_label ?? "Dispatched next business day from Siliguri"
     ),
-    hero_image_url: String(row.hero_image_url ?? "/images/trials/discovery-shelf-hero.webp"),
+    hero_image_url: tradeImage(row.hero_image_url as string, "hero"),
     hero_video_url: row.hero_video_url ? String(row.hero_video_url) : null,
     hero_video_poster_url: row.hero_video_poster_url
       ? String(row.hero_video_poster_url)
       : null,
-    trial_image_url: String(row.trial_image_url ?? "/images/trials/discovery-shelf-hero.webp"),
+    trial_image_url: tradeImage(row.trial_image_url as string, "trial"),
     updated_at: String(row.updated_at ?? new Date().toISOString()),
   };
 }

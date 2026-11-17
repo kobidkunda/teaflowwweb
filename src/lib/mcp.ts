@@ -15,6 +15,13 @@ import {
   BUSINESS_TOOL_ALIASES,
 } from "@/lib/business/mcpTools";
 import {
+  TRANSLATION_TOOL_DEFINITIONS,
+  TRANSLATION_TOOL_ALIASES,
+  TranslationMcpError,
+} from "@/lib/international/mcpTools";
+import { studio } from "@/lib/international/translations";
+import { LANGUAGES } from "@/lib/international/models";
+import {
   PrivateLabelRevisionConflictError,
   PrivateLabelNotFoundError,
   PrivateLabelGateError,
@@ -207,6 +214,9 @@ function parse<T>(schema: z.ZodType<T>, args: unknown): T {
 function serviceError(error: unknown): never {
   logger.error("MCP Service Error: " + (error instanceof Error ? error.message : String(error)));
   if (error instanceof McpError) throw error;
+  if (error instanceof TranslationMcpError) {
+    throw new McpError(error.code, error.message);
+  }
   if (error instanceof PrivateLabelRevisionConflictError) {
     throw new McpError(-32009, error.message);
   }
@@ -5582,6 +5592,7 @@ export const TOOL_DEFINITIONS: ToolDef[] = [
   ...PRIVATE_LABEL_TOOL_DEFINITIONS,
   ...TRADE_TOOL_DEFINITIONS,
   ...BUSINESS_TOOL_DEFINITIONS,
+  ...TRANSLATION_TOOL_DEFINITIONS,
 ];
 
 export function listToolDefinitions() {
@@ -5967,6 +5978,7 @@ const TOOL_ALIASES: Record<string, string> = {
   ...PRIVATE_LABEL_TOOL_ALIASES,
   ...TRADE_TOOL_ALIASES,
   ...BUSINESS_TOOL_ALIASES,
+  ...TRANSLATION_TOOL_ALIASES,
 };
 
 export function dispatchToolCall(name: unknown, args: unknown): unknown {
@@ -6135,6 +6147,46 @@ export const RESOURCE_DEFINITIONS: ResourceDef[] = [
     description: "Real-time metrics on active and abandoned shopping carts, captured phone leads, and recovery conversion rates.",
     mimeType: "application/json",
     read: () => getAbandonedCartsResourceSummary(),
+  },
+  {
+    uri: "tea://translations/overview",
+    name: "Translations & Localization Overview",
+    description: "Overview of supported languages, Pan-India translations status, and translation studio summary.",
+    mimeType: "application/json",
+    read: () => {
+      const panIndiaCodes = ["hi", "bn", "pa", "mr", "gu", "ta", "te"];
+      const hiStudio = studio("hi");
+      const counts = hiStudio.reduce<Record<string, number>>((acc, cur) => {
+        acc[cur.status] = (acc[cur.status] || 0) + 1;
+        acc.total = (acc.total || 0) + 1;
+        return acc;
+      }, { published: 0, draft: 0, stale: 0, missing: 0, queued: 0, failed: 0, total: 0 });
+      return {
+        defaultLocale: "en",
+        locales: LANGUAGES.map((l) => ({ code: l.code, name: l.name, dir: l.dir })),
+        panIndiaLocales: panIndiaCodes,
+        totalResources: hiStudio.length,
+        hindiStatusCounts: counts,
+      };
+    },
+  },
+  {
+    uri: "tea://translations/studio",
+    name: "Translation Studio Resource Manifest",
+    description: "Full listing of translatable storefront resources and their translation state across Hindi and Pan-India locales.",
+    mimeType: "application/json",
+    read: () => {
+      return {
+        resources: studio("hi").map((r) => ({
+          resource: r.resource,
+          title: r.title,
+          status: r.status,
+          revision: r.translation?.revision ?? null,
+          hasDraft: Boolean(r.translation?.draft),
+          hasPublished: Boolean(r.translation?.published),
+        })),
+      };
+    },
   },
   {
     uri: "tea://pages",
@@ -6836,6 +6888,9 @@ export function dispatchPromptGet(name: unknown, args: unknown): unknown {
     return prompt.get(recordArgs);
   } catch (error) {
     if (error instanceof McpError) throw error;
+  if (error instanceof TranslationMcpError) {
+    throw new McpError(error.code, error.message);
+  }
     throw new McpError(-32603, "Failed to generate prompt template.");
   }
 }

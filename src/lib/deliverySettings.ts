@@ -10,6 +10,10 @@ export const deliverySettingsSchema = z.object({
   free_shipping_enabled: z.boolean().default(true),
   shipping_calculation_mode: z.enum(["flat", "live"]).default("flat"),
   dispatch_commitment: z.string().max(200).default("24-48 hours from Siliguri hub"),
+  handling_days_min: z.coerce.number().int().min(0).max(30).default(1),
+  handling_days_max: z.coerce.number().int().min(0).max(60).default(2),
+  transit_days_min: z.coerce.number().int().min(0).max(30).default(2),
+  transit_days_max: z.coerce.number().int().min(0).max(60).default(5),
   announcement_auto_sync: z.boolean().default(true),
 
   // Cash on Delivery (COD) Rules
@@ -100,6 +104,10 @@ export function getDeliverySettings(): DeliverySettings {
   const freeEnabled = map.get("free_shipping_enabled") !== "0";
   const autoSync = map.get("announcement_auto_sync") !== "0";
   const commitment = map.get("dispatch_commitment") || "24-48 hours from Siliguri hub";
+  const handlingDaysMin = Math.max(0, Number(map.get("handling_days_min") ?? "1") || 0);
+  const handlingDaysMax = Math.max(handlingDaysMin, Number(map.get("handling_days_max") ?? "2") || handlingDaysMin);
+  const transitDaysMin = Math.max(0, Number(map.get("transit_days_min") ?? "2") || 0);
+  const transitDaysMax = Math.max(transitDaysMin, Number(map.get("transit_days_max") ?? "5") || transitDaysMin);
 
   // Cash on Delivery (COD)
   const codEnabled = map.get("cod_enabled") !== "0";
@@ -158,6 +166,10 @@ export function getDeliverySettings(): DeliverySettings {
 
     shipping_calculation_mode: calculationMode,
     dispatch_commitment: commitment,
+    handling_days_min: handlingDaysMin,
+    handling_days_max: handlingDaysMax,
+    transit_days_min: transitDaysMin,
+    transit_days_max: transitDaysMax,
     announcement_auto_sync: autoSync,
 
     cod_enabled: codEnabled,
@@ -224,6 +236,10 @@ export function updateDeliverySettings(rawInput: unknown): DeliverySettings {
     ["shipping_flat_paise", String(flatFeePaise)],
     ["shipping_calculation_mode", parsed.shipping_calculation_mode],
     ["dispatch_commitment", parsed.dispatch_commitment],
+    ["handling_days_min", String(parsed.handling_days_min)],
+    ["handling_days_max", String(Math.max(parsed.handling_days_min, parsed.handling_days_max))],
+    ["transit_days_min", String(parsed.transit_days_min)],
+    ["transit_days_max", String(Math.max(parsed.transit_days_min, parsed.transit_days_max))],
     ["announcement_auto_sync", parsed.announcement_auto_sync ? "1" : "0"],
 
     // Cash on Delivery

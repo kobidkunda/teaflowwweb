@@ -60,11 +60,14 @@ export function BusinessLeadForm({
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [serverError, setServerError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
+  const [liveAnnouncement, setLiveAnnouncement] = useState("");
   const [reference, setReference] = useState("");
   const [hasTrackedStart, setHasTrackedStart] = useState(false);
 
   const idempotencyRef = useRef<string | null>(null);
   const errorSummaryRef = useRef<HTMLDivElement | null>(null);
+  const announceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (selectedOffer) {
@@ -72,19 +75,73 @@ export function BusinessLeadForm({
     }
   }, [selectedOffer]);
 
+  useEffect(() => {
+    return () => {
+      if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    };
+  }, []);
+
+  function buildPayload(draft: Draft) {
+    return {
+      segment: draft.segment,
+      interest: draft.interest,
+      quantityBand: draft.quantityBand,
+      pincode: draft.pincode.trim(),
+      name: draft.name.trim(),
+      phone: draft.phone.trim(),
+      ...(draft.company.trim() ? { company: draft.company.trim() } : {}),
+      ...(draft.note.trim() ? { note: draft.note.trim() } : {}),
+      locale,
+      contactConsent: draft.contactConsent,
+      marketingConsent: draft.marketingConsent,
+      attribution: collectAttribution(typeof window !== "undefined" ? window.location.search : ""),
+      honeypot: draft.honeypot,
+    };
+  }
+
+  function validateSingleField(key: keyof Draft, draft: Draft, announce: boolean) {
+    const parsed = businessLeadSchema.safeParse(buildPayload(draft));
+    let nextMessage: string | null = null;
+    if (!parsed.success) {
+      const issue = parsed.error.issues.find((item) => item.path[0] === key);
+      if (issue) nextMessage = issue.message;
+    }
+
+    setFieldErrors((curr) => {
+      const next = { ...curr };
+      if (nextMessage) {
+        next[key] = nextMessage;
+      } else {
+        delete next[key];
+      }
+      return next;
+    });
+
+    if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    if (nextMessage && announce) {
+      announceTimerRef.current = setTimeout(() => {
+        setLiveAnnouncement(nextMessage ?? "");
+      }, 450);
+    } else if (!nextMessage) {
+      setLiveAnnouncement("");
+    }
+  }
+
   function updateField<K extends keyof Draft>(key: K, value: Draft[K]) {
     if (!hasTrackedStart) {
       setHasTrackedStart(true);
       trackBusinessEvent("business_quote_start", { segment, locale });
     }
-    setForm((curr) => ({ ...curr, [key]: value }));
-    if (fieldErrors[key]) {
-      setFieldErrors((curr) => {
-        const next = { ...curr };
-        delete next[key];
-        return next;
-      });
+    const nextDraft = { ...form, [key]: value };
+    setForm(nextDraft);
+    if (touchedFields[key] || fieldErrors[key]) {
+      validateSingleField(key, nextDraft, false);
     }
+  }
+
+  function handleFieldBlur(key: keyof Draft) {
+    setTouchedFields((curr) => ({ ...curr, [key]: true }));
+    validateSingleField(key, form, true);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -92,21 +149,7 @@ export function BusinessLeadForm({
     if (status === "submitting" || status === "success") return;
 
     setServerError("");
-    const payload = {
-      segment: form.segment,
-      interest: form.interest,
-      quantityBand: form.quantityBand,
-      pincode: form.pincode.trim(),
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      ...(form.company.trim() ? { company: form.company.trim() } : {}),
-      ...(form.note.trim() ? { note: form.note.trim() } : {}),
-      locale,
-      contactConsent: form.contactConsent,
-      marketingConsent: form.marketingConsent,
-      attribution: collectAttribution(typeof window !== "undefined" ? window.location.search : ""),
-      honeypot: form.honeypot,
-    };
+    const payload = buildPayload(form);
 
     const parsed = businessLeadSchema.safeParse(payload);
     if (!parsed.success) {
@@ -118,6 +161,13 @@ export function BusinessLeadForm({
         }
       }
       setFieldErrors(nextErrors);
+      setTouchedFields((curr) => ({
+        ...curr,
+        pincode: true,
+        name: true,
+        phone: true,
+        contactConsent: true,
+      }));
       setStatus("error");
       setTimeout(() => errorSummaryRef.current?.focus(), 20);
       return;
@@ -225,6 +275,12 @@ export function BusinessLeadForm({
   }
 
   const errorEntries = Object.entries(fieldErrors);
+  const fieldAnchorMap: Record<string, string> = {
+    pincode: "tf-pincode",
+    name: "tf-name",
+    phone: "tf-phone",
+    contactConsent: "tf-consent",
+  };
 
   return (
     <form
@@ -238,6 +294,10 @@ export function BusinessLeadForm({
       }}
       noValidate
     >
+      <div aria-live="polite" className="tf-sr-only">
+        {liveAnnouncement}
+      </div>
+
       {errorEntries.length > 0 ? (
         <div
           ref={errorSummaryRef}
@@ -249,9 +309,26 @@ export function BusinessLeadForm({
             {isHi ? "कृपया निम्नलिखित विवरण जांचें:" : "Please check the highlighted fields:"}
           </strong>
           <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.2rem" }}>
-            {errorEntries.map(([field, msg]) => (
-              <li key={field}>{msg}</li>
-            ))}
+            {errorEntries.map(([field, msg]) => {
+              const targetId = fieldAnchorMap[field];
+              return (
+                <li key={field}>
+                  {targetId ? (
+                    <a
+                      href={`#${targetId}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        document.getElementById(targetId)?.focus();
+                      }}
+                    >
+                      {msg}
+                    </a>
+                  ) : (
+                    msg
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}
@@ -316,22 +393,27 @@ export function BusinessLeadForm({
 
       <div className="tf-field">
         <label htmlFor="tf-pincode">{isHi ? "डिलीवरी पिन कोड *" : "Delivery pincode *"}</label>
+        <span id="tf-pincode-hint" className="tf-field-hint">
+          {isHi ? "6 अंकों का भारतीय पिन कोड, जैसे 734001" : "6-digit Indian pincode, e.g. 734001"}
+        </span>
         <input
           id="tf-pincode"
           type="text"
           inputMode="numeric"
           autoComplete="postal-code"
+          pattern="\d{6}"
           maxLength={6}
           required
           value={form.pincode}
-          aria-invalid={Boolean(fieldErrors.pincode)}
-          aria-describedby={fieldErrors.pincode ? "tf-pincode-err" : undefined}
+          aria-invalid={fieldErrors.pincode ? "true" : "false"}
+          aria-describedby={fieldErrors.pincode ? "tf-pincode-hint tf-pincode-err" : "tf-pincode-hint"}
           onChange={(e) => updateField("pincode", e.target.value.replace(/\D/g, "").slice(0, 6))}
+          onBlur={() => handleFieldBlur("pincode")}
           placeholder="734001"
         />
         {fieldErrors.pincode ? (
           <p id="tf-pincode-err" className="tf-error">
-            {fieldErrors.pincode}
+            <span role="img" aria-label="Error">⚠</span> {fieldErrors.pincode}
           </p>
         ) : null}
       </div>
@@ -343,36 +425,43 @@ export function BusinessLeadForm({
             id="tf-name"
             type="text"
             autoComplete="name"
+            minLength={2}
             required
             value={form.name}
-            aria-invalid={Boolean(fieldErrors.name)}
+            aria-invalid={fieldErrors.name ? "true" : "false"}
             aria-describedby={fieldErrors.name ? "tf-name-err" : undefined}
             onChange={(e) => updateField("name", e.target.value)}
+            onBlur={() => handleFieldBlur("name")}
           />
           {fieldErrors.name ? (
             <p id="tf-name-err" className="tf-error">
-              {fieldErrors.name}
+              <span role="img" aria-label="Error">⚠</span> {fieldErrors.name}
             </p>
           ) : null}
         </div>
 
         <div className="tf-field">
           <label htmlFor="tf-phone">{isHi ? "मोबाइल नंबर *" : "Mobile number *"}</label>
+          <span id="tf-phone-hint" className="tf-field-hint">
+            {isHi ? "10 अंकों का मोबाइल नंबर, जैसे 9876543210" : "10-digit Indian mobile, e.g. 9876543210"}
+          </span>
           <input
             id="tf-phone"
             type="tel"
             inputMode="tel"
             autoComplete="tel-national"
+            pattern="[6-9]\d{9}"
             required
             value={form.phone}
-            aria-invalid={Boolean(fieldErrors.phone)}
-            aria-describedby={fieldErrors.phone ? "tf-phone-err" : undefined}
+            aria-invalid={fieldErrors.phone ? "true" : "false"}
+            aria-describedby={fieldErrors.phone ? "tf-phone-hint tf-phone-err" : "tf-phone-hint"}
             onChange={(e) => updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))}
+            onBlur={() => handleFieldBlur("phone")}
             placeholder="9876543210"
           />
           {fieldErrors.phone ? (
             <p id="tf-phone-err" className="tf-error">
-              {fieldErrors.phone}
+              <span role="img" aria-label="Error">⚠</span> {fieldErrors.phone}
             </p>
           ) : null}
         </div>
@@ -396,10 +485,12 @@ export function BusinessLeadForm({
 
       <label className="tf-form-checkbox">
         <input
+          id="tf-consent"
           type="checkbox"
           required
           checked={form.contactConsent}
-          aria-invalid={Boolean(fieldErrors.contactConsent)}
+          aria-invalid={fieldErrors.contactConsent ? "true" : "false"}
+          aria-describedby={fieldErrors.contactConsent ? "tf-consent-err" : undefined}
           onChange={(e) => updateField("contactConsent", e.target.checked)}
         />
         <span>
@@ -408,7 +499,11 @@ export function BusinessLeadForm({
             : "I agree TeaFloww may contact me about this enquiry. *"}
         </span>
       </label>
-      {fieldErrors.contactConsent ? <p className="tf-error">{fieldErrors.contactConsent}</p> : null}
+      {fieldErrors.contactConsent ? (
+        <p id="tf-consent-err" className="tf-error">
+          <span role="img" aria-label="Error">⚠</span> {fieldErrors.contactConsent}
+        </p>
+      ) : null}
 
       <label className="tf-form-checkbox">
         <input

@@ -16,14 +16,16 @@ import {
 } from "@/lib/productModels";
 import { SubscribeLink } from "@/components/subscriptions/SubscribeLink";
 import { formatPackWeight } from "@/lib/packSize";
-import { ShoppingCart, Share2, Check, Zap, MapPin, Truck } from "lucide-react";
+import { ShoppingCart, Share2, Check, Zap, MapPin, Truck, Star, RotateCcw } from "lucide-react";
 import { catalogItem, trackViewItem } from "@/lib/seo/tracking";
 import { cupsFromGrams } from "@/lib/money";
+import type { ClientCommercePolicy } from "@/lib/seo/productPolicy";
 
 export interface VariantPickerProps {
   product: Product;
   initialFormat?: PackagingFormat;
   initialGrams?: number;
+  commercePolicy?: ClientCommercePolicy;
   onVariantChange?: (variant: Variant) => void;
   className?: string;
 }
@@ -38,11 +40,20 @@ export function VariantPicker({
   product,
   initialFormat,
   initialGrams,
+  commercePolicy,
   onVariantChange,
   className = "",
 }: VariantPickerProps) {
   const formatINR = useDisplayMoney();
   const formatPerCup = (price: number, servings: number) => formatINR(servings > 0 ? Math.round(price / servings) : 0);
+
+  const freeShippingThresholdPaise = commercePolicy?.freeShippingThresholdPaise ?? 59900;
+  const freeShippingEnabled = commercePolicy?.freeShippingEnabled ?? true;
+  const flatShippingPaise = commercePolicy?.flatShippingPaise ?? 9900;
+  const hasExplicitShippingOverride = commercePolicy?.hasExplicitShippingOverride ?? false;
+  const deliveryWindowLabel = commercePolicy?.deliveryWindowLabel ?? "3–7 day delivery";
+  const returnWindowDays = commercePolicy?.returnWindowDays ?? 14;
+  const reviewSummary = commercePolicy?.reviewSummary ?? null;
 
   const { add, subtotal: cartSubtotal } = useCart();
   const [pincode, setPincode] = useState("");
@@ -250,9 +261,11 @@ export function VariantPicker({
     const days = isEastOrNorthEast ? "2–3 business days" : "3–5 business days";
     const combinedPaise = cartSubtotal + totalPricePaise;
     const freeShipText =
-      combinedPaise >= 49900
-        ? "FREE Delivery unlocked (orders ₹499+)"
-        : `Add ${formatINR(49900 - combinedPaise)} more for FREE Delivery (₹499+ threshold)`;
+      !hasExplicitShippingOverride && freeShippingEnabled && combinedPaise >= freeShippingThresholdPaise
+        ? `FREE Delivery unlocked (orders ${formatINR(freeShippingThresholdPaise)}+)`
+        : !hasExplicitShippingOverride && freeShippingEnabled
+        ? `Add ${formatINR(freeShippingThresholdPaise - combinedPaise)} more for FREE Delivery (${formatINR(freeShippingThresholdPaise)}+ threshold)`
+        : `Standard shipping ${formatINR(flatShippingPaise)}`;
     const codText =
       combinedPaise >= 29900 || isWholesaleMode
         ? "Cash on Delivery available"
@@ -261,7 +274,7 @@ export function VariantPicker({
       status: "ok",
       text: `✓ Deliverable to PIN ${clean} in ${days} from Siliguri origin · ${freeShipText} · ${codText}.`,
     });
-  }, [pincode, cartSubtotal, totalPricePaise, formatINR, isWholesaleMode]);
+  }, [pincode, cartSubtotal, totalPricePaise, formatINR, isWholesaleMode, hasExplicitShippingOverride, freeShippingEnabled, freeShippingThresholdPaise, flatShippingPaise]);
 
   const handleShare = async () => {
     if (typeof window === "undefined") return;
@@ -353,9 +366,21 @@ export function VariantPicker({
       data-testid="purchase-panel"
       aria-label={`Purchase options for ${product.name}`}
     >
-      {/* 1. Rating, Reviews & Share Bar */}
+      {/* 1. Rating, Origin & Share Bar */}
       <div className="flex items-center justify-between gap-4 py-2 border-b border-[#e8e4dc] mb-3 text-xs">
-        <span className="font-semibold text-[#5a6655] uppercase tracking-wider text-[11px]"><StorefrontText id="copy_97f19ad6e6888594" fallback="Direct from Estate" /></span>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="font-semibold text-[#5a6655] uppercase tracking-wider text-[11px]"><StorefrontText id="copy_97f19ad6e6888594" fallback="Direct from Estate" /></span>
+          {reviewSummary && reviewSummary.reviewCount > 0 && (
+            <a
+              href="#verified-reviews"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#1b3022] hover:underline"
+            >
+              <Star size={12} className="fill-[#b36b3d] text-[#b36b3d]" aria-hidden="true" />
+              <span>{reviewSummary.ratingValue.toFixed(1)}</span>
+              <span className="text-[#5a6655] font-medium">({reviewSummary.reviewCount})</span>
+            </a>
+          )}
+        </div>
         <button
           type="button"
           onClick={handleShare}
@@ -458,6 +483,33 @@ export function VariantPicker({
           <span>{isSoldOut ? "Sold Out" : "In Stock"}</span>
         </div>
       </div>
+
+      {/* Synchronized Delivery & Return Policy Summary (matches Google & OpenAI schema/feeds) */}
+      {(() => {
+        const variantShipPaise =
+          !hasExplicitShippingOverride && freeShippingEnabled && currentUnitPaise >= freeShippingThresholdPaise
+            ? 0
+            : flatShippingPaise;
+        const shipLabel =
+          variantShipPaise === 0
+            ? "Free delivery"
+            : `${formatINR(variantShipPaise)} delivery${!hasExplicitShippingOverride && freeShippingEnabled ? ` (Free ${formatINR(freeShippingThresholdPaise)}+)` : ""}`;
+        return (
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-[#4a5047] mb-3">
+            <span className="inline-flex items-center gap-1 font-medium text-[#1b3022]">
+              <Truck size={12} aria-hidden="true" />
+              <span>{deliveryWindowLabel}</span>
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{shipLabel}</span>
+            <span aria-hidden="true">·</span>
+            <Link href="/returns" className="inline-flex items-center gap-1 hover:underline text-[#1b3022] font-medium">
+              <RotateCcw size={11} aria-hidden="true" />
+              <span>{returnWindowDays}-day returns</span>
+            </Link>
+          </div>
+        );
+      })()}
 
       {/* Interactive Wholesale Tier Cards & Freight Notice */}
       {isWholesaleMode && (
@@ -878,7 +930,10 @@ export function VariantPicker({
             <span>Check Delivery &amp; COD Availability</span>
           </label>
           <span className="text-[11px] text-[#556358] flex items-center gap-1">
-            <Truck size={12} aria-hidden="true" /> Free delivery ₹499+
+            <Truck size={12} aria-hidden="true" />{" "}
+            {!hasExplicitShippingOverride && freeShippingEnabled
+              ? `Free delivery ${formatINR(freeShippingThresholdPaise)}+`
+              : `Flat ${formatINR(flatShippingPaise)} delivery`}
           </span>
         </div>
         <div className="flex items-center gap-2">

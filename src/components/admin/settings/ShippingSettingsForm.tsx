@@ -31,6 +31,10 @@ export function ShippingSettingsForm() {
   const [shippingFeeRupees, setShippingFeeRupees] = useState<number>(99);
   const [calculationMode, setCalculationMode] = useState<"flat" | "live">("flat");
   const [dispatchCommitment, setDispatchCommitment] = useState("24-48 hours from Siliguri hub");
+  const [handlingDaysMin, setHandlingDaysMin] = useState<number>(1);
+  const [handlingDaysMax, setHandlingDaysMax] = useState<number>(2);
+  const [transitDaysMin, setTransitDaysMin] = useState<number>(2);
+  const [transitDaysMax, setTransitDaysMax] = useState<number>(5);
   const [announcementAutoSync, setAnnouncementAutoSync] = useState(true);
 
   // Cash on Delivery (COD) Rules
@@ -99,6 +103,10 @@ export function ShippingSettingsForm() {
         setShippingFeeRupees(data.settings.shipping_flat_fee_rupees ?? 99);
         setCalculationMode(data.settings.shipping_calculation_mode ?? "flat");
         setDispatchCommitment(data.settings.dispatch_commitment || "24-48 hours from Siliguri hub");
+        setHandlingDaysMin(data.settings.handling_days_min ?? 1);
+        setHandlingDaysMax(data.settings.handling_days_max ?? 2);
+        setTransitDaysMin(data.settings.transit_days_min ?? 2);
+        setTransitDaysMax(data.settings.transit_days_max ?? 5);
         setAnnouncementAutoSync(data.settings.announcement_auto_sync ?? true);
 
         // Cash on Delivery
@@ -207,6 +215,10 @@ export function ShippingSettingsForm() {
         shipping_flat_fee_rupees: Number(shippingFeeRupees),
         shipping_calculation_mode: calculationMode,
         dispatch_commitment: dispatchCommitment.trim(),
+        handling_days_min: Number(handlingDaysMin),
+        handling_days_max: Number(handlingDaysMax),
+        transit_days_min: Number(transitDaysMin),
+        transit_days_max: Number(transitDaysMax),
         announcement_auto_sync: announcementAutoSync,
 
         // Cash on Delivery
@@ -412,6 +424,62 @@ export function ShippingSettingsForm() {
             <span style={{ fontSize: "12px", color: "#666", display: "block", marginTop: "4px" }}>
               Displayed on product pages, bag, and checkout trust badges.
             </span>
+          </div>
+
+          {/* Handling & Transit Windows (Used in Google & OpenAI Search Schemas/Feeds) */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                Min Handling Days
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="30"
+                value={handlingDaysMin}
+                onChange={(e) => setHandlingDaysMin(Number(e.target.value))}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                Max Handling Days
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="60"
+                value={handlingDaysMax}
+                onChange={(e) => setHandlingDaysMax(Number(e.target.value))}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                Min Transit Days
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="30"
+                value={transitDaysMin}
+                onChange={(e) => setTransitDaysMin(Number(e.target.value))}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 600, marginBottom: "6px" }}>
+                Max Transit Days
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="60"
+                value={transitDaysMax}
+                onChange={(e) => setTransitDaysMax(Number(e.target.value))}
+                style={{ width: "100%", padding: "10px 12px", border: "1px solid #ccc", borderRadius: "6px", fontSize: "14px" }}
+              />
+            </div>
           </div>
 
           {/* Announcement Bar Auto-Sync */}

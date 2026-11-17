@@ -192,3 +192,30 @@ Hidden sourcing values and external integrations are preserved. Added nullable
 JSON-text storage via migration 037, shared validation and HTTP/MCP read/write
 parity. See `docs/TEA_MOMENTS.md` for migration, backup and isolated preview steps.
 No production deployment or automatic editorial backfill.
+
+## Tea Traders — selected option 2 (2026-11-17)
+
+Implemented the chosen Leaf to Business split hero, audience paths, catalogue-backed
+product shelf with exact pack selection, direct checkout navigation, optional
+WhatsApp enquiry, purchase guidance, short consent-based quote form and FAQs.
+All product photographs come from backend primary/gallery/SKU records. No generated
+product mockups replace backend photographs. Empty/disabled/missing-image/out-of-stock,
+validation, submission, error and saved-reference states are provided.
+
+`/admin/business` now opens the Tea Traders Slider & Shop editor: ordered hero
+slides, featured products, guidance-image product, public text and SEO. The same
+validated document is exposed through `/api/admin/business/traders` and MCP
+`business.getTradersPage` / `business.saveTradersPage`. Translation Studio's
+`tea-traders` resource covers visible copy and explicit slide text. B2B leads appear
+in `/admin/responses`. Existing server checkout remains the sole authority for
+chargeable stock, price, delivery and payment verification. No schema change,
+new dependency, production deployment or payment was performed.
+
+### Tea shops Counter Ritual — implemented locally, 2026-11-17
+
+Selected option 1 implemented with generated TeaFloww-branded pouch imagery,
+responsive Hindi-first presentation, direct commerce checkout and optional
+WhatsApp enquiry after lead persistence. Added `trade` Translation Studio resource
+shared with MCP/API, preserving reviewed legacy defaults and operator media URLs.
+Operations, screenshot evidence and limits: `docs/ui/tea-shops-ritual/README.md`.
+No production deployment or task-specific schema migration performed.

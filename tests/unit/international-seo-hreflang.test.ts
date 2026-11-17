@@ -120,9 +120,49 @@ describe("International SEO, Localized Metadata & hreflang Alternates", () => {
       resource,
     });
 
-    expect(localizedMeta.title).toBe("हिमालयी चाय संग्रह · Himalayan Tea House");
+    expect(localizedMeta.title).toBe("हिमालयी चाय संग्रह · TeaFloww");
     expect(localizedMeta.description).toBe("दार्जिलिंग की दुर्लभ पत्तियां");
     expect(localizedMeta.alternates?.canonical).toBe("https://himalayantea.com/hi/tea/darjeeling-spring");
+    expect(localizedMeta.openGraph?.locale).toBe("hi_IN");
+    expect(localizedMeta.twitter?.title).toBe("हिमालयी चाय संग्रह");
+    expect(localizedMeta.twitter?.description).toBe("दार्जिलिंग की दुर्लभ पत्तियां");
+  });
+
+  it("marks non-English pages noindex when interface translation is missing, and emits multilingual sitemap alternates when published", async () => {
+    const { editTranslation, queueTranslation, studio, sourceFor } = await import(
+      "@/lib/international/translations"
+    );
+    const { getCatalogSitemapEntries } = await import("@/lib/seo/sitemap");
+
+    const resource = `product:${testProductId}`;
+    // Publish French product translation WITHOUT publishing interface in French
+    queueTranslation(resource, "fr");
+    const frItem = studio("fr").find((r) => r.resource === resource)!;
+    const source = sourceFor(resource);
+    editTranslation(
+      frItem.translation!.id,
+      { ...source, seo_title: "Thé de Printemps Darjeeling", seo_description: "Feuilles fines du domaine Gopaldhara" },
+      "publish"
+    );
+
+    const frMeta = constructMetadata({
+      title: "Darjeeling Spring",
+      description: "Artisanal spring flush",
+      path: "/tea/darjeeling-spring",
+      locale: "fr",
+      resource,
+    });
+    expect(frMeta.robots).toEqual(expect.objectContaining({ index: false, follow: false }));
+
+    const entries = getCatalogSitemapEntries();
+    const hiUrl = "https://himalayantea.com/hi/tea/darjeeling-spring";
+    const enEntry = entries.find((e) => e.url === "https://himalayantea.com/tea/darjeeling-spring");
+    const hiEntry = entries.find((e) => e.url === hiUrl);
+    expect(enEntry?.alternates?.languages?.hi).toBe(hiUrl);
+    expect(enEntry?.alternates?.languages?.en).toBe("https://himalayantea.com/tea/darjeeling-spring");
+    expect(enEntry?.alternates?.languages?.["x-default"]).toBe("https://himalayantea.com/tea/darjeeling-spring");
+    expect(enEntry?.alternates?.languages?.fr).toBeUndefined();
+    expect(hiEntry?.alternates?.languages?.hi).toBe(hiUrl);
   });
 
   it("ensures country and currency choices do not create duplicate SEO canonicals", () => {

@@ -16,6 +16,7 @@ import {
   Info,
   CheckCircle,
   Search,
+  MapPin,
 } from "lucide-react";
 import type { FeedItem } from "@/lib/feedTypes";
 import { isPrivateHost } from "@/lib/feedsHost";
@@ -24,11 +25,24 @@ interface FeedsClientProps {
   items: FeedItem[];
   isTokenProtected: boolean;
   publicBaseUrl?: string;
+  initialLocalStoreCode?: string;
+  initialLocalPickupMethod?: string;
+  initialLocalPickupSla?: string;
 }
 
-export function FeedsClient({ items, isTokenProtected, publicBaseUrl }: FeedsClientProps) {
+export function FeedsClient({
+  items,
+  isTokenProtected,
+  publicBaseUrl,
+  initialLocalStoreCode = "",
+  initialLocalPickupMethod = "",
+  initialLocalPickupSla = "",
+}: FeedsClientProps) {
   const [origin, setOrigin] = useState<string>("");
   const [tokenInput, setTokenInput] = useState<string>("");
+  const [localStoreCode, setLocalStoreCode] = useState<string>(initialLocalStoreCode);
+  const [localPickupMethod, setLocalPickupMethod] = useState<string>(initialLocalPickupMethod);
+  const [localPickupSla, setLocalPickupSla] = useState<string>(initialLocalPickupSla);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -56,6 +70,32 @@ export function FeedsClient({ items, isTokenProtected, publicBaseUrl }: FeedsCli
     if (download) {
       params.set("download", "1");
       params.set("base_url", effectivePublicOrigin);
+    }
+    if (tokenInput.trim()) {
+      params.set("token", tokenInput.trim());
+    }
+    const query = params.toString();
+    return query ? `${base}?${query}` : base;
+  };
+
+  const buildLocalFeedUrl = (path: string, download = false) => {
+    const base = download ? path : `${effectivePublicOrigin}${path}`;
+    const params = new URLSearchParams();
+    if (download) {
+      params.set("download", "1");
+      params.set("base_url", effectivePublicOrigin);
+    }
+    const code = localStoreCode.trim() || "SILIGURI-01";
+    if (!initialLocalStoreCode || localStoreCode.trim() !== initialLocalStoreCode) {
+      params.set("store_code", code);
+    }
+    if (localPickupMethod && localPickupMethod !== initialLocalPickupMethod) {
+      params.set("pickup_method", localPickupMethod);
+      if (localPickupMethod !== "not supported" && localPickupSla) {
+        params.set("pickup_sla", localPickupSla);
+      }
+    } else if (localPickupSla && localPickupSla !== initialLocalPickupSla && localPickupMethod && localPickupMethod !== "not supported") {
+      params.set("pickup_sla", localPickupSla);
     }
     if (tokenInput.trim()) {
       params.set("token", tokenInput.trim());
@@ -473,8 +513,10 @@ export function FeedsClient({ items, isTokenProtected, publicBaseUrl }: FeedsCli
 
             <p style={{ fontSize: "14px", color: "#444", lineHeight: 1.5, marginBottom: "18px" }}>
               Formatted to the OpenAI Commerce Product Feed specification for ChatGPT discovery with{" "}
-              <code>item_id</code>, <code>url</code>, <code>image_url</code>, <code>seller_name</code>,{" "}
-              <code>target_countries</code>, and search/checkout eligibility flags.
+              <code>item_id</code>, <code>url</code>, <code>image_url</code>, <code>shipping</code>,{" "}
+              <code>delivery_estimate</code>, <code>accepts_returns</code>, <code>return_window</code>,{" "}
+              <code>review_count</code> / <code>star_rating</code> (when verified reviews exist), and{" "}
+              <code>target_countries</code>.
             </p>
 
             <div style={{ marginBottom: "20px" }}>
@@ -565,6 +607,187 @@ export function FeedsClient({ items, isTokenProtected, publicBaseUrl }: FeedsCli
               <strong> <StorefrontText id="copy_77d5aa1023fd7a88" fallback="Endpoint Alias:" /> </strong> <code>/api/feeds/openai</code>
             </div>
           </article>
+
+          {/* Channel 4: Google Local Product Inventory (India / GBP) */}
+          <article
+            style={{
+              background: "white",
+              border: "1px solid var(--stone)",
+              borderRadius: "8px",
+              padding: "28px",
+              display: "flex",
+              flexDirection: "column",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ background: "#e8ede7", padding: "10px", borderRadius: "6px", color: "var(--forest)" }}>
+                  <MapPin size={24} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "20px", margin: 0 }}>Google Local Inventory</h3>
+                  <span style={{ fontSize: "12px", color: "#666" }}>Free Local Listings &amp; Local Inventory Ads (India)</span>
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "4px 8px",
+                  borderRadius: "4px",
+                  background: "#e8ede7",
+                  color: "var(--forest)",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                XML / TSV
+              </span>
+            </div>
+
+            <p style={{ fontSize: "14px", color: "#444", marginBottom: "16px" }}>
+              Dedicated Local Product Inventory feed matching online <code>g:id</code> SKUs with your linked Google Business Profile <code>store_code</code>, INR <code>price</code>, <code>quantity</code>, and optional <code>pickup_sla</code>.
+            </p>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "14px" }}>
+              <div>
+                <label htmlFor="public-local-store-code" style={{ display: "block", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "#5a6655", marginBottom: "4px" }}>
+                  GBP Store Code
+                </label>
+                <input
+                  id="public-local-store-code"
+                  type="text"
+                  value={localStoreCode}
+                  onChange={(e) => setLocalStoreCode(e.target.value)}
+                  placeholder="SILIGURI-01"
+                  style={{
+                    width: "100%",
+                    padding: "6px 10px",
+                    borderRadius: "4px",
+                    border: "1px solid var(--stone)",
+                    fontSize: "12px",
+                    fontFamily: "monospace",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+              <div>
+                <label htmlFor="public-local-pickup" style={{ display: "block", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "#5a6655", marginBottom: "4px" }}>
+                  Pickup SLA
+                </label>
+                <select
+                  id="public-local-pickup"
+                  value={localPickupMethod ? `${localPickupMethod}:${localPickupSla || "same_day"}` : ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val) {
+                      setLocalPickupMethod("");
+                      setLocalPickupSla("");
+                    } else {
+                      const [m, s] = val.split(":");
+                      setLocalPickupMethod(m);
+                      setLocalPickupSla(s || "");
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: "4px",
+                    border: "1px solid var(--stone)",
+                    fontSize: "12px",
+                    background: "white",
+                    boxSizing: "border-box",
+                  }}
+                >
+                  <option value="">No pickup attributes</option>
+                  <option value="buy:same_day">buy / same_day</option>
+                  <option value="buy:next_day">buy / next_day</option>
+                  <option value="reserve:same_day">reserve / same_day</option>
+                  <option value="reserve:next_day">reserve / next_day</option>
+                  <option value="ship to store:2-day">ship to store / 2-day</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "20px", flexGrow: 1 }}>
+              <label style={{ display: "block", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", color: "#5a6655", marginBottom: "6px" }}>
+                Live Local Inventory URL (XML)
+              </label>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  background: "var(--paper)",
+                  border: "1px solid var(--stone)",
+                  borderRadius: "4px",
+                  padding: "8px 12px",
+                  gap: "8px",
+                }}
+              >
+                <code
+                  style={{
+                    flex: 1,
+                    fontSize: "13px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    color: "var(--forest)",
+                    fontFamily: "monospace",
+                  }}
+                >
+                  {buildLocalFeedUrl("/feeds/google-local.xml")}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(buildLocalFeedUrl("/feeds/google-local.xml"), "google-local-xml")}
+                  className="icon-button"
+                  title="Copy Local Inventory XML URL"
+                  aria-label="Copy Google Local Inventory XML feed URL"
+                  style={{ padding: "4px" }}
+                >
+                  {copiedKey === "google-local-xml" ? <Check size={16} color="#23483a" /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(buildLocalFeedUrl("/feeds/google-local.xml"), "google-local-xml")}
+                className="button button-primary"
+                style={{ flex: 1, minHeight: "40px" }}
+              >
+                {copiedKey === "google-local-xml" ? <Check size={16} /> : <Copy size={16} />}
+                <span>{copiedKey === "google-local-xml" ? "Copied URL!" : "Copy Live URL"}</span>
+              </button>
+              <a
+                href={buildLocalFeedUrl("/feeds/google-local.tsv", true)}
+                download="google-local-inventory.tsv"
+                className="button button-outline"
+                style={{ minHeight: "40px", padding: "10px 16px" }}
+                title="Download TSV File"
+              >
+                <Download size={16} />
+                <span>Download TSV</span>
+              </a>
+              <a
+                href={buildLocalFeedUrl("/feeds/google-local.xml")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button button-cream"
+                style={{ minHeight: "40px", padding: "10px 14px" }}
+                title="View in new tab"
+                aria-label="View Google Local Inventory XML in new browser tab"
+              >
+                <ExternalLink size={16} />
+              </a>
+            </div>
+
+            <div style={{ marginTop: "16px", paddingTop: "14px", borderTop: "1px solid #eee", fontSize: "12px", color: "#666" }}>
+              <strong>TSV / Alias:</strong> <code>/feeds/google-local.tsv</code> · <code>/api/feeds/google-local-inventory</code> ·{" "}
+              <strong>Ratings XML:</strong> <a href={buildUrl("/feeds/google-reviews.xml")} target="_blank" rel="noopener noreferrer"><code>/feeds/google-reviews.xml</code></a>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -613,6 +836,19 @@ export function FeedsClient({ items, isTokenProtected, publicBaseUrl }: FeedsCli
               <li>Each line is a UTF-8 JSON object with <code>item_id</code>, <code>title</code>, <code>description</code>, <code>url</code>, <code>image_url</code>, <code>price</code>, <code>availability</code>, <code>brand</code>, and <code>seller_name</code>.</li>
               <li>Geo-tagging defaults to <code>store_country: &quot;IN&quot;</code> and <code>target_countries: [&quot;IN&quot;]</code> (configurable via environment variables).</li>
               <li>Upload the snapshot using a stable filename via OpenAI Commerce SFTP or file upload on a daily schedule.</li>
+            </ol>
+          </div>
+
+          <div style={{ background: "white", padding: "24px", borderRadius: "8px", border: "1px solid var(--stone)" }}>
+            <h3 style={{ fontSize: "18px", display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+              <CheckCircle size={18} color="#23483a" />
+              <span>Google Local Inventory Setup (India)</span>
+            </h3>
+            <ol style={{ paddingLeft: "20px", fontSize: "14px", lineHeight: 1.7, color: "#333", margin: 0 }}>
+              <li><strong>Online-only stores:</strong> Disable <em>Free local listings</em> and <em>Local inventory ads</em> under Merchant Center <strong>Settings &gt; Add-ons</strong> if you do not sell from a physical storefront.</li>
+              <li><strong>Physical stores:</strong> Link your claimed <strong>Google Business Profile</strong> to Merchant Center and assign a matching <code>store_code</code>.</li>
+              <li>Delete any manually uploaded inventory data in Merchant Center, then add a <strong>Local product inventory</strong> scheduled fetch pointing to <code>{buildLocalFeedUrl("/feeds/google-local.xml")}</code> (or <code>.tsv</code>).</li>
+              <li>All SKUs (<code>id</code>) match <code>g:id</code> in <code>/feeds/google.xml</code>, and out-of-stock variants automatically omit store pickup eligibility.</li>
             </ol>
           </div>
         </div>

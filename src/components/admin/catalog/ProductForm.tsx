@@ -95,6 +95,13 @@ export interface ProductFormData {
   seo_description?: string | null;
   canonical_override?: string | null;
   noindex?: number;
+  shipping_fee_paise_override?: number | null;
+  handling_days_min_override?: number | null;
+  handling_days_max_override?: number | null;
+  transit_days_min_override?: number | null;
+  transit_days_max_override?: number | null;
+  return_window_days_override?: number | null;
+  return_fees_override?: string | null;
   // Attached PDF Dossier
   pdf_url?: string | null;
   pdf_title?: string | null;
@@ -156,6 +163,13 @@ const DEFAULT_FORM_DATA: ProductFormData = {
   seo_description: "",
   canonical_override: "",
   noindex: 0,
+  shipping_fee_paise_override: null,
+  handling_days_min_override: null,
+  handling_days_max_override: null,
+  transit_days_min_override: null,
+  transit_days_max_override: null,
+  return_window_days_override: null,
+  return_fees_override: null,
   pdf_url: null,
   pdf_title: null,
   wholesale_moq: null,
@@ -1317,6 +1331,20 @@ export function ProductForm({ initialData, isEdit = false, productId }: ProductF
             onCanonicalOverrideChange={(val) => handleChange("canonical_override", val)}
             noindex={formData.noindex}
             onNoindexChange={(val) => handleChange("noindex", val ? 1 : 0)}
+            shippingFeePaiseOverride={formData.shipping_fee_paise_override}
+            onShippingFeePaiseOverrideChange={(val) => handleChange("shipping_fee_paise_override", val)}
+            handlingDaysMinOverride={formData.handling_days_min_override}
+            onHandlingDaysMinOverrideChange={(val) => handleChange("handling_days_min_override", val)}
+            handlingDaysMaxOverride={formData.handling_days_max_override}
+            onHandlingDaysMaxOverrideChange={(val) => handleChange("handling_days_max_override", val)}
+            transitDaysMinOverride={formData.transit_days_min_override}
+            onTransitDaysMinOverrideChange={(val) => handleChange("transit_days_min_override", val)}
+            transitDaysMaxOverride={formData.transit_days_max_override}
+            onTransitDaysMaxOverrideChange={(val) => handleChange("transit_days_max_override", val)}
+            returnWindowDaysOverride={formData.return_window_days_override}
+            onReturnWindowDaysOverrideChange={(val) => handleChange("return_window_days_override", val)}
+            returnFeesOverride={formData.return_fees_override}
+            onReturnFeesOverrideChange={(val) => handleChange("return_fees_override", val)}
             defaultTitle={formData.name || "Product Name"}
             defaultDescription={formData.description || formData.tasting_notes}
             defaultPath={`/tea/${formData.slug || "product-slug"}`}

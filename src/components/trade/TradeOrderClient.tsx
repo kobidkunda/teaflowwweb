@@ -119,7 +119,7 @@ export function TradeOrderClient({
               </p>
               <div style={{ marginTop: 16 }}>
                 <Link
-                  href={`/tea-shops/${locale}#bulk`}
+                  href={`/tea-shops/${locale}?pin=${encodeURIComponent(order.destinationPin)}#bulk`}
                   className={`${styles.btn} ${styles.btnPrimary}`}
                 >
                   Check today&apos;s price to reorder

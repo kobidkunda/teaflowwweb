@@ -227,3 +227,24 @@ quote analytics supply purchase amounts. PurchaseStatus is the sole active paid
 retail conversion source; demo and unpaid COD confirmations do not emit purchase.
 Catalog SKUs match feed identifiers. See the [audit and GTM setup contract](analytics/TRACKING_AUDIT_2026-11-11.md)
 for event definitions, verification evidence, platform release gates and limits.
+
+## Tea Traders presentation — 2026-11-17
+
+`/tea-traders` uses the selected split-hero design with server-resolved catalogue
+products and small client carousel, pack-selection and enquiry components.
+`src/lib/business/traderRepository.ts` owns the validated presentation JSON in
+`store_settings.tea_traders_presentation_v1`. GUI, authenticated REST and MCP share
+this reader/writer; no schema migration is required. The document stores product
+IDs rather than copied photo URLs, stock or prices. Published/enabled-product
+filtering applies on every render, so unpublishing a selected product removes it
+from the public page without exposing a draft. SKU image mapping uses the existing
+catalogue helper.
+
+The `tea-traders` Translation Studio resource includes all page/SEO copy and
+explicit slide titles/bodies. Source hashing invalidates old publications after
+English edits. Existing translation GUI/API/MCP workflows publish these texts;
+missing/stale fields retain English. Product resources own product-name translations.
+The existing B2B form endpoint retains idempotency, consent and rate limits; its
+`b2b_leads` records now appear in the unified Responses inbox under Bulk orders.
+Lead validation accepts supported storefront locales; legacy EN/HI B2B page-content
+constraints remain unchanged. See `docs/ui/tea-traders-redesign/README.md`.

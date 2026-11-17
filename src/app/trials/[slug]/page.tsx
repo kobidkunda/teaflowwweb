@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { constructMetadata } from "@/lib/seo/metadata";
-import { getBreadcrumbSchema } from "@/lib/seo/schema";
-import { getSiteUrl } from "@/lib/seo/site";
+import { getBreadcrumbSchema, getTrialProductSchema } from "@/lib/seo/schema";
+import { resolveProductCommercePolicy, toClientCommercePolicy } from "@/lib/seo/productPolicy";
+import { listApprovedReviews } from "@/lib/reviews";
+import { ProductReviewsSection } from "@/components/ProductReviewsSection";
 import { SESSION_COOKIE, verifySessionValue } from "@/lib/adminSessions";
 import { TrialService } from "@/lib/trials/service";
 import { DraftPreviewBanner } from "@/components/trials/DraftPreviewBanner";
@@ -108,45 +110,17 @@ export default async function TrialPDPPage({
   const isDraftPreview = !isPublished && isAdmin;
   const publicDto = TrialService.toPublicDto(trial, { allowDraftPreview: true });
 
-  const siteUrl = getSiteUrl();
-
-  const productJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "@id": `${siteUrl}/trials/${publicDto.slug}#product`,
-    name: publicDto.title,
-    description: publicDto.description || publicDto.tagline || publicDto.title,
-    image: publicDto.hero_image?.url
-      ? [
-          publicDto.hero_image.url.startsWith("http")
-            ? publicDto.hero_image.url
-            : `${siteUrl}${publicDto.hero_image.url.startsWith("/") ? "" : "/"}${publicDto.hero_image.url}`,
-        ]
-      : undefined,
-    sku: publicDto.sku,
-    brand: {
-      "@type": "Brand",
-      name: "TeaFloww",
-    },
-    weight: {
-      "@type": "QuantitativeValue",
-      value: publicDto.net_weight_g || 200,
-      unitCode: "GRM",
-    },
-    offers: {
-      "@type": "Offer",
-      url: `${siteUrl}/trials/${publicDto.slug}`,
-      priceCurrency: "INR",
-      price: (publicDto.price_paise / 100).toFixed(2),
-      availability: publicDto.in_stock
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-      seller: {
-        "@type": "Organization",
-        name: "TeaFloww",
-      },
-    },
-  };
+  const commercePolicy = resolveProductCommercePolicy({
+    entityType: "trial",
+    entityId: trial.id,
+    overrides: publicDto.policy_overrides,
+  });
+  const approvedReviews = listApprovedReviews("trial", trial.id);
+  const productJsonLd = getTrialProductSchema(publicDto, {
+    policy: commercePolicy,
+    reviews: approvedReviews,
+  });
+  const clientPolicy = toClientCommercePolicy(commercePolicy);
 
   const breadcrumbJsonLd = getBreadcrumbSchema([
     { name: "Home", url: "/" },
@@ -186,7 +160,17 @@ export default async function TrialPDPPage({
         }}
       />
 
-      <TrialPDPInteractiveView trial={publicDto} />
+      <TrialPDPInteractiveView trial={publicDto} commercePolicy={clientPolicy} />
+
+      <div className="max-w-[1260px] mx-auto px-4 md:px-6 pb-12">
+        <ProductReviewsSection
+          entityType="trial"
+          entityId={trial.id}
+          productName={publicDto.title}
+          summary={commercePolicy.reviewSummary}
+          reviews={approvedReviews}
+        />
+      </div>
     </div>
   );
 }

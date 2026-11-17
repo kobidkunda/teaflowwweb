@@ -34,7 +34,14 @@ export interface StoreSettings {
   telephone: string;
   opening_hours: string;
   dispatch_commitment: string;
+  handling_days_min: number;
+  handling_days_max: number;
+  transit_days_min: number;
+  transit_days_max: number;
   return_window_days: number;
+  return_fees: string;
+  return_method: string;
+  return_policy_label: string;
   guarantee_description: string;
   social_instagram: string;
   social_twitter: string;
@@ -55,6 +62,10 @@ export interface StoreSettings {
   webhook_url_quote: string;
   webhook_url_order: string;
   webhook_url_subscription: string;
+  // Google Merchant Center Local Inventory (India / GBP)
+  google_local_store_code: string;
+  google_local_pickup_method: string;
+  google_local_pickup_sla: string;
 }
 
 export interface UpdateStoreSettingsInput {
@@ -118,8 +129,18 @@ export interface UpdateStoreSettingsInput {
   openingHours?: string;
   dispatch_commitment?: string;
   dispatchCommitment?: string;
+  handling_days_min?: number;
+  handling_days_max?: number;
+  transit_days_min?: number;
+  transit_days_max?: number;
   return_window_days?: number;
   returnWindowDays?: number;
+  return_fees?: string;
+  returnFees?: string;
+  return_method?: string;
+  returnMethod?: string;
+  return_policy_label?: string;
+  returnPolicyLabel?: string;
   guarantee_description?: string;
   guaranteeDescription?: string;
   social_instagram?: string;
@@ -150,6 +171,12 @@ export interface UpdateStoreSettingsInput {
   webhook_url_quote?: string;
   webhook_url_order?: string;
   webhook_url_subscription?: string;
+  google_local_store_code?: string;
+  googleLocalStoreCode?: string;
+  google_local_pickup_method?: string;
+  googleLocalPickupMethod?: string;
+  google_local_pickup_sla?: string;
+  googleLocalPickupSla?: string;
 }
 
 export function getStoreSettings(): StoreSettings {
@@ -189,7 +216,14 @@ export function getStoreSettings(): StoreSettings {
   const phone = map.get("telephone") || "+91-353-2570112";
   const hours = map.get("opening_hours") || "Monday – Saturday, 09:00 to 18:00 IST";
   const dispatchCommitment = map.get("dispatch_commitment") || "24-48 hours from Siliguri hub";
-  const returnDays = Number(map.get("return_window_days") || "14");
+  const handlingDaysMin = Math.max(0, Number(map.get("handling_days_min") ?? "1") || 0);
+  const handlingDaysMax = Math.max(handlingDaysMin, Number(map.get("handling_days_max") ?? "2") || handlingDaysMin);
+  const transitDaysMin = Math.max(0, Number(map.get("transit_days_min") ?? "2") || 0);
+  const transitDaysMax = Math.max(transitDaysMin, Number(map.get("transit_days_max") ?? "5") || transitDaysMin);
+  const returnDays = Math.max(1, Number(map.get("return_window_days") || "14"));
+  const returnFees = map.get("return_fees") || "FreeReturn";
+  const returnMethod = map.get("return_method") || "ReturnByMail";
+  const returnPolicyLabel = map.get("return_policy_label") || "";
   const guaranteeDesc = map.get("guarantee_description") ||
     "14-day freshness and transit resolution guarantee. Unopened tins or items damaged in transit are replaced or refunded upon inspection.";
   const instagram = map.get("social_instagram") || "https://www.instagram.com/himalayanteahouse";
@@ -240,7 +274,14 @@ export function getStoreSettings(): StoreSettings {
     telephone: phone,
     opening_hours: hours,
     dispatch_commitment: dispatchCommitment,
+    handling_days_min: handlingDaysMin,
+    handling_days_max: handlingDaysMax,
+    transit_days_min: transitDaysMin,
+    transit_days_max: transitDaysMax,
     return_window_days: returnDays,
+    return_fees: returnFees,
+    return_method: returnMethod,
+    return_policy_label: returnPolicyLabel,
     guarantee_description: guaranteeDesc,
     social_instagram: instagram,
     social_twitter: twitter,
@@ -260,6 +301,9 @@ export function getStoreSettings(): StoreSettings {
     webhook_url_quote: map.get("webhook_url_quote") || "",
     webhook_url_order: map.get("webhook_url_order") || "",
     webhook_url_subscription: map.get("webhook_url_subscription") || "",
+    google_local_store_code: map.get("google_local_store_code") || "",
+    google_local_pickup_method: map.get("google_local_pickup_method") || "",
+    google_local_pickup_sla: map.get("google_local_pickup_sla") || "",
   };
 }
 
@@ -294,7 +338,14 @@ export function updateStoreSettings(input: UpdateStoreSettingsInput): StoreSetti
   const phone = (input.telephone ?? input.contactPhone ?? current.telephone).trim();
   const hours = (input.opening_hours ?? input.openingHours ?? current.opening_hours).trim();
   const dispatchCommitment = (input.dispatch_commitment ?? input.dispatchCommitment ?? current.dispatch_commitment).trim();
-  const returnDays = String(input.return_window_days ?? input.returnWindowDays ?? current.return_window_days);
+  const handlingDaysMin = Math.max(0, Number(input.handling_days_min ?? current.handling_days_min) || 0);
+  const handlingDaysMax = Math.max(handlingDaysMin, Number(input.handling_days_max ?? current.handling_days_max) || handlingDaysMin);
+  const transitDaysMin = Math.max(0, Number(input.transit_days_min ?? current.transit_days_min) || 0);
+  const transitDaysMax = Math.max(transitDaysMin, Number(input.transit_days_max ?? current.transit_days_max) || transitDaysMin);
+  const returnDays = String(Math.max(1, Number(input.return_window_days ?? input.returnWindowDays ?? current.return_window_days) || 14));
+  const returnFees = (input.return_fees ?? input.returnFees ?? current.return_fees).trim() || "FreeReturn";
+  const returnMethod = (input.return_method ?? input.returnMethod ?? current.return_method).trim() || "ReturnByMail";
+  const returnPolicyLabel = (input.return_policy_label ?? input.returnPolicyLabel ?? current.return_policy_label).trim();
   const guaranteeDesc = (input.guarantee_description ?? input.guaranteeDescription ?? current.guarantee_description).trim();
   const instagram = (input.social_instagram ?? input.socialInstagram ?? current.social_instagram).trim();
   const twitter = (input.social_twitter ?? input.socialTwitter ?? current.social_twitter).trim();
@@ -373,7 +424,14 @@ export function updateStoreSettings(input: UpdateStoreSettingsInput): StoreSetti
     upsertStmt.run("telephone", phone);
     upsertStmt.run("opening_hours", hours);
     upsertStmt.run("dispatch_commitment", dispatchCommitment);
+    if (input.handling_days_min !== undefined) upsertStmt.run("handling_days_min", String(handlingDaysMin));
+    if (input.handling_days_max !== undefined) upsertStmt.run("handling_days_max", String(handlingDaysMax));
+    if (input.transit_days_min !== undefined) upsertStmt.run("transit_days_min", String(transitDaysMin));
+    if (input.transit_days_max !== undefined) upsertStmt.run("transit_days_max", String(transitDaysMax));
     upsertStmt.run("return_window_days", returnDays);
+    if ((input.return_fees ?? input.returnFees) !== undefined) upsertStmt.run("return_fees", returnFees);
+    if ((input.return_method ?? input.returnMethod) !== undefined) upsertStmt.run("return_method", returnMethod);
+    if ((input.return_policy_label ?? input.returnPolicyLabel) !== undefined) upsertStmt.run("return_policy_label", returnPolicyLabel);
     upsertStmt.run("guarantee_description", guaranteeDesc);
     upsertStmt.run("social_instagram", instagram);
     upsertStmt.run("social_twitter", twitter);
@@ -407,6 +465,19 @@ export function updateStoreSettings(input: UpdateStoreSettingsInput): StoreSetti
       if (val !== undefined) {
         upsertStmt.run(key, val.trim());
       }
+    }
+
+    const googleLocalStoreCode = input.google_local_store_code ?? input.googleLocalStoreCode;
+    if (googleLocalStoreCode !== undefined) {
+      upsertStmt.run("google_local_store_code", googleLocalStoreCode.trim());
+    }
+    const googleLocalPickupMethod = input.google_local_pickup_method ?? input.googleLocalPickupMethod;
+    if (googleLocalPickupMethod !== undefined) {
+      upsertStmt.run("google_local_pickup_method", googleLocalPickupMethod.trim());
+    }
+    const googleLocalPickupSla = input.google_local_pickup_sla ?? input.googleLocalPickupSla;
+    if (googleLocalPickupSla !== undefined) {
+      upsertStmt.run("google_local_pickup_sla", googleLocalPickupSla.trim());
     }
 
     try {

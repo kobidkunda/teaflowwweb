@@ -48,6 +48,7 @@ export const FUNNEL_NAMES = [
   "retail_storefront",
   "trials",
   "wholesale_b2b",
+  "trade_tea_shops",
   "private_label",
   "blend_lab",
   "subscriptions",
@@ -61,6 +62,7 @@ export const FUNNEL_LABELS: Record<FunnelName, string> = {
   retail_storefront: "Retail Storefront",
   trials: "Home Tea Trials",
   wholesale_b2b: "Wholesale B2B",
+  trade_tea_shops: "TeaFloww Trade (Tea Shops)",
   private_label: "Private Label Studio",
   blend_lab: "Blend Lab",
   subscriptions: "Tea Subscriptions",
@@ -73,12 +75,14 @@ export const CONVERSATION_CHANNELS = [
   "whatsapp_checkout_help",
   "whatsapp_cart_recovery",
   "whatsapp_wholesale",
+  "whatsapp_trade",
   "whatsapp_private_label",
   "whatsapp_contact",
   "whatsapp_order",
   "phone_call",
   "contact_form",
   "wholesale_form",
+  "trade_enquiry_form",
   "admin_inbox_reply",
   "customer_feedback",
 ] as const;
@@ -173,6 +177,7 @@ export type FunnelTrackEventInput = z.infer<typeof funnelTrackEventSchema>;
 
 export function resolveFunnelNameFromPath(pathname: string): FunnelName {
   const clean = (pathname || "/").split("?")[0].toLowerCase();
+  if (clean.startsWith("/tea-shops") || clean.startsWith("/for-tea-shops")) return "trade_tea_shops";
   if (clean.startsWith("/trials")) return "trials";
   if (clean.startsWith("/wholesale")) return "wholesale_b2b";
   if (clean.startsWith("/private-label")) return "private_label";

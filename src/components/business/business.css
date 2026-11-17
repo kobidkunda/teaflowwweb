@@ -581,6 +581,25 @@
   color: var(--tf-ivory);
 }
 
+.tf-sr-only {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+.tf-field-hint {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--tf-almond);
+  line-height: 1.4;
+}
+
 .tf-field input,
 .tf-field select,
 .tf-field textarea {
@@ -593,12 +612,18 @@
   padding: 0.72rem 0.85rem;
   border-radius: 12px;
   font-size: 1rem;
+  transition: border-color 150ms ease, background-color 150ms ease;
 }
 
-.tf-field input[aria-invalid="true"],
-.tf-field select[aria-invalid="true"] {
+.tf-field input:is(:user-invalid, [aria-invalid="true"]),
+.tf-field select:is(:user-invalid, [aria-invalid="true"]) {
   border-color: #f87171;
   border-width: 2px;
+  background: #fff5f5;
+}
+
+.tf-field input[aria-invalid="false"]:user-valid {
+  border-color: #527f58;
 }
 
 .tf-error {
@@ -606,6 +631,9 @@
   font-size: 0.86rem;
   font-weight: 600;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .tf-error-summary {
@@ -615,6 +643,16 @@
   border: 1px solid #fca5a5;
   color: #fff5f5;
   font-size: 0.9rem;
+}
+
+.tf-error-summary a {
+  color: #fff5f5;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tf-error-summary a:hover {
+  color: var(--tf-honey-light);
 }
 
 .tf-note {
@@ -664,13 +702,37 @@
   margin-top: 1.5rem;
 }
 
+.tf-faq-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.tf-faq-toggle-all {
+  background: transparent;
+  border: 1px solid var(--tf-line);
+  border-radius: 9999px;
+  padding: 0.45rem 0.95rem;
+  min-height: 36px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--tf-forest);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.tf-faq-toggle-all:hover {
+  background: var(--tf-almond);
+  border-color: var(--tf-forest);
+}
+
 .tf-faq details {
   border-bottom: 1px solid var(--tf-line);
-  padding: 1.15rem 0;
+  padding: 0.95rem 0;
 }
 
 .tf-faq summary {
-  list-style-position: outside;
+  list-style: none;
   font-weight: 750;
   font-size: 1.05rem;
   cursor: pointer;
@@ -678,13 +740,65 @@
   min-height: 44px;
   display: flex;
   align-items: center;
+  gap: 0.65rem;
+  border-radius: 10px;
+  padding-inline: 0.35rem;
+}
+
+.tf-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.tf-faq summary:hover {
+  background: rgb(246 232 215 / 0.55);
+}
+
+.tf-faq summary::before {
+  content: "";
+  inline-size: 0.55em;
+  block-size: 0.55em;
+  flex-shrink: 0;
+  border-inline-end: 2.2px solid currentColor;
+  border-block-end: 2.2px solid currentColor;
+  transform: rotate(-45deg);
+}
+
+.tf-faq details[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.tf-faq details::details-content {
+  interpolate-size: allow-keywords;
+  overflow: clip;
+  contain: layout;
+}
+
+.tf-faq details:not([open])::details-content {
+  block-size: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tf-faq summary::before {
+    transition: transform 200ms ease;
+  }
+
+  .tf-faq details::details-content {
+    transition: block-size, content-visibility, display;
+    transition-duration: 0.28s;
+    transition-timing-function: ease-in-out;
+    transition-behavior: allow-discrete;
+  }
+}
+
+.tf-faq-body {
+  padding: 0.45rem 0 0.25rem 1.3rem;
 }
 
 .tf-faq p {
   max-width: 74ch;
   line-height: 1.75;
   color: var(--tf-ink-muted);
-  margin: 0.6rem 0 0;
+  margin: 0;
 }
 
 /* Footer */

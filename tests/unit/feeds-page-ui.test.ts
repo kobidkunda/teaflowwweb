@@ -53,6 +53,8 @@ describe("Dedicated Feeds Page & UI Components", () => {
     expect(markup).toContain("/feeds/google.xml");
     expect(markup).toContain("/feeds/catalog.csv");
     expect(markup).toContain("/feeds/openai.jsonl");
+    expect(markup).toContain("Google Local Inventory");
+    expect(markup).toContain("/feeds/google-local.xml");
   });
 
   it("renders FeedsClient with channels, metrics, and actions", () => {
@@ -175,6 +177,8 @@ describe("Dedicated Feeds Page & UI Components", () => {
     expect(markup).toContain("https://himalayantea.com/feeds/google.xml?token=secret123");
     expect(markup).toContain("https://himalayantea.com/feeds/catalog.csv?token=secret123");
     expect(markup).toContain("https://himalayantea.com/feeds/openai.jsonl?token=secret123");
+    expect(markup).toContain("Google Local Inventory");
+    expect(markup).toContain("/feeds/google-local.xml");
     expect(markup).toContain("darjeeling-ff-tin-100g");
     expect(markup).toContain("luxury_tin");
     expect(markup).toContain("749.00 INR");

@@ -165,3 +165,137 @@ Five Chromium regression tests passed, including keyboard, save/clear,
 validation and broken-image fallback. Impeccable detector returned no findings.
 Fresh finish reviewer viewed every capture and returned **Ship**, no material
 findings or required fixes. The approved incumbent design system is preserved.
+
+## Tea Traders — selected option 2 — 2026-11-17
+
+Source: `docs/ui/tea-traders-redesign/selected-option-2.png` (946×1663 generated
+mock, selected as the second displayed result). Browser target: `/tea-traders`.
+The first comparison normalized source to 1440 CSS px and paired the upper 1024 px
+with the desktop browser capture in `comparison-hero.png`.
+
+Initial findings:
+- P2: header/logo and hero CTA/supporting type were too small against the chosen
+  source. Increased desktop logo/nav, serif CTA text, button height and supporting
+  copy; aligned hero height and split to the source.
+- P2: one-column merchandising at 390 px made the buying/enquiry journey too long.
+  Kept two product columns at 390 px; single column starts at 360 px for readability.
+- P2 functional: admin saves rejected a valid browser Host when Next used an
+  internal bind origin. Reproduced as a failing regression, fixed Host handling
+  while retaining cross-site rejection, and passed all six focused contracts.
+
+Intentional differences: user requires backend product photography, so catalogue
+tins/pouches replace generated concept packaging. A product shelf adds direct
+buying to the selected source. Copy avoids unsupported sourcing/delivery claims.
+All photos retain backend identity; they are not reconstructed from the mock.
+
+Final review: `comparison-hero-final.png` pairs the selected source and actual
+1440 px browser render in one image. Reviewed layout, type, spacing, cream/forest
+palette, CTA hierarchy and backend photograph substitution. The header is slightly
+more compact than the concept; no material visual or functional findings remain.
+`desktop-1440.png`, `mobile-390.png` and `mobile-320.png` are real browser captures.
+The mobile hero crop was also reviewed at readable scale. DOM measurements confirm
+no horizontal overflow at 390 px or 320 px. Full-page screenshots retain normal
+content; `desktop-hero-final.png` is a crop of the actual desktop capture.
+
+Browser checks: manual carousel advances, exact selected pack Buy now reaches
+checkout with one item, add-to-bag confirmation, invalid enquiry errors, successful
+enquiry reference, admin slider add/reorder/save and storefront readback. No
+payment was submitted. Integration tests verify unified responses and translation
+GUI-service/API/MCP publication plus stale fallback. Temporary local admin and
+QA bag were removed; no matching QA leads remain; presentation defaults restored.
+
+Validation: latest TypeScript and scoped ESLint exit 0; six focused integration
+tests pass; full suite 3,137 passes / six PostgreSQL-only skips. Latest isolated
+production build exits 0 (130 static pages). See `docs/TESTING.md` for the full
+check/build concurrency limitation. No production deployment.
+
+final result: passed
+
+## Tea shops — Counter Ritual option 1 — 2026-11-17
+
+Source visual truth:
+`/Users/biolastic/.codex/generated_images/01a1e800-71f1-73a0-b4bd-7be72057f8ff/exec-d689007a-3b7a-4205-93e5-f0d36a14d616.png`.
+This is the selected first concept refined for the requested logo-bearing pouches
+and direct buying. Implementation: `docs/ui/tea-shops-ritual/desktop-1440.png`.
+
+**Comparison setup**
+Source 1122×1402 raster normalized to 1440×1800 (no device frame); implementation
+captured at 1440×1800 CSS px, deviceScaleFactor 1, using browser CDP capture.
+State: Hindi landing page, no modal, no PIN quote. Full paired evidence:
+`docs/ui/tea-shops-ritual/comparison-desktop.png`; focused pouch/logo evidence:
+`docs/ui/tea-shops-ritual/comparison-pouches.png`. Both were opened and inspected
+together. Independent browser captures also reviewed at 768×1024, 390×844 and
+320×740; viewport/scrollWidth match at 768 and 320.
+
+**Findings and comparison history**
+- Fixed P2 typography/scale drift: enlarged desktop display type, header brand,
+  hero action and trial-band heading/action after the first paired comparison.
+  Final desktop capture shows the intended cream/gold hierarchy and prominent CTA.
+- Fixed P2 mobile header wrapping: compact one-row header at 320 px, with labelled
+  help and language actions. Final `mobile-320.png` shows no clipped controls.
+- Fixed P2 transaction clarity: final checkout now includes the actual payment
+  discount line and explicitly distinguishes its authoritative total from the
+  earlier trade estimate. `checkout-review.png` shows ₹200 − ₹2 = ₹198.
+- Fixed P1 editor publication blocker: numeric PIN wording now preserves the
+  protected digit in source and translation. Unit regression checks all regional
+  defaults; isolated GUI returned Saved successfully and published status.
+  `admin-translation-published.png` records that result. The edited Hindi heading
+  was then observed on the same isolated storefront.
+
+**Required fidelity surfaces**
+- Fonts/typography: Hindi display hierarchy, two-line cream title and gold italic
+  emphasis match the selected direction. Existing supported font stack retained;
+  practical body copy remains readable rather than baked into the generated image.
+- Spacing/layout rhythm: split desktop hero, horizontal pouch band and three-step
+  strip retained. Longer explanatory copy and live product/quote controls extend
+  the source intentionally. Mobile uses an image-first hero and stacked sections.
+- Colors/tokens: forest background, warm brass actions, cream foreground and ivory
+  commerce sections retained; native focus, disabled and success states considered.
+- Image quality: generated chai-pour hero and four genuine raster pouch concepts
+  are installed, optimized and sharp at reviewed sizes. TeaFloww branding is visible
+  on every pouch. Existing catalogue photos remain catalogue-controlled. No custom
+  SVG/div-art replacement for source imagery; standard UI icons use the repo library.
+- Copy/content: unsupported guarantee/scarcity/testimonial claims are absent. Prices,
+  weights and availability come from the catalogue; PIN availability comes from the
+  server. AI illustration/packaging concept is disclosed. GUI/API/MCP publication
+  controls copy; admin implementation details do not leak into the customer journey.
+
+**Interactions and residual test gaps**
+Trial → PIN quote → direct checkout → server final total verified in browser without
+placing an order/payment. Editing city removes the payment action until recalculated.
+Consented enquiry returned a stored reference before WhatsApp handoff; success shown
+in `lead-saved-mobile.png`. GUI translation publishing and media controls reviewed.
+Browser error log was empty during the final landing/enquiry pass. Existing keyboard
+focus/native modal paths retained. Updated terminal Playwright suite was not run;
+no live gateway payment or production deployment was performed.
+
+**Open questions / follow-up polish (P3)**
+Replace concept packaging with approved physical packaging photography when available.
+Some operator-owned product titles/hours/ETA strings remain English until translated.
+The local copied catalogue contains historical fixture products, not a production
+merchandising decision. These do not block the redesigned buying/enquiry journey.
+
+**Implementation checklist**
+- [x] Selected direction, generated assets, branded pouches installed.
+- [x] Desktop and focused paired comparison reviewed after fixes.
+- [x] Mobile/tablet layouts and core buying/enquiry states reviewed.
+- [x] Admin translation publication and media edit surfaces verified.
+- [x] No actionable P0/P1/P2 design findings remain for this scope.
+
+final result: passed
+
+
+### Tea Traders Hindi follow-up — 2026-11-17
+
+Reviewed actual `hindi-hero.png`/`hindi-desktop.png` and mobile rendering at 390px.
+Devanagari navigation, heading, CTA and form text fit the existing responsive
+layout; no horizontal overflow (390 px viewport/document). All 84 page-copy fields
+are translated; catalogue identities and business hours retain backend values.
+Admin publication overrides starter copy. Seven feature and 22 shared translation
+regressions pass; no production deployment. Final result: passed.
+
+Tea shops final verification addendum: the isolated browser lead
+`ENQ-19703A7F58` visibly appeared in `/admin/responses`, status new, locale hi;
+evidence `docs/ui/tea-shops-ritual/admin-responses.png`.
+Full `npm run check` completed successfully with an isolated build output directory.
+Final result for Tea shops Counter Ritual remains: passed.

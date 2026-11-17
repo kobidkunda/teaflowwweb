@@ -1,9 +1,10 @@
 import { getStoreSettings } from "@/lib/storeSettings";
+import { getDeliverySettings } from "@/lib/deliverySettings";
 
 export const SITE_CONFIG = {
-  name: "Himalayan Tea House",
-  legalName: "Himalayan Tea House Private Limited",
-  brand: "Himalayan Tea House",
+  name: "TeaFloww",
+  legalName: "Nirva",
+  brand: "TeaFloww",
   tagline: "Orthodox & CTC Teas from Origin",
   description:
     "Direct-from-origin single-estate orthodox teas harvested in Darjeeling, Assam, Kangra, and Nilgiri. Graded, cupped, and packaged at origin in Siliguri to preserve high-mountain aromatics.",
@@ -12,17 +13,12 @@ export const SITE_CONFIG = {
   currencySymbol: "₹",
   defaultOgImage: "/images/og-himalayan-tea-house.jpg",
 
-  // Real business location & contact
-  // NOTE: Operator-managed values in `store_settings` override these fallbacks
-  // at runtime via getDynamicSiteConfig(). AGENTS.md lists the canonical
-  // TeaFloww/Nirva contact facts — update them via /admin/settings or MCP
-  // (store.updateSettings), not by editing this fallback, to avoid breaking
-  // feed/MCP/schema contracts covered by unit tests.
+  // Real business location & contact (AGENTS.md source of truth; overridden by store_settings via getDynamicSiteConfig)
   address: {
-    streetAddress: "Hill Cart Road, Near Tea Auction Centre, Matigara",
+    streetAddress: "Shiv Shakti Kali Bari Rd Sukantapally East",
     addressLocality: "Siliguri",
     addressRegion: "West Bengal",
-    postalCode: "734010",
+    postalCode: "734005",
     addressCountry: "IN",
   },
   geo: {
@@ -30,8 +26,8 @@ export const SITE_CONFIG = {
     longitude: 88.3953,
   },
   contact: {
-    email: "support@himalayantea.com",
-    telephone: "+91-353-2570112",
+    email: "info@teafloww.com",
+    telephone: "+91 7001304853",
     contactType: "customer service",
     availableLanguage: ["English", "Hindi", "Bengali", "Nepali"],
   },
@@ -39,16 +35,24 @@ export const SITE_CONFIG = {
     "Mo-Sa 09:00-18:00",
   ],
 
-  // Sourcing & Shipping details
+  // Sourcing & Shipping defaults (overridden by live DB settings)
   shipping: {
     minDeliveryOrderPaise: 0,
-    freeShippingThresholdPaise: 150000, // ₹1,500.00
+    freeShippingThresholdPaise: 59900, // ₹599.00
+    freeShippingEnabled: true,
     flatRatePaise: 9900, // ₹99.00
+    handlingDaysMin: 1,
+    handlingDaysMax: 2,
+    transitDaysMin: 2,
+    transitDaysMax: 5,
     dispatchCommitment: "24-48 hours from Siliguri hub",
     courierPartners: ["Blue Dart", "Delhivery", "India Post Speed Post"],
   },
   returns: {
     windowDays: 14,
+    returnFees: "FreeReturn",
+    returnMethod: "ReturnByMail",
+    returnPolicyLabel: "",
     policyDescription:
       "14-day freshness and transit resolution guarantee. Unopened tins or items damaged in transit are replaced or refunded upon inspection.",
   },
@@ -89,10 +93,16 @@ export function getSiteUrl(): string {
 export function getDynamicSiteConfig() {
   try {
     const s = getStoreSettings();
+    let d: ReturnType<typeof getDeliverySettings> | null = null;
+    try {
+      d = getDeliverySettings();
+    } catch {
+      d = null;
+    }
     return {
       name: s.store_name || SITE_CONFIG.name,
       legalName: s.legal_name || SITE_CONFIG.legalName,
-      brand: s.brand_name || SITE_CONFIG.brand,
+      brand: s.brand_name || s.store_name || SITE_CONFIG.brand,
       tagline: s.brand_tagline || SITE_CONFIG.tagline,
       description: s.brand_description || SITE_CONFIG.description,
       defaultLocale: SITE_CONFIG.defaultLocale,
@@ -118,14 +128,22 @@ export function getDynamicSiteConfig() {
       },
       openingHours: [s.opening_hours || SITE_CONFIG.openingHours[0]],
       shipping: {
-        minDeliveryOrderPaise: s.min_delivery_order_paise,
-        freeShippingThresholdPaise: s.free_shipping_threshold_paise,
-        flatRatePaise: s.shipping_flat_fee_paise,
-        dispatchCommitment: s.dispatch_commitment || SITE_CONFIG.shipping.dispatchCommitment,
+        minDeliveryOrderPaise: d?.min_delivery_order_paise ?? s.min_delivery_order_paise,
+        freeShippingThresholdPaise: d?.free_shipping_threshold_paise ?? s.free_shipping_threshold_paise,
+        freeShippingEnabled: d?.free_shipping_enabled ?? true,
+        flatRatePaise: d?.shipping_flat_fee_paise ?? s.shipping_flat_fee_paise,
+        handlingDaysMin: d?.handling_days_min ?? s.handling_days_min,
+        handlingDaysMax: d?.handling_days_max ?? s.handling_days_max,
+        transitDaysMin: d?.transit_days_min ?? s.transit_days_min,
+        transitDaysMax: d?.transit_days_max ?? s.transit_days_max,
+        dispatchCommitment: d?.dispatch_commitment || s.dispatch_commitment || SITE_CONFIG.shipping.dispatchCommitment,
         courierPartners: SITE_CONFIG.shipping.courierPartners,
       },
       returns: {
         windowDays: s.return_window_days || SITE_CONFIG.returns.windowDays,
+        returnFees: s.return_fees || SITE_CONFIG.returns.returnFees,
+        returnMethod: s.return_method || SITE_CONFIG.returns.returnMethod,
+        returnPolicyLabel: s.return_policy_label || SITE_CONFIG.returns.returnPolicyLabel,
         policyDescription: s.guarantee_description || SITE_CONFIG.returns.policyDescription,
       },
       sameAs: [

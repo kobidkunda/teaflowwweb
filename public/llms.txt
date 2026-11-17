@@ -26,6 +26,12 @@ TeaFloww is an artisanal tea brand by Nirva, headquartered in Siliguri, West Ben
 - [Wholesale Inquiries](https://teafloww.com/wholesale): Direct estate rates and bulk quantities for cafes, boutique hotels, and specialty retailers.
 - [Contact & Origin Facility](https://teafloww.com/contact): Customer service, Siliguri origin tasting room, and visitor information.
 
+## Structured Product & AI Feeds
+- [OpenAI / ChatGPT Product Feed (JSONL)](https://teafloww.com/feeds/openai.jsonl): Machine-readable catalog of all TeaFloww teas, trial kits, and packaging structures with live prices, stock, shipping, and return policies.
+- [Google Merchant Center Feed (XML)](https://teafloww.com/feeds/google.xml): RSS 2.0 XML product catalog with shipping rates and delivery windows.
+- [Google Product Ratings Feed (XML)](https://teafloww.com/feeds/google-reviews.xml): Verified customer product reviews feed.
+- [Full Live Catalog Manifest](https://teafloww.com/llms-full.txt): Live Markdown summary of all available products, prices, delivery windows, and return policies.
+
 ## Company Details
 - Brand: TeaFloww
 - Entity: Nirva

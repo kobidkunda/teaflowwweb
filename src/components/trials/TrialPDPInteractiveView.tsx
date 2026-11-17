@@ -14,11 +14,14 @@ import { TrialBulkLadder } from "./TrialBulkLadder";
 import { TrialStickyActionBar } from "./TrialStickyActionBar";
 import { TrialLanguageToggle } from "./TrialLanguageToggle";
 
+import type { ClientCommercePolicy } from "@/lib/seo/productPolicy";
+
 export interface TrialPDPInteractiveViewProps {
   trial: TrialPublicDto;
+  commercePolicy?: ClientCommercePolicy;
 }
 
-export function TrialPDPInteractiveView({ trial }: TrialPDPInteractiveViewProps) {
+export function TrialPDPInteractiveView({ trial, commercePolicy }: TrialPDPInteractiveViewProps) {
   const [locale, setLocale] = useState<TrialLocale>("en");
   const [activePouchIndex, setActivePouchIndex] = useState<number>(0);
 
@@ -90,7 +93,7 @@ export function TrialPDPInteractiveView({ trial }: TrialPDPInteractiveViewProps)
               initialStage={initialStage}
             />
 
-            <TrialBuyBox trial={localizedTrial} />
+            <TrialBuyBox trial={localizedTrial} commercePolicy={commercePolicy} />
           </div>
         </div>
       </div>

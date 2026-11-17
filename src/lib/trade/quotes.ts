@@ -17,6 +17,12 @@ import {
   type TradeLaneRecord,
 } from "./catalogue";
 import { computeParcelPacking } from "./packing";
+import {
+  getTableColumns,
+  recordConversationEvent,
+  safeRecordEntityAttribution,
+  type ExtractedRequestAttribution,
+} from "@/lib/funnel/server";
 
 const QUOTE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -670,7 +676,36 @@ export function getTradeQuoteForSession(quoteId: string, sessionId: string) {
   };
 }
 
-export function createTradeEnquiry(rawInput: unknown, sessionId: string) {
+function buildTradeEnquiryWhatsAppText(args: {
+  id: string;
+  draft: string;
+  contactName?: string;
+  contactPhone: string;
+  destinationPin: string;
+  preferredHours?: string;
+  utmCampaign?: string;
+  utmSource?: string;
+}): string {
+  const parts = [
+    `*TEAFLOWW TRADE ENQUIRY (${args.id})*`,
+    args.contactName ? `Shop / Name: ${args.contactName}` : null,
+    `Phone: ${args.contactPhone}`,
+    `PIN Code: ${args.destinationPin}`,
+    args.preferredHours ? `Preferred Callback: ${args.preferredHours}` : null,
+    "",
+    args.draft,
+    args.utmCampaign || args.utmSource
+      ? `\n_Ref: ${[args.utmSource, args.utmCampaign].filter(Boolean).join(" / ")}_`
+      : null,
+  ].filter((x): x is string => Boolean(x !== null));
+  return parts.join("\n");
+}
+
+export function createTradeEnquiry(
+  rawInput: unknown,
+  sessionId: string,
+  attribution?: ExtractedRequestAttribution
+) {
   const input = TradeEnquiryRequestSchema.parse(rawInput);
   const db = getDb();
   const existing = db
@@ -680,11 +715,20 @@ export function createTradeEnquiry(rawInput: unknown, sessionId: string) {
   const waPhone = settings.whatsapp_number.replace(/[^0-9]/g, "");
 
   if (existing) {
-    const text = encodeURIComponent(String(existing.whatsapp_draft || ""));
+    const existingText = buildTradeEnquiryWhatsAppText({
+      id: String(existing.id),
+      draft: String(existing.whatsapp_draft || ""),
+      contactName: existing.contact_name ? String(existing.contact_name) : undefined,
+      contactPhone: String(existing.contact_phone || input.contactPhone),
+      destinationPin: String(existing.destination_pin || input.destinationPin),
+      preferredHours: existing.preferred_hours ? String(existing.preferred_hours) : undefined,
+      utmCampaign: existing.utm_campaign ? String(existing.utm_campaign) : undefined,
+      utmSource: existing.utm_source ? String(existing.utm_source) : undefined,
+    });
     return {
       enquiry: existing,
       deduped: true,
-      whatsappUrl: `https://wa.me/${waPhone}?text=${text}`,
+      whatsappUrl: `https://wa.me/${waPhone}?text=${encodeURIComponent(existingText)}`,
     };
   }
 
@@ -698,39 +742,149 @@ export function createTradeEnquiry(rawInput: unknown, sessionId: string) {
       reason: "Requested callback / transport quote",
     });
 
-  db.prepare(`
-    INSERT INTO trade_enquiries (
-      id, idempotency_key, session_id, locale, destination_pin, enquiry_type,
-      lines_json, contact_name, contact_phone, preferred_hours, consent_given,
-      whatsapp_draft, status
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'new')
-  `).run(
-    id,
-    input.idempotencyKey,
-    sessionId,
-    input.locale,
-    input.destinationPin,
-    input.enquiryType,
-    JSON.stringify(input.lines),
-    input.contactName || null,
-    input.contactPhone,
-    input.preferredHours || null,
-    draft
-  );
+  const attrTouch = attribution?.lastTouch || attribution?.firstTouch;
+  const bodyTouch = input.attribution?.lastTouch || input.attribution?.firstTouch;
+  const utmSource = attrTouch?.utm_source || bodyTouch?.utm_source || "";
+  const utmMedium = attrTouch?.utm_medium || bodyTouch?.utm_medium || "";
+  const utmCampaign = attrTouch?.utm_campaign || bodyTouch?.utm_campaign || "";
+  const utmTerm = attrTouch?.utm_term || bodyTouch?.utm_term || "";
+  const utmContent = attrTouch?.utm_content || bodyTouch?.utm_content || "";
+  const gclid = attrTouch?.gclid || bodyTouch?.gclid || "";
+  const fbclid = attrTouch?.fbclid || bodyTouch?.fbclid || "";
+  const landingPage =
+    attrTouch?.landing_page || bodyTouch?.landing_page || `/tea-shops/${input.locale}`;
+  const referrer = attrTouch?.referrer || bodyTouch?.referrer || attribution?.referer || "";
+  const funnelName = attribution?.funnelName || input.attribution?.funnelName || "trade_tea_shops";
+  const ctaSource = input.ctaSource || "";
+
+  const cols = getTableColumns(db, "trade_enquiries");
+  if (cols.has("utm_source")) {
+    db.prepare(`
+      INSERT INTO trade_enquiries (
+        id, idempotency_key, session_id, locale, destination_pin, enquiry_type,
+        lines_json, contact_name, contact_phone, preferred_hours, consent_given,
+        whatsapp_draft, status,
+        utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+        gclid, fbclid, landing_page, referrer, funnel_name, cta_source
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'new', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      input.idempotencyKey,
+      attribution?.sessionId || sessionId,
+      input.locale,
+      input.destinationPin,
+      input.enquiryType,
+      JSON.stringify(input.lines),
+      input.contactName || null,
+      input.contactPhone,
+      input.preferredHours || null,
+      draft,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
+      gclid,
+      fbclid,
+      landingPage,
+      referrer,
+      funnelName,
+      ctaSource
+    );
+  } else {
+    db.prepare(`
+      INSERT INTO trade_enquiries (
+        id, idempotency_key, session_id, locale, destination_pin, enquiry_type,
+        lines_json, contact_name, contact_phone, preferred_hours, consent_given,
+        whatsapp_draft, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'new')
+    `).run(
+      id,
+      input.idempotencyKey,
+      attribution?.sessionId || sessionId,
+      input.locale,
+      input.destinationPin,
+      input.enquiryType,
+      JSON.stringify(input.lines),
+      input.contactName || null,
+      input.contactPhone,
+      input.preferredHours || null,
+      draft
+    );
+  }
 
   recordTradeFunnelEvent({
-    sessionId,
+    sessionId: attribution?.sessionId || sessionId,
     eventName: "enquiry_submitted",
     locale: input.locale,
     enquiryId: id,
-    metadata: { pin: input.destinationPin, enquiryType: input.enquiryType },
+    metadata: {
+      pin: input.destinationPin,
+      enquiryType: input.enquiryType,
+      ctaSource,
+      utmSource,
+      utmCampaign,
+    },
   });
 
+  // Record unified first-party funnel attribution & conversation when tables exist
+  if (getTableColumns(db, "entity_attributions").size > 0) {
+    safeRecordEntityAttribution(
+      {
+        entityType: "trade_enquiry",
+        entityId: id,
+        attribution,
+        funnelName: "trade_tea_shops",
+        funnelStage: "form_submit",
+        eventName: "trade_enquiry_submit",
+        path: landingPage,
+        customerName: input.contactName || null,
+        customerPhone: input.contactPhone,
+        metadata: {
+          destinationPin: input.destinationPin,
+          enquiryType: input.enquiryType,
+          ctaSource,
+        },
+      },
+      db
+    );
+    try {
+      recordConversationEvent(
+        {
+          sessionId: attribution?.sessionId || sessionId,
+          channel: "trade_enquiry_form",
+          sourcePage: landingPage,
+          referenceCode: id,
+          customerName: input.contactName || null,
+          customerPhone: input.contactPhone,
+          messagePreview: draft.slice(0, 300),
+          linkedEntityType: "trade_enquiry",
+          linkedEntityId: id,
+          attribution,
+        },
+        db
+      );
+    } catch {
+      // Non-fatal in minimal test DBs
+    }
+  }
+
   const saved = db.prepare("SELECT * FROM trade_enquiries WHERE id = ?").get(id);
+  const waText = buildTradeEnquiryWhatsAppText({
+    id,
+    draft,
+    contactName: input.contactName || undefined,
+    contactPhone: input.contactPhone,
+    destinationPin: input.destinationPin,
+    preferredHours: input.preferredHours || undefined,
+    utmCampaign,
+    utmSource,
+  });
+
   return {
     enquiry: saved,
     deduped: false,
-    whatsappUrl: `https://wa.me/${waPhone}?text=${encodeURIComponent(draft)}`,
+    whatsappUrl: `https://wa.me/${waPhone}?text=${encodeURIComponent(waText)}`,
   };
 }
 

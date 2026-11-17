@@ -195,6 +195,8 @@ describe("mcp 100% capabilities: full specification suite", () => {
       "trade.upsertPilot",
       "trade.listOrders",
       "trade.reconcileOrder",
+      "business.getTradersPage",
+      "business.saveTradersPage",
       "business.getOverview",
       "business.updateSettings",
       "business.listOffers",
@@ -209,6 +211,15 @@ describe("mcp 100% capabilities: full specification suite", () => {
       "business.createQuote",
       "business.listOutbox",
       "business.retryOutbox",
+      "translations.getLocales",
+      "translations.list",
+      "translations.get",
+      "translations.update",
+      "translations.publish",
+      "translations.unpublish",
+      "translations.queue",
+      "translations.seedPanIndia",
+      "translations.bulkPublish",
     ]);
   });
 
@@ -354,6 +365,8 @@ describe("mcp 100% capabilities: full specification suite", () => {
       "tea://content/homepage",
       "tea://content/blogs",
       "tea://analytics/abandoned-carts",
+      "tea://translations/overview",
+      "tea://translations/studio",
       "tea://pages",
       "tea://announcement",
       "tea://navigation",
@@ -700,7 +713,7 @@ describe("mcp 100% capabilities: full specification suite", () => {
       };
     }>;
 
-    expect(tools.length).toBe(192);
+    expect(tools.length).toBe(203);
 
     for (const tool of tools) {
       expect(tool.annotations).toBeDefined();

@@ -687,3 +687,68 @@ Full suite follow-up: TypeScript and ESLint pass; 2,945 tests pass and six
 PostgreSQL-only tests are skipped. Production build validation follows in the
 same `npm run check`; local development/testing remains SQLite.
 Production build completed successfully; the full `npm run check` exited zero.
+
+
+## Tea Traders option 2 — 2026-11-17
+
+Executed validation for the backend-driven redesign:
+
+- `npm run check`: typecheck and ESLint passed; 208 test files passed, one skipped;
+  3,137 tests passed and six PostgreSQL-only tests skipped. Its shared `.next`
+  build stage was stopped to avoid collision with another active build, so this
+  invocation is **not** reported as a completed full-check exit zero.
+- `npx vitest run tests/unit/tea-traders-presentation.test.ts`: six tests passed.
+  Covers actual catalogue media/price/stock refresh, canonical admin API/MCP saves,
+  authorization and origin rejection, strict payload/product validation,
+  Translation Studio/MCP publication and stale fallback, idempotent localized
+  business leads and unified response listing/detail. The internal-bind versus
+  browser-Host regression was reproduced red before fixing and rerunning green.
+- Latest `npx tsc --noEmit` and scoped ESLint both exited zero after final edits.
+- `NEXT_DIST_DIR=.next-traders-build node node_modules/next/dist/bin/next build`
+  exited zero on the final source, generating 130 static pages. Separate output
+  avoids interfering with concurrent development. Build skips type/lint by repo
+  configuration; those were executed separately above.
+- Real in-app browser: slider controls, add-to-bag, Buy now to existing checkout
+  (one selected pack), invalid and successful enquiries with reference, admin
+  slider save/reorder and storefront readback. No order/payment was submitted and
+  no WhatsApp message was sent.
+- Desktop 1440 px comparison reviewed alongside selected option 2. Mobile 390 px
+  and 320 px captures reviewed; document scroll width equals viewport width.
+  Evidence: `docs/ui/tea-traders-redesign/`; final verdict in root `design-qa.md`.
+- Temporary local QA admin/sessions removed, no matching test leads remain,
+  QA cart removed via UI, and pre-QA presentation defaults restored. Local SQLite
+  only; no production database migration or deployment.
+
+### Tea shops Counter Ritual redesign (2026-11-17)
+
+`tests/unit/trade-redesign.test.ts` exercises publishable regional defaults,
+Studio/MCP publication and stale-copy fallback, English editorial MCP publication,
+consented enquiry deduplication/unified Responses visibility, and media overrides.
+Browser verification uses a temporary SQLite copy with outbound notifications
+disabled. Real captures and operational notes: `docs/ui/tea-shops-ritual/`.
+Trial PIN quote → checkout → authoritative final total was verified without
+submitting a payment. Changing address invalidates the payable final quote.
+The updated `tests/e2e/trade-channel.spec.ts` includes a mocked payment-error retry
+contract; that terminal Playwright suite was not executed in this task.
+
+
+### Tea Traders Hindi follow-up — 2026-11-17
+
+Seven Tea Traders tests passed, including full Hindi source coverage, protected
+value validation, admin publication precedence, partial-publication defaults,
+custom-source safety and configured slider localization. Shared translation
+regressions: 22 tests passed across Translation Studio, MCP and Pan-India suites.
+Scoped ESLint passed. Local seed created 84 published Hindi fields and its second
+run preserved the existing record. Desktop and 390 px Hindi browser rendering
+reviewed, with no horizontal overflow (390/390). No production publication.
+Latest `npx tsc --noEmit` also completed with exit zero.
+
+Final full validation: typecheck and ESLint completed (0 lint errors; existing
+warnings remain), 209 unit files passed / 1 skipped, 3,152 tests passed / 6 skipped.
+The final English trade MCP publication regression was rerun with the translations
+MCP suite: 15 tests passed. Browser submission also visibly appeared in the unified
+admin Responses inbox (`admin-responses.png`).
+
+`NEXT_DIST_DIR=.next-ritual-validation npm run check` completed successfully,
+including the optimized production build and all 130 static pages. Follow-up
+final typecheck/lint also completed successfully after the MCP English edit.

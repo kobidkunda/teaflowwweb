@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { attributionBundleSchema } from "@/lib/funnel/types";
 
-export const TRADE_LOCALES = ["en", "bn", "hi", "gu", "mr"] as const;
-export const STAGED_TRADE_LOCALES = ["pa", "ta", "te", "kn"] as const;
+export const TRADE_LOCALES = ["en", "bn", "hi", "gu", "mr", "pa", "ta", "te"] as const;
+export const STAGED_TRADE_LOCALES = ["kn"] as const;
 export const ALL_TRADE_LOCALES = [...TRADE_LOCALES, ...STAGED_TRADE_LOCALES] as const;
 
 export type TradeLocale = (typeof TRADE_LOCALES)[number];
@@ -136,6 +137,8 @@ export const TradeEnquiryRequestSchema = z.object({
   preferredHours: z.string().trim().max(120).optional().default(""),
   consentGiven: z.literal(true),
   whatsappDraft: z.string().trim().max(1500).optional().default(""),
+  ctaSource: z.string().trim().max(80).optional().default(""),
+  attribution: attributionBundleSchema.optional(),
 });
 
 export const TradeCheckoutRequestSchema = z.object({

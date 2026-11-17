@@ -168,6 +168,13 @@ export interface Trial {
   hero_image_id: number | null;
   meta_title: string | null;
   meta_description: string | null;
+  shipping_fee_paise_override?: number | null;
+  handling_days_min_override?: number | null;
+  handling_days_max_override?: number | null;
+  transit_days_min_override?: number | null;
+  transit_days_max_override?: number | null;
+  return_window_days_override?: number | null;
+  return_fees_override?: string | null;
   revision: number;
   created_at: string;
   updated_at: string;
@@ -377,6 +384,15 @@ export interface TrialPublicDto {
   meta: {
     title: string | null;
     description: string | null;
+  };
+  policy_overrides?: {
+    shipping_fee_paise_override?: number | null;
+    handling_days_min_override?: number | null;
+    handling_days_max_override?: number | null;
+    transit_days_min_override?: number | null;
+    transit_days_max_override?: number | null;
+    return_window_days_override?: number | null;
+    return_fees_override?: string | null;
   };
 }
 

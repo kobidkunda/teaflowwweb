@@ -2476,6 +2476,430 @@ export async function runAllPgMigrations() {
       console.log("✓ Applied 062_b2b_business_acquisition");
     }
 
+    // Migration 063 (Trade Enquiries UTM Attribution & 8 Pan-India Locales)
+    if (!applied.has("063_trade_enquiries_utm")) {
+      console.log("Applying 063_trade_enquiries_utm...");
+      await client.query("BEGIN");
+      await client.query(`
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS utm_source TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS utm_medium TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS utm_campaign TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS utm_term TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS utm_content TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS gclid TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS fbclid TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS landing_page TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS referrer TEXT NOT NULL DEFAULT '';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS funnel_name TEXT NOT NULL DEFAULT 'trade_tea_shops';
+        ALTER TABLE trade_enquiries ADD COLUMN IF NOT EXISTS cta_source TEXT NOT NULL DEFAULT '';
+        CREATE INDEX IF NOT EXISTS idx_trade_enquiries_campaign ON trade_enquiries(utm_campaign, utm_source, created_at DESC);
+      `);
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["063_trade_enquiries_utm"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 063_trade_enquiries_utm");
+    }
+
+    // Migration 064 (Trial Weight & Copy Consistency)
+    if (!applied.has("064_trial_weight_copy_consistency")) {
+      console.log("Applying 064_trial_weight_copy_consistency...");
+      await client.query("BEGIN");
+      const { rows: trialRows } = await client.query(
+        "SELECT id, title, tagline, description, net_weight_g FROM trials WHERE slug = '4-x-25-gm' OR sku = 'KIT-4-X-25-GM' LIMIT 1"
+      );
+      if (trialRows[0] && Number(trialRows[0].net_weight_g) === 200) {
+        const r = trialRows[0];
+        const cleanTitle = String(r.title || "")
+          .replace(/4\s*[×x]\s*25\s*g\s*\(100\s*g\)/gi, "4 × 50 g (200 g)")
+          .replace(/4\s*[×x]\s*25\s*g/gi, "4 × 50 g");
+        const cleanTagline = r.tagline
+          ? String(r.tagline)
+              .replace(/25\s*g\s*each/gi, "50 g each")
+              .replace(/100\s*g\s*trial\s*pack/gi, "200 g trial pack")
+          : null;
+        const cleanDesc = r.description
+          ? String(r.description)
+              .replace(/25\s*g\s*pouch/gi, "50 g pouch")
+              .replace(/100\s*g\s*total/gi, "200 g total")
+              .replace(/—\s*25\s*g/gi, "— 50 g")
+          : null;
+        await client.query(
+          "UPDATE trials SET title = $1, tagline = $2, description = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4",
+          [cleanTitle, cleanTagline, cleanDesc, r.id]
+        );
+      }
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["064_trial_weight_copy_consistency"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 064_trial_weight_copy_consistency");
+    }
+
+    // Migration 065 (Backfill B2B offers, EN/HI page content, and claims if 062 ran prior to seed inclusion)
+    if (!applied.has("065_b2b_seed_backfill")) {
+      console.log("Applying 065_b2b_seed_backfill...");
+      await client.query("BEGIN");
+      await client.query(`
+        INSERT INTO b2b_settings (
+          id, business_landing_enabled, leads_enabled, whatsapp_enabled, whatsapp_e164,
+          support_hours, starter_hero_image_url, trader_hero_image_url,
+          proof_image_1_url, proof_image_2_url, crm_webhook_enabled
+        ) VALUES (
+          'default', 1, 1, 1, '917001304853',
+          'Mon-Sat 9:00 AM - 7:00 PM IST',
+          '/images/hero-himalayan-tea.webp',
+          '/images/cupping-guide.webp',
+          '/images/orthodox-vs-ctc.webp',
+          '/images/private-label/teafloww-reserve-front-v2.webp',
+          0
+        ) ON CONFLICT (id) DO NOTHING;
+      `);
+
+      const nowIso = new Date().toISOString();
+      const offers = [
+        [
+          "bulk_supply",
+          "BULK SUPPLY",
+          "थोक सप्लाई",
+          "25kg Bulk Tea Sacks",
+          "25kg थोक चाय बोरी",
+          "Whole leaf and CTC tea in bulk 25kg sacks for traders, distributors, and local packers.",
+          "व्यापारियों, डिस्ट्रीब्यूटर्स और लोकल पैकर्स के लिए 25kg बोरी में होल लीफ और CTC चाय।",
+          "Quote bulk supply →",
+          "थोक कोटेशन पाएं →",
+          "package",
+          "/images/orthodox-vs-ctc.webp",
+          "TeaFloww 25kg bulk tea sack supply",
+          "TeaFloww 25kg थोक चाय बोरी सप्लाई",
+          '["request_quote"]',
+          "MOQ and freight are confirmed in your quotation.",
+          "MOQ और भाड़ा आपके कोटेशन में कन्फर्म किया जाता है।",
+          '["Siliguri sourcing options","Bulk 25kg sack packing","Sampling discussion"]',
+          1,
+          nowIso,
+          1,
+        ],
+        [
+          "ready_retail",
+          "RETAIL PACKS",
+          "रिटेल पैक",
+          "250g, 500g & 1kg TeaFloww Packs",
+          "250g, 500g और 1kg TeaFloww पैक",
+          "Shelf-ready TeaFloww retail pouches if you want to start selling tea without designing your own brand first.",
+          "तुरंत बेचने के लिए तैयार TeaFloww रिटेल पाउच, बिना पहले अपना ब्रांड डिज़ाइन किए।",
+          "Quote retail packs →",
+          "रिटेल पैक कोटेशन पाएं →",
+          "shopping-bag",
+          "/images/hero-himalayan-tea.webp",
+          "TeaFloww 250g, 500g and 1kg retail tea packs",
+          "TeaFloww 250g, 500g और 1kg रिटेल चाय पैक",
+          "[]",
+          "Order band and freight are confirmed in your quotation.",
+          "ऑर्डर मात्रा और भाड़ा आपके कोटेशन में कन्फर्म किया जाता है।",
+          '["250g, 500g and 1kg packs","Direct retail resale","Commercial quotation"]',
+          1,
+          nowIso,
+          2,
+        ],
+        [
+          "private_label",
+          "YOUR BRAND",
+          "आपका ब्रांड",
+          "Own-Brand & Private Label",
+          "आपका अपना ब्रांड / प्राइवेट लेबल",
+          "Build your own brand name on pouches or boxes with TeaFloww blend, packaging, and creative planning support.",
+          "TeaFloww के ब्लेंड, पैकेजिंग और क्रिएटिव प्लानिंग सपोर्ट के साथ अपने नाम का चाय ब्रांड बनाएं।",
+          "Discuss your brand →",
+          "अपने ब्रांड पर बात करें →",
+          "pen-tool",
+          "/images/private-label/teafloww-reserve-front-v2.webp",
+          "Private label tea pouch example",
+          "प्राइवेट लेबल चाय पाउच उदाहरण",
+          "[]",
+          "Print minimums and packaging timelines depend on format and are confirmed in your quotation.",
+          "प्रिंटिंग मिनिमम और पैकेजिंग समय आपके पैक के अनुसार कोटेशन में कन्फर्म होते हैं।",
+          '["Blend guidance","Label & pouch planning","Go-to-market material planning"]',
+          1,
+          nowIso,
+          3,
+        ],
+      ];
+      for (const o of offers) {
+        await client.query(
+          `INSERT INTO b2b_offers (
+            id, code, eyebrow_en, eyebrow_hi, title_en, title_hi, description_en, description_hi,
+            cta_label_en, cta_label_hi, icon, image_url, image_alt_en, image_alt_hi,
+            sku_ids_json, moq_text_en, moq_text_hi, pricing_mode, service_scope_json,
+            active, approved_at, sort_order
+          ) VALUES ($1,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'request_quote',$17,$18,$19,$20)
+          ON CONFLICT (code) DO NOTHING`,
+          o
+        );
+      }
+
+      const pages = [
+        [
+          "starter:en",
+          "starter",
+          "en",
+          "START YOUR TEA BUSINESS • SILIGURI SUPPLY",
+          "Start your tea business. Buy in bulk or build your own brand.",
+          "Sourcing, 25kg bulk supply, ready retail packs and own-brand packaging from Siliguri. Tell us your stage and quantity to receive a written commercial quotation.",
+          "Request My Quote →",
+          "Explore 3 ways to start",
+          "/images/hero-himalayan-tea.webp",
+          "TeaFloww retail tea packs and Siliguri tea sourcing showcase",
+          "How your enquiry moves from first contact to confirmed quotation.",
+          JSON.stringify([
+            { title: "1. Share your stage", body: "Choose 25kg bulk sacks, ready retail packs, or own-brand private label." },
+            { title: "2. Align on blend & pack", body: "Discuss target taste, pouch/sack format, and serviceable pincode delivery." },
+            { title: "3. Receive written quote", body: "We confirm MOQ, pricing, applicable GST, freight, and lead time in writing." },
+            { title: "4. Sample & first order", body: "Review sampling options if needed and confirm your first commercial order." },
+          ]),
+          "Real tea formats. Transparent commercial terms.",
+          "No fabricated discounts or guaranteed margins. We share real pack examples and confirm every commercial term in your written quotation.",
+          JSON.stringify([
+            { title: "Bulk 25kg & CTC/Orthodox Grades", caption: "Siliguri-sourced tea formats for wholesale buyers and local packers.", imageUrl: "/images/orthodox-vs-ctc.webp", alt: "Orthodox and CTC tea leaf comparison", sourceOwner: "TeaFloww", approvedAt: nowIso },
+            { title: "Custom Pouch & Private Label", caption: "Structured brand and pouch planning without hidden print commitments.", imageUrl: "/images/private-label/teafloww-reserve-front-v2.webp", alt: "TeaFloww private label pouch", sourceOwner: "TeaFloww", approvedAt: nowIso },
+          ]),
+          "Request your B2B quotation",
+          "Share your stage, planned quantity, and delivery pincode. Our trade desk responds with written terms.",
+          JSON.stringify([
+            { q: "Can I start a tea business under my own brand name?", a: "Yes. We support own-brand and private-label pouch/box planning. Print minimums and timelines depend on your chosen format and are confirmed in your written quotation." },
+            { q: "Do I have to buy 25kg sacks, or are smaller retail packs available?", a: "Both options are available. You can start with 250g, 500g, or 1kg TeaFloww retail packs, or enquire for 25kg bulk sacks." },
+            { q: "How are MOQ, shipping freight, and GST confirmed?", a: "Every commercial enquiry receives a written quotation confirming product pricing, MOQ for your selected format, GST, and pincode freight." },
+          ]),
+          "Start a Tea Business | Bulk Supply & Private Label | TeaFloww",
+          "Start your tea business with TeaFloww Siliguri supply: 25kg bulk sacks, 250g-1kg retail packs, or your own private-label tea brand.",
+          nowIso,
+        ],
+        [
+          "starter:hi",
+          "starter",
+          "hi",
+          "अपना चाय बिज़नेस शुरू करें • सिलीगुड़ी सप्लाई",
+          "अपना चाय बिज़नेस शुरू करें। थोक खरीदें या अपना खुद का ब्रांड बनाएं।",
+          "सिलीगुड़ी से सोर्सिंग, 25kg थोक सप्लाई, तैयार रिटेल पैक और अपने ब्रांड की पैकेजिंग। लिखित कोटेशन पाने के लिए अपनी आवश्यकता साझा करें।",
+          "मेरा कोटेशन प्राप्त करें →",
+          "शुरुआत के 3 विकल्प देखें",
+          "/images/hero-himalayan-tea.webp",
+          "TeaFloww रिटेल चाय पैक और सिलीगुड़ी चाय सोर्सिंग",
+          "आपकी पूछताछ पहले संपर्क से लिखित कोटेशन तक कैसे पहुँचती है।",
+          JSON.stringify([
+            { title: "1. अपना चरण चुनें", body: "25kg थोक बोरी, तैयार रिटेल पैक या अपना प्राइवेट लेबल ब्रांड चुनें।" },
+            { title: "2. ब्लेंड और पैक तय करें", body: "स्वाद, पैक साइज और अपने पिन कोड पर डिलीवरी की जानकारी साझा करें।" },
+            { title: "3. लिखित कोटेशन पाएं", body: "हम MOQ, कीमत, GST, भाड़ा और समय लिखित कोटेशन में कन्फर्म करते हैं।" },
+            { title: "4. सैंपल और पहला ऑर्डर", body: "आवश्यकतानुसार सैंपल विकल्प देखें और अपना पहला बिज़नेस ऑर्डर कन्फर्म करें।" },
+          ]),
+          "वास्तविक चाय विकल्प। पारदर्शी व्यावसायिक शर्तें।",
+          "कोई झूठा मुनाफा या नकली छूट नहीं। हम वास्तविक पैक उदाहरण साझा करते हैं और हर शर्त लिखित कोटेशन में कन्फर्म करते हैं।",
+          JSON.stringify([
+            { title: "25kg थोक और CTC/ऑर्थोडॉक्स ग्रेड", caption: "थोक खरीदारों और लोकल पैकर्स के लिए सिलीगुड़ी से सोर्स की गई चाय।", imageUrl: "/images/orthodox-vs-ctc.webp", alt: "ऑर्थोडॉक्स और CTC चाय की तुलना", sourceOwner: "TeaFloww", approvedAt: nowIso },
+            { title: "कस्टम पाउच और प्राइवेट लेबल", caption: "स्पष्ट शर्तों के साथ अपने ब्रांड के पाउच और पैकेजिंग की योजना।", imageUrl: "/images/private-label/teafloww-reserve-front-v2.webp", alt: "TeaFloww प्राइवेट लेबल पाउच", sourceOwner: "TeaFloww", approvedAt: nowIso },
+          ]),
+          "अपना B2B कोटेशन मांगें",
+          "अपना चरण, अनुमानित मात्रा और डिलीवरी पिन कोड बताएं। हमारी ट्रेड टीम लिखित शर्तों के साथ संपर्क करेगी।",
+          JSON.stringify([
+            { q: "क्या मैं अपने नाम से चाय का ब्रांड शुरू कर सकता हूँ?", a: "हाँ। हम अपने ब्रांड और प्राइवेट लेबल पाउच/बॉक्स प्लानिंग में सहायता करते हैं। प्रिंटिंग मिनिमम और समय आपके पैक के अनुसार कोटेशन में कन्फर्म होते हैं।" },
+            { q: "क्या 25kg बोरी लेना ज़रूरी है या छोटे रिटेल पैक भी मिलते हैं?", a: "दोनों विकल्प उपलब्ध हैं। आप 250g, 500g या 1kg TeaFloww रिटेल पैक से शुरुआत कर सकते हैं या 25kg थोक बोरी का कोटेशन ले सकते हैं।" },
+            { q: "MOQ, भाड़ा और GST की पुष्टि कैसे होती है?", a: "हर पूछताछ पर आपके चुने हुए फॉर्मेट के अनुसार कीमत, MOQ, GST और पिन कोड भाड़े का लिखित कोटेशन दिया जाता है।" },
+          ]),
+          "चाय बिज़नेस शुरू करें | थोक और प्राइवेट लेबल | TeaFloww",
+          "TeaFloww सिलीगुड़ी सप्लाई के साथ अपना चाय बिज़नेस शुरू करें: 25kg थोक बोरी, 250g-1kg रिटेल पैक या अपना प्राइवेट लेबल ब्रांड।",
+          nowIso,
+        ],
+        [
+          "trader:en",
+          "trader",
+          "en",
+          "FOR TEA TRADERS & WHOLESALE BUYERS • SILIGURI",
+          "Wholesale tea supply, 25kg sacks & private-label packing.",
+          "Direct trade desk for existing tea traders, regional distributors, and retail brands comparing bulk sacks, ready retail packs, and custom packaging.",
+          "Get Wholesale Quote →",
+          "Compare trade formats",
+          "/images/cupping-guide.webp",
+          "TeaFloww tea cupping and wholesale grade evaluation",
+          "Built for working tea buyers who need grade consistency, freight clarity, and written quotes.",
+          JSON.stringify([
+            { title: "1. Specify volume & grade", body: "Share your monthly volume band, target CTC/Orthodox profile, and delivery pincode." },
+            { title: "2. Format & packing scope", body: "Select 25kg bulk sacks, TeaFloww retail packs, or custom private-label pouches." },
+            { title: "3. Landed freight & quote", body: "Receive a versioned written quotation with freight terms, GST, and dispatch window." },
+            { title: "4. Sample & repeat supply", body: "Discuss cupping/sampling options and lock in repeat commercial fulfillment." },
+          ]),
+          "Cupping discipline & commercial clarity.",
+          "Every trader enquiry goes straight to our trade desk with your pincode, volume band, and format requirements.",
+          JSON.stringify([
+            { title: "Grade & Liquor Evaluation", caption: "Consistent CTC and Orthodox evaluation for wholesale continuity.", imageUrl: "/images/orthodox-vs-ctc.webp", alt: "CTC and Orthodox tea comparison", sourceOwner: "TeaFloww", approvedAt: nowIso },
+            { title: "Branded Pouch & Sack Fulfillment", caption: "Scale from 25kg sacks to custom-printed retail packs.", imageUrl: "/images/private-label/teafloww-reserve-front-v2.webp", alt: "Private label tea packaging", sourceOwner: "TeaFloww", approvedAt: nowIso },
+          ]),
+          "Request wholesale quotation",
+          "Share your target volume, pincode, and preferred tea grade or packing notes.",
+          JSON.stringify([
+            { q: "Can we order both 25kg bulk sacks and branded retail pouches?", a: "Yes, though 25kg bulk sacks and custom-printed private-label runs have separate MOQs and lead times, both detailed in your written quote." },
+            { q: "How do you quote landed freight to our pincode?", a: "Provide your 6-digit delivery pincode and planned quantity band so our trade desk can quote exact freight slabs and dispatch timelines." },
+          ]),
+          "Wholesale Tea Supply & 25kg Sacks for Tea Traders | TeaFloww",
+          "Siliguri wholesale tea supply for existing traders: 25kg bulk sacks, ready retail packs, and private-label tea packaging.",
+          nowIso,
+        ],
+        [
+          "trader:hi",
+          "trader",
+          "hi",
+          "चाय व्यापारियों और थोक खरीदारों के लिए • सिलीगुड़ी",
+          "थोक चाय सप्लाई, 25kg बोरी और प्राइवेट-लेबल पैकिंग।",
+          "मौजूदा चाय व्यापारियों, डिस्ट्रीब्यूटर्स और रिटेल ब्रांड्स के लिए थोक बोरी, तैयार रिटेल पैक और कस्टम पैकेजिंग की सीधी ट्रेड डेस्क।",
+          "थोक कोटेशन पाएं →",
+          "ट्रेड विकल्प देखें",
+          "/images/cupping-guide.webp",
+          "TeaFloww चाय कपिंग और थोक ग्रेड जांच",
+          "उन अनुभवी चाय खरीदारों के लिए जिन्हें नियमित ग्रेड, स्पष्ट भाड़ा और लिखित कोटेशन चाहिए।",
+          JSON.stringify([
+            { title: "1. मात्रा और ग्रेड बताएं", body: "अपनी अनुमानित मात्रा, CTC/ऑर्थोडॉक्स आवश्यकता और डिलीवरी पिन कोड साझा करें।" },
+            { title: "2. पैकिंग फॉर्मेट चुनें", body: "25kg थोक बोरी, TeaFloww रिटेल पैक या कस्टम प्राइवेट लेबल चुनें।" },
+            { title: "3. भाड़ा और लिखित कोटेशन", body: "भाड़े की शर्तों, GST और डिस्पैच समय के साथ लिखित कोटेशन प्राप्त करें।" },
+            { title: "4. सैंपल और नियमित सप्लाई", body: "सैंपल विकल्प पर बात करें और नियमित कमर्शियल सप्लाई शुरू करें।" },
+          ]),
+          "कपिंग गुणवत्ता और स्पष्ट व्यावसायिक शर्तें।",
+          "हर व्यापारी पूछताछ आपके पिन कोड, मात्रा और पैकिंग आवश्यकता के साथ सीधे हमारी ट्रेड डेस्क पर जाती है।",
+          JSON.stringify([
+            { title: "ग्रेड और लिकर जांच", caption: "थोक सप्लाई के लिए CTC और ऑर्थोडॉक्स चाय की नियमित गुणवत्ता।", imageUrl: "/images/orthodox-vs-ctc.webp", alt: "CTC और ऑर्थोडॉक्स चाय", sourceOwner: "TeaFloww", approvedAt: nowIso },
+            { title: "ब्रांडेड पाउच और थोक पैकिंग", caption: "25kg बोरी से लेकर कस्टम प्रिंटेड रिटेल पैक तक सप्लाई।", imageUrl: "/images/private-label/teafloww-reserve-front-v2.webp", alt: "प्राइवेट लेबल चाय पैकेजिंग", sourceOwner: "TeaFloww", approvedAt: nowIso },
+          ]),
+          "थोक कोटेशन का अनुरोध करें",
+          "अपनी मात्रा, पिन कोड और चाय ग्रेड या पैकिंग से जुड़े नोट्स साझा करें।",
+          JSON.stringify([
+            { q: "क्या हम 25kg बोरी और कस्टम ब्रांडेड पाउच दोनों मंगवा सकते हैं?", a: "हाँ, लेकिन 25kg थोक बोरी और कस्टम प्राइवेट लेबल के MOQ और समय अलग होते हैं, जिनकी पूरी जानकारी लिखित कोटेशन में दी जाती है।" },
+            { q: "हमारे पिन कोड पर भाड़ा कैसे तय होता है?", a: "अपना 6 अंकों का पिन कोड और अनुमानित मात्रा बताएं ताकि हमारी टीम सटीक भाड़ा और डिस्पैच समय कोट कर सके।" },
+          ]),
+          "थोक चाय सप्लाई और 25kg बोरी | चाय व्यापारियों के लिए | TeaFloww",
+          "चाय व्यापारियों के लिए सिलीगुड़ी से थोक चाय सप्लाई: 25kg बोरी, रिटेल पैक और प्राइवेट-लेबल पैकेजिंग।",
+          nowIso,
+        ],
+      ];
+      for (const p of pages) {
+        await client.query(
+          `INSERT INTO b2b_page_content (
+            id, segment, locale, eyebrow, headline, intro, primary_cta, secondary_cta,
+            hero_image_url, hero_image_alt, process_intro, steps_json,
+            proof_title, proof_body, proof_items_json, form_heading, form_subhead,
+            faq_json, seo_title, seo_description, approved_at
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+          ON CONFLICT (id) DO NOTHING`,
+          p
+        );
+      }
+
+      const claims = [
+        [
+          "siliguri_origin",
+          "Tea sourcing and packaging options from Siliguri.",
+          "सिलीगुड़ी से चाय सोर्सिंग और पैकेजिंग के विकल्प।",
+          "TeaFloww Operations Verification",
+          "Operations",
+          nowIso,
+        ],
+        [
+          "quote_terms_notice",
+          "Prices, freight, tax and delivery dates are confirmed in your written quotation.",
+          "कीमत, भाड़ा, टैक्स और डिलीवरी तारीख आपके लिखित कोटेशन में कन्फर्म की जाती है।",
+          "Commercial Fact Gate G-02",
+          "Finance",
+          nowIso,
+        ],
+        [
+          "sample_bridge_notice",
+          "Tell us what you want to test. We can discuss current sampling options and applicable fees.",
+          "बताएं कि आप क्या टेस्ट करना चाहते हैं। हम उपलब्ध सैंपल विकल्पों और लागू शुल्क पर चर्चा कर सकते हैं।",
+          "Commercial Fact Gate G-05",
+          "Operations",
+          nowIso,
+        ],
+      ];
+      for (const c of claims) {
+        await client.query(
+          `INSERT INTO b2b_claims (
+            claim_key, exact_copy_en, exact_copy_hi, evidence_source, evidence_owner,
+            allowed_channels_json, active, approved_at
+          ) VALUES ($1,$2,$3,$4,$5,'["web","sales"]',1,$6)
+          ON CONFLICT (claim_key) DO NOTHING`,
+          c
+        );
+      }
+
+      await client.query("INSERT INTO schema_migrations (version) VALUES ($1)", ["065_b2b_seed_backfill"]);
+      await client.query("COMMIT");
+      console.log("✓ Applied 065_b2b_seed_backfill");
+    }
+
+    // Migration 066 (also records 065_product_commerce_policies_and_reviews to match scripts/migrations/065_*.mjs for /api/ready)
+    if (!applied.has("066_product_commerce_policies_and_reviews") || !applied.has("065_product_commerce_policies_and_reviews")) {
+      console.log("Applying 065/066_product_commerce_policies_and_reviews...");
+      await client.query("BEGIN");
+      const defaults = [
+        ["handling_days_min", "1"],
+        ["handling_days_max", "2"],
+        ["transit_days_min", "2"],
+        ["transit_days_max", "5"],
+        ["return_fees", "FreeReturn"],
+        ["return_method", "ReturnByMail"],
+        ["return_policy_label", ""],
+      ];
+      for (const [k, v] of defaults) {
+        await client.query(
+          "INSERT INTO store_settings (key, value, updated_at) VALUES ($1, $2, CURRENT_TIMESTAMP) ON CONFLICT (key) DO NOTHING",
+          [k, v]
+        );
+      }
+
+      for (const tbl of ["products", "trials", "pl_packaging_variants"]) {
+        const { rows: tblExists } = await client.query(
+          "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = $1",
+          [tbl]
+        );
+        if (tblExists.length > 0) {
+          await client.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS shipping_fee_paise_override INTEGER DEFAULT NULL`);
+          await client.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS handling_days_min_override INTEGER DEFAULT NULL`);
+          await client.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS handling_days_max_override INTEGER DEFAULT NULL`);
+          await client.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS transit_days_min_override INTEGER DEFAULT NULL`);
+          await client.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS transit_days_max_override INTEGER DEFAULT NULL`);
+          await client.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS return_window_days_override INTEGER DEFAULT NULL`);
+          await client.query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS return_fees_override TEXT DEFAULT NULL`);
+        }
+      }
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS product_reviews (
+          id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+          entity_type TEXT NOT NULL CHECK(entity_type IN ('product', 'trial', 'packaging')),
+          entity_id TEXT NOT NULL,
+          order_id TEXT DEFAULT NULL,
+          commerce_order_id TEXT DEFAULT NULL,
+          customer_id INTEGER DEFAULT NULL,
+          reviewer_name TEXT NOT NULL,
+          rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+          title TEXT NOT NULL DEFAULT '',
+          body TEXT NOT NULL DEFAULT '',
+          verified_purchase INTEGER NOT NULL DEFAULT 0 CHECK(verified_purchase IN (0, 1)),
+          status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved', 'rejected')),
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_product_reviews_entity_status
+          ON product_reviews(entity_type, entity_id, status);
+        CREATE INDEX IF NOT EXISTS idx_product_reviews_status_created
+          ON product_reviews(status, created_at DESC);
+      `);
+
+      await client.query(
+        "INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING",
+        ["065_product_commerce_policies_and_reviews"]
+      );
+      await client.query(
+        "INSERT INTO schema_migrations (version) VALUES ($1) ON CONFLICT (version) DO NOTHING",
+        ["066_product_commerce_policies_and_reviews"]
+      );
+      await client.query("COMMIT");
+      console.log("✓ Applied 066_product_commerce_policies_and_reviews");
+    }
+
     console.log("All PostgreSQL migrations are completely up to date!");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});

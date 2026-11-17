@@ -56,6 +56,10 @@ const settingsSchema = z.object({
   wholesale_bank_upi_id: z.string().max(100).optional(),
   contact_email: z.string().email("Please enter a valid email address"),
   whatsapp_number: z.string().max(30).optional(),
+  return_window_days: optionalNumber(z.coerce.number().int().min(1).max(365)),
+  return_fees: z.enum(["FreeReturn", "ReturnShippingFees", "ReturnFeesCustomerResponsibility"]).optional(),
+  return_method: z.enum(["ReturnByMail", "ReturnInStore", "ReturnAtKiosk"]).optional(),
+  return_policy_label: z.string().trim().max(100).optional(),
   notification_emails: commaSeparatedEmails,
   webhook_secret: z.string().trim().max(256).optional(),
   webhook_url_enquiry: optionalWebhookUrl,
@@ -66,6 +70,30 @@ const settingsSchema = z.object({
   webhook_url_quote: optionalWebhookUrl,
   webhook_url_order: optionalWebhookUrl,
   webhook_url_subscription: optionalWebhookUrl,
+  google_local_store_code: z
+    .string()
+    .trim()
+    .max(50, "Store code cannot exceed 50 characters")
+    .regex(/^[a-zA-Z0-9_-]*$/, "Store code may only contain letters, numbers, hyphens, and underscores")
+    .optional(),
+  google_local_pickup_method: z
+    .enum(["", "buy", "reserve", "ship to store", "not supported"])
+    .optional(),
+  google_local_pickup_sla: z
+    .enum(["", "same_day", "next_day", "2-day", "3-day", "4-day", "5-day", "6-day", "multi-week"])
+    .optional(),
+}).superRefine((data, ctx) => {
+  if (
+    data.google_local_pickup_method &&
+    data.google_local_pickup_method !== "not supported" &&
+    !data.google_local_pickup_sla
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["google_local_pickup_sla"],
+      message: "Pickup SLA is required when store pickup is enabled.",
+    });
+  }
 });
 
 export type StoreSettingsPayload = StoreSettings;

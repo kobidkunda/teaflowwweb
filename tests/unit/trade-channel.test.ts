@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { up as up061 } from "../../scripts/migrations/061_trade_channel.mjs";
+import { up as up063 } from "../../scripts/migrations/063_trade_enquiries_utm.mjs";
 import {
   calculateServingsPerKg,
   compareBatches,
@@ -128,6 +129,8 @@ beforeAll(() => {
   // Run migration 061 twice to verify idempotency
   up061(db);
   up061(db);
+  up063(db);
+  up063(db);
 });
 
 afterAll(() => {
@@ -178,6 +181,8 @@ describe("TeaFloww Trade calculators and packing", () => {
     });
     expect(rec.requiredKg).toBe(13.5);
     expect(rec.closestPacks[0].grams).toBe(10000);
+    expect(rec.fullCoverageSuggestion?.totalKg).toBe(15);
+    expect(rec.fullCoverageSuggestion?.summaryLabel).toBe("10 kg + 5 kg");
   });
 
   it("detects overslab on 25 + 5 kg + 0.6 kg tare = 30.6 kg", () => {
@@ -652,5 +657,62 @@ describe("100% Trade data updates via Admin/API & MCP", () => {
     }
 
     updateTradeSettings({ trial_credit_paise: 0 });
+  });
+
+  it("persists UTM attribution and ctaSource on trade enquiries and enables all 8 locales", () => {
+    for (const loc of ["en", "hi", "bn", "pa", "mr", "gu", "ta", "te"] as const) {
+      const d = getTradeDictionary(loc);
+      expect(d["hero.ctaTrial"]).toBeTruthy();
+      expect(d["hero.ctaBulk"]).toBeTruthy();
+      expect(d["enquiry.whatsappOpen"]).toBeTruthy();
+    }
+
+    const res = createTradeEnquiry(
+      {
+        idempotencyKey: "enq_utm_test_001",
+        locale: "pa",
+        destinationPin: "141001",
+        enquiryType: "bulk",
+        contactName: "Ludhiana Tea Point",
+        contactPhone: "+919876501234",
+        consentGiven: true,
+        ctaSource: "hero_enquiry",
+        whatsappDraft: "Need 25 kg Everyday Strong Milk Chai",
+        attribution: {
+          sessionId: "sess_utm_1",
+          funnelName: "trade_tea_shops",
+          firstTouch: {
+            utm_source: "meta",
+            utm_medium: "paid_social",
+            utm_campaign: "chai_punjab_nov",
+            utm_term: "bulk_ctc_tea",
+            utm_content: "video_a",
+            fbclid: "fb.1.999",
+            landing_page: "/tea-shops/pa?utm_source=meta",
+          },
+          lastTouch: {
+            utm_source: "meta",
+            utm_medium: "paid_social",
+            utm_campaign: "chai_punjab_nov",
+            utm_term: "bulk_ctc_tea",
+            utm_content: "video_a",
+            fbclid: "fb.1.999",
+            landing_page: "/tea-shops/pa?utm_source=meta",
+          },
+        },
+      },
+      "sess_utm_1"
+    );
+
+    const saved = res.enquiry as Record<string, unknown>;
+    expect(saved.id).toMatch(/^ENQ-/);
+    expect(saved.utm_source).toBe("meta");
+    expect(saved.utm_medium).toBe("paid_social");
+    expect(saved.utm_campaign).toBe("chai_punjab_nov");
+    expect(saved.utm_term).toBe("bulk_ctc_tea");
+    expect(saved.cta_source).toBe("hero_enquiry");
+    expect(res.whatsappUrl).toContain("https://wa.me/");
+    expect(decodeURIComponent(res.whatsappUrl)).toContain(String(saved.id));
+    expect(decodeURIComponent(res.whatsappUrl)).toContain("141001");
   });
 });

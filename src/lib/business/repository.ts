@@ -154,7 +154,7 @@ export type B2BLeadRecord = {
   phone: string;
   company: string | null;
   note: string | null;
-  locale: BusinessLocale;
+  locale: BusinessLeadInput["locale"];
   status: BusinessLeadStatus;
   qualification_reason: string | null;
   owner_id: string | null;

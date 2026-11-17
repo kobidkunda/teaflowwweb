@@ -1,7 +1,7 @@
 import React from "react";
 import { cookies } from "next/headers";
 import type { AnyTradeLocale, QuoteResult } from "@/lib/trade/contracts";
-import { getTradeSettings } from "@/lib/trade/catalogue";
+import { getTradeSettings, getPublicTradeTrial } from "@/lib/trade/catalogue";
 import { getTradeDictionary } from "@/lib/trade/i18n";
 import { getTradeQuoteForSession } from "@/lib/trade/quotes";
 import { TradeCheckoutReview } from "@/components/trade/TradeCheckoutReview";
@@ -67,6 +67,8 @@ export default async function TradeCheckoutPage({
     }
   }
 
+  const trial = getPublicTradeTrial(settings);
+  const trialId = confirmedQuote?.quoteType === "trial" && trial?.sku === confirmedQuote.lines[0]?.sku ? trial.id : undefined;
   return (
     <TradeCheckoutReview
       locale={locale as AnyTradeLocale}
@@ -74,6 +76,7 @@ export default async function TradeCheckoutPage({
       settings={settings}
       quote={confirmedQuote}
       expired={expired}
+      trialId={trialId}
     />
   );
 }

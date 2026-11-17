@@ -77,6 +77,13 @@ export type RawProductRow = {
   pdf_url?: string | null;
   pdf_title?: string | null;
   wholesale_moq?: number | null;
+  shipping_fee_paise_override?: number | null;
+  handling_days_min_override?: number | null;
+  handling_days_max_override?: number | null;
+  transit_days_min_override?: number | null;
+  transit_days_max_override?: number | null;
+  return_window_days_override?: number | null;
+  return_fees_override?: string | null;
 };
 
 export function mapVariantRow(row: RawVariantRow): Variant {
@@ -166,6 +173,13 @@ export function mapProductRow(
     pdf_url: row.pdf_url ?? null,
     pdf_title: row.pdf_title ?? null,
     wholesale_moq: row.wholesale_moq != null ? Number(row.wholesale_moq) : null,
+    shipping_fee_paise_override: row.shipping_fee_paise_override != null ? Number(row.shipping_fee_paise_override) : null,
+    handling_days_min_override: row.handling_days_min_override != null ? Number(row.handling_days_min_override) : null,
+    handling_days_max_override: row.handling_days_max_override != null ? Number(row.handling_days_max_override) : null,
+    transit_days_min_override: row.transit_days_min_override != null ? Number(row.transit_days_min_override) : null,
+    transit_days_max_override: row.transit_days_max_override != null ? Number(row.transit_days_max_override) : null,
+    return_window_days_override: row.return_window_days_override != null ? Number(row.return_window_days_override) : null,
+    return_fees_override: row.return_fees_override ?? null,
     primary_image: primaryImage ?? null,
     ...(primaryImage?.url ? { primary_image_url: primaryImage.url } : {}),
     variants,
@@ -560,6 +574,23 @@ export function upsertProduct(input: ProductInput): {
     if (hasWholesaleMoq && input.wholesale_moq !== undefined) {
       const wMoq = input.wholesale_moq === null || Number(input.wholesale_moq) <= 0 ? null : Math.round(Number(input.wholesale_moq));
       db.prepare("UPDATE products SET wholesale_moq=? WHERE id=?").run(wMoq, productId);
+    }
+
+    const policyCols = [
+      "shipping_fee_paise_override",
+      "handling_days_min_override",
+      "handling_days_max_override",
+      "transit_days_min_override",
+      "transit_days_max_override",
+      "return_window_days_override",
+      "return_fees_override",
+    ] as const;
+    for (const pCol of policyCols) {
+      if (cols.includes(pCol) && input[pCol] !== undefined) {
+        const rawVal = input[pCol];
+        const cleanVal = rawVal === null || String(rawVal) === "" ? null : rawVal;
+        db.prepare(`UPDATE products SET ${pCol}=? WHERE id=?`).run(cleanVal, productId);
+      }
     }
 
     // Handle price / variants on existing or new product

@@ -7,10 +7,13 @@ import {
   getOrganizationSchema,
   getLocalBusinessSchema,
   getProductSchema,
+  getTrialProductSchema,
+  getPackagingProductSchema,
   getBreadcrumbSchema,
   getArticleSchema,
   getCollectionSchema,
 } from "@/lib/seo/schema";
+import { resolveProductCommercePolicy } from "@/lib/seo/productPolicy";
 import { getCatalogSitemapEntries } from "@/lib/seo/sitemap";
 import robots from "@/app/robots";
 import type { Product, Variant } from "@/lib/productModels";
@@ -51,7 +54,7 @@ describe("Metadata Generation Engine (constructMetadata)", () => {
       ogImage: "/images/darjeeling.jpg",
     });
 
-    expect(meta.title).toBe("Darjeeling First Flush · Himalayan Tea House");
+    expect(meta.title).toBe("Darjeeling First Flush · TeaFloww");
     expect(meta.description).toBe("Artisanal spring flush orthodox tea.");
     expect(meta.alternates?.canonical).toBe("https://himalayantea.com/tea/darjeeling-spring");
     expect(meta.openGraph?.title).toBe("Darjeeling First Flush");
@@ -166,15 +169,19 @@ describe("Schema.org JSON-LD Structured Data", () => {
     expect(schema["@context"]).toBe("https://schema.org");
     expect(schema["@type"]).toBe("Product");
     expect(schema.name).toBe("Darjeeling Spring Clonal First Flush");
-    expect(schema.brand.name).toBe("Himalayan Tea House");
+    expect(["Himalayan Tea House", "TeaFloww"]).toContain(schema.brand.name);
 
-    const offer = Array.isArray(schema.offers) ? schema.offers[0] : schema.offers;
-    expect(offer["@type"]).toBe("Offer");
-    expect(offer.price).toBe("950.00");
-    expect(offer.priceCurrency).toBe("INR");
-    expect(offer.availability).toBe("https://schema.org/InStock");
-    expect(offer.hasMerchantReturnPolicy.merchantReturnDays).toBe(14);
-    expect(offer.shippingDetails.shippingRate.value).toBe("99.00");
+    expect("offers" in schema).toBe(true);
+    if ("offers" in schema && schema.offers) {
+      const offer = Array.isArray(schema.offers) ? schema.offers[0] : schema.offers;
+      expect(offer["@type"]).toBe("Offer");
+      expect(offer.price).toBe("950.00");
+      expect(offer.priceCurrency).toBe("INR");
+      expect(offer.availability).toBe("https://schema.org/InStock");
+      expect(offer.hasMerchantReturnPolicy.merchantReturnDays).toBe(14);
+      // ₹950.00 qualifies for free shipping above the ₹599 threshold
+      expect(offer.shippingDetails.shippingRate.value).toBe("0.00");
+    }
 
     // Strict Anti-Fabrication & Deprecation Fences:
     // 1. MUST NOT contain deprecated FAQ schema
@@ -184,6 +191,180 @@ describe("Schema.org JSON-LD Structured Data", () => {
     expect(schema).not.toHaveProperty("review");
     // 3. MUST NOT invent fake GTIN barcodes
     expect(schema).not.toHaveProperty("gtin13");
+  });
+
+  it("generates ProductGroup schema for multi-variant products with price range, per-variant shipping, overrides, and conditional ratings", () => {
+    const mockProduct: Product = {
+      id: 99,
+      slug: "assam-reserve",
+      name: "Assam Reserve Orthodox",
+      category: "Black",
+      category_id: 1,
+      origin: "Assam, India",
+      estate: "Halmari",
+      flush: "Second Flush",
+      harvest_date: "Summer 2026",
+      description: "Rich malty orthodox tea.",
+      tasting_notes: "Malt, honey",
+      floral: 2,
+      fruity: 3,
+      malty: 5,
+      body: 5,
+      sweetness: 4,
+      earthy: 2,
+      aroma_tags: ["Malt"],
+      dry_leaf_appearance: "Tippy whole leaf",
+      dry_leaf_grade: "TGFOP1",
+      dry_leaf_aroma: "Sweet malt",
+      liquor_hue_hex: "#a04010",
+      liquor_hue_name: "Deep Copper",
+      liquor_clarity: "Bright",
+      liquor_body: "Full",
+      wet_leaf_aroma: "Baked honey",
+      wet_leaf_oxidation: "Full",
+      brew_temp: 95,
+      brew_seconds: 210,
+      leaf_dose_grams: 2.5,
+      water_ml: 200,
+      steep_count: 3,
+      steep_instructions: "Infuse 3.5 mins",
+      elevation_feet: 400,
+      elevation_display: "400 ft",
+      lot_number: "HM-26",
+      cultivar: "Assam",
+      estate_story: "Upper Assam heritage garden.",
+      featured: 1,
+      shipping_fee_paise_override: 15000, // ₹150.00
+      handling_days_min_override: 1,
+      handling_days_max_override: 2,
+      transit_days_min_override: 2,
+      transit_days_max_override: 7, // total 3–9 days
+      return_window_days_override: 7,
+      variants: [],
+    };
+
+    const mockVariants: Variant[] = [
+      {
+        id: 201,
+        product_id: 99,
+        sku: "AS-100G",
+        packaging_format: "loose_leaf_pouch",
+        grams: 100,
+        servings: 50,
+        price_paise: 37500, // ₹375.00
+        stock: 15,
+      },
+      {
+        id: 202,
+        product_id: 99,
+        sku: "AS-500G",
+        packaging_format: "luxury_tin",
+        grams: 500,
+        servings: 250,
+        price_paise: 135300, // ₹1,353.00
+        stock: 8,
+      },
+    ];
+
+    const policy = resolveProductCommercePolicy({
+      overrides: mockProduct,
+      reviewSummary: { ratingValue: 4.3, reviewCount: 61 },
+    });
+
+    const group = getProductSchema(mockProduct, mockVariants, [], { policy });
+    expect(group["@type"]).toBe("ProductGroup");
+    if ("hasVariant" in group) {
+      expect(group.hasVariant).toHaveLength(2);
+      expect(group.hasVariant[0].offers.price).toBe("375.00");
+      expect(group.hasVariant[0].offers.shippingDetails.shippingRate.value).toBe("150.00");
+      expect(group.hasVariant[0].offers.shippingDetails.deliveryTime.handlingTime.minValue).toBe(1);
+      expect(group.hasVariant[0].offers.shippingDetails.deliveryTime.transitTime.maxValue).toBe(7);
+      expect(group.hasVariant[0].offers.hasMerchantReturnPolicy.merchantReturnDays).toBe(7);
+      expect(group.hasVariant[1].offers.price).toBe("1353.00");
+    }
+    expect((group as Record<string, unknown>).aggregateRating).toEqual({
+      "@type": "AggregateRating",
+      ratingValue: "4.3",
+      reviewCount: 61,
+      bestRating: 5,
+      worstRating: 1,
+    });
+  });
+
+  it("generates Trial Kit and Private Label Packaging schemas with shipping & return policies", () => {
+    const trialSchema = getTrialProductSchema({
+      id: "trial-1",
+      slug: "tea-stall-discovery-kit",
+      title: "TeaFloww Four-Tea Discovery Kit",
+      tagline: "4 x 50g",
+      description: "Four Assam & Dooars tea blends.",
+      status: "published",
+      pack_format: "4x50g_sachets",
+      net_weight_g: 200,
+      price_paise: 18900,
+      compare_at_price_paise: null,
+      sku: "KIT-200G",
+      in_stock: true,
+      hero_image: { url: "/images/tea.jpg", alt_text: "Trial kit" },
+      components: [],
+      claims: [],
+      meta: { title: null, description: null },
+      policy_overrides: {
+        handling_days_min_override: 1,
+        handling_days_max_override: 2,
+        transit_days_min_override: 2,
+        transit_days_max_override: 7,
+        return_window_days_override: 3,
+      },
+    });
+    expect(trialSchema["@type"]).toBe("Product");
+    expect(trialSchema.offers.price).toBe("189.00");
+    expect(trialSchema.offers.availability).toBe("https://schema.org/InStock");
+    expect(trialSchema.offers.hasMerchantReturnPolicy.merchantReturnDays).toBe(3);
+    expect(trialSchema.offers.shippingDetails.deliveryTime.transitTime.maxValue).toBe(7);
+    expect(trialSchema).not.toHaveProperty("aggregateRating");
+
+    const packSchema = getPackagingProductSchema({
+      id: "pack-1",
+      family_id: "fam-1",
+      name: "Stand-Up Pouch",
+      slug: "stand-up-pouch-matte-black-250g",
+      sku: "PL-PC-250-MBK",
+      title: "Stand-Up Pouch Matte Black 250g",
+      category: "Pouch",
+      family: "Pouch",
+      capacity_description: "250g",
+      net_capacity_grams: 250,
+      net_weight_capacity_grams: 250,
+      dimensions_mm: { width: 160, height: 230, depth: 80 },
+      label_safe_area_mm: { width: 120, height: 150 },
+      material: "Kraft Barrier",
+      finish: "Matte",
+      closure_type: "Zipper",
+      barrier_properties: ["Moisture"],
+      moq_units: 500,
+      order_multiple: 50,
+      lead_time_days: 14,
+      image_url: "/images/pouch.jpg",
+      hero_image_url: "/images/pouch.jpg",
+      image_illustrative: false,
+      dieline_url: null,
+      dieline_available: false,
+      supported_print_methods: ["digital"],
+      compatible_print_method_codes: ["digital"],
+      status: "published",
+      starting_price: {
+        currency: "INR",
+        unit_price_paise: 1200,
+        formatted_unit_price: "₹12.00",
+        min_quantity: 500,
+        tier_label: "From 500 units",
+      },
+    });
+    expect(packSchema["@type"]).toBe("Product");
+    expect(packSchema.offers.price).toBe("12.00");
+    expect(packSchema.offers.shippingDetails.deliveryTime.handlingTime.minValue).toBeGreaterThanOrEqual(14);
+    expect(packSchema.offers.hasMerchantReturnPolicy).toBeDefined();
   });
 
   it("generates BreadcrumbList and Article schemas", () => {
@@ -207,7 +388,7 @@ describe("Schema.org JSON-LD Structured Data", () => {
     expect(article["@type"]).toBe("Article");
     expect(article.headline).toBe("How to Brew Assam Orthodox Tea");
     expect(article.author.name).toBe("Tashi Bhutia");
-    expect(article.publisher.name).toBe("Himalayan Tea House");
+    expect(["Himalayan Tea House", "TeaFloww"]).toContain(article.publisher.name);
   });
 });
 

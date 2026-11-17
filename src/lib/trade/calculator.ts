@@ -69,6 +69,13 @@ export type PackRecommendation = {
     coversDays: number;
     differenceGrams: number;
   }>;
+  fullCoverageSuggestion: {
+    packs: Array<{ grams: number; labelKg: number; count: number }>;
+    totalGrams: number;
+    totalKg: number;
+    coversDays: number;
+    summaryLabel: string;
+  } | null;
 };
 
 export function recommendPackCoverage(args: {
@@ -96,5 +103,69 @@ export function recommendPackCoverage(args: {
     }))
     .sort((a, b) => Math.abs(a.differenceGrams) - Math.abs(b.differenceGrams));
 
-  return { requiredKg, requiredGrams, closestPacks };
+  // Compute full-period multi-pack combination that meets or exceeds requiredGrams
+  let fullCoverageSuggestion: PackRecommendation["fullCoverageSuggestion"] = null;
+  if (requiredGrams > 0 && uniquePacks.length > 0) {
+    const bulkPacks = uniquePacks.filter((g) => g >= 1000);
+    const pool = bulkPacks.length > 0 ? bulkPacks : uniquePacks;
+    const desc = [...pool].sort((a, b) => b - a);
+    const smallest = desc[desc.length - 1];
+
+    // Check single-pack fit >= requiredGrams first if no overshot is huge
+    let bestCombo: Map<number, number> | null = null;
+    let bestTotal = Infinity;
+
+    // Greedy + remainder top-up using largest packs then smallest pack covering remainder
+    const greedy = new Map<number, number>();
+    let rem = requiredGrams;
+    for (let i = 0; i < desc.length; i++) {
+      const p = desc[i];
+      if (p <= rem) {
+        const cnt = Math.floor(rem / p);
+        if (cnt > 0) {
+          greedy.set(p, (greedy.get(p) || 0) + cnt);
+          rem -= cnt * p;
+        }
+      }
+    }
+    if (rem > 0) {
+      const nextPack = [...pool].sort((a, b) => a - b).find((p) => p >= rem) ?? smallest;
+      greedy.set(nextPack, (greedy.get(nextPack) || 0) + 1);
+    }
+    let greedyTotal = 0;
+    greedy.forEach((cnt, g) => {
+      greedyTotal += cnt * g;
+    });
+    bestCombo = greedy;
+    bestTotal = greedyTotal;
+
+    // Also compare with single smallest pack >= requiredGrams (e.g. 25 kg instead of 2x10 + 5)
+    const singleCover = pool.find((p) => p >= requiredGrams);
+    if (singleCover && singleCover <= bestTotal) {
+      bestCombo = new Map([[singleCover, 1]]);
+      bestTotal = singleCover;
+    }
+
+    if (bestCombo) {
+      const packs = Array.from(bestCombo.entries())
+        .sort((a, b) => b[0] - a[0])
+        .map(([grams, count]) => ({
+          grams,
+          labelKg: Math.round((grams / 1000) * 100) / 100,
+          count,
+        }));
+      const summaryLabel = packs
+        .map((p) => (p.count > 1 ? `${p.count} × ${p.labelKg} kg` : `${p.labelKg} kg`))
+        .join(" + ");
+      fullCoverageSuggestion = {
+        packs,
+        totalGrams: bestTotal,
+        totalKg: Math.round((bestTotal / 1000) * 100) / 100,
+        coversDays: dailyGrams > 0 ? Math.floor(bestTotal / dailyGrams) : 0,
+        summaryLabel,
+      };
+    }
+  }
+
+  return { requiredKg, requiredGrams, closestPacks, fullCoverageSuggestion };
 }

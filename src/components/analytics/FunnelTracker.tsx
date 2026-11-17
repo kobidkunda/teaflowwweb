@@ -15,6 +15,7 @@ function inferConversationChannel(pathname: string, href: string, anchor: HTMLAn
   if (explicit) return explicit;
   if (href.startsWith("tel:")) return "phone_call";
   const lowerPath = (pathname || "/").toLowerCase();
+  if (lowerPath.startsWith("/tea-shops") || lowerPath.startsWith("/for-tea-shops")) return "whatsapp_trade";
   if (lowerPath.startsWith("/checkout")) return "whatsapp_checkout_help";
   if (lowerPath.startsWith("/cart")) return "whatsapp_cart_recovery";
   if (lowerPath.startsWith("/wholesale")) return "whatsapp_wholesale";

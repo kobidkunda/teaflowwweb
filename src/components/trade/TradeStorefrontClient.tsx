@@ -1,8 +1,16 @@
 "use client";
-
+import Image from "next/image";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, Coffee, X } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator,
+  Coffee,
+  MapPin,
+  MessageCircle,
+  Package,
+  Truck,
+} from "lucide-react";
 import type { TrialPublicDto } from "@/lib/trials/types";
 import type {
   AnyTradeLocale,
@@ -14,20 +22,24 @@ import type {
   TradeSettings,
   TradeSharedPilotRecord,
 } from "@/lib/trade/catalogue";
-import type { TradeDictionary } from "@/lib/trade/i18n";
+import type { TradeDictionary } from "@/lib/trade/i18nMeta";
+import { tradeText } from "@/lib/trade/copy";
 import {
   ActionButton,
   AudioButton,
   ChoiceGroup,
   InlineStatus,
+  ModalDialog,
   PinField,
   PriceReceipt,
   QuantityStepper,
   formatInrPaise,
 } from "./ui/Primitives";
 import { TradeShell } from "./TradeShell";
+import { TradeEnquiryForm } from "./TradeEnquiryForm";
 import { CupCalculator } from "./CupCalculator";
 import styles from "./trade.module.css";
+import ui from "./ritual.module.css";
 
 export function TradeStorefrontClient({
   locale,
@@ -48,1112 +60,901 @@ export function TradeStorefrontClient({
   heroAudioUrl?: string | null;
   heroTranscript?: string | null;
 }) {
+  const t = (key: string) => tradeText(dict, `ui.${key}`);
+  const productName = (p: TradeProductDto) =>
+    dict[`product.${p.productId}.name`] ||
+    (locale === "hi" ? dict[`ui.product.${p.slug}`] : null) ||
+    p.name;
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialSlug = searchParams.get("blend");
-
-  const initialProduct = useMemo(() => {
-    if (initialSlug) {
-      const found = products.find((p) => p.slug === initialSlug);
-      if (found) return found;
-    }
-    return products[0] ?? null;
-  }, [initialSlug, products]);
-
-  const [selectedProductId, setSelectedProductId] = useState<number>(
-    initialProduct?.productId ?? 0
-  );
-  const selectedProduct = useMemo(
-    () => products.find((p) => p.productId === selectedProductId) ?? products[0] ?? null,
-    [products, selectedProductId]
-  );
-
-  const defaultVariant = useMemo(() => {
-    if (!selectedProduct) return null;
-    if (selectedProduct.defaultVariantId) {
-      const def = selectedProduct.variants.find(
-        (v) => v.id === selectedProduct.defaultVariantId && v.inStock
-      );
-      if (def) return def;
-    }
-    const twentyFiveKg = selectedProduct.variants.find(
-      (v) => v.grams === 25000 && v.inStock
-    );
-    return (
-      twentyFiveKg ??
-      selectedProduct.variants.find((v) => v.inStock) ??
-      selectedProduct.variants[0] ??
-      null
-    );
-  }, [selectedProduct]);
-
-  const [selectedVariantId, setSelectedVariantId] = useState<number>(
-    defaultVariant?.id ?? 0
-  );
-  useEffect(() => {
-    if (defaultVariant && !selectedProduct?.variants.some((v) => v.id === selectedVariantId)) {
-      setSelectedVariantId(defaultVariant.id);
-    }
-  }, [defaultVariant, selectedProduct, selectedVariantId]);
-
-  const selectedVariant = useMemo(
-    () =>
-      selectedProduct?.variants.find((v) => v.id === selectedVariantId) ??
-      defaultVariant,
-    [selectedProduct, selectedVariantId, defaultVariant]
-  );
-
+  const search = useSearchParams();
+  const initial =
+    products.find((p) => p.slug === search.get("blend")) || products[0];
+  const [productId, setProductId] = useState(initial?.productId || 0);
+  const product =
+    products.find((p) => p.productId === productId) || products[0];
+  const defaultVariant = (p?: TradeProductDto) =>
+    p?.variants.find((v) => v.id === p.defaultVariantId && v.inStock) ||
+    p?.variants.find((v) => v.grams === 25000 && v.inStock) ||
+    p?.variants.find((v) => v.inStock);
+  const [variantId, setVariantId] = useState(defaultVariant(initial)?.id || 0);
+  const variant =
+    product?.variants.find((v) => v.id === variantId) ||
+    defaultVariant(product);
   const [quantity, setQuantity] = useState(1);
   const [payment, setPayment] = useState<TradePaymentMethod>("prepaid");
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState<string | null>(null);
-  const [quotePending, setQuotePending] = useState(false);
+  const [pin, setPin] = useState(
+    /^[1-9][0-9]{5}$/.test(search.get("pin") || "") ? search.get("pin")! : "",
+  );
   const [quote, setQuote] = useState<QuoteResult | null>(null);
-  const quoteSeqRef = useRef(0);
-  const quoteAbortRef = useRef<AbortController | null>(null);
-
-  // Modals
-  const [brewOpen, setBrewOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [pinError, setPinError] = useState("");
   const [trialOpen, setTrialOpen] = useState(false);
   const [trialPin, setTrialPin] = useState("");
   const [trialQuote, setTrialQuote] = useState<QuoteResult | null>(null);
   const [trialPending, setTrialPending] = useState(false);
-
+  const [trialError, setTrialError] = useState("");
+  const [enquiryTrial, setEnquiryTrial] = useState(false);
   const [enquiryOpen, setEnquiryOpen] = useState(false);
-  const [enquiryPhone, setEnquiryPhone] = useState("");
-  const [enquiryName, setEnquiryName] = useState("");
-  const [enquiryHours, setEnquiryHours] = useState("");
-  const [enquiryDraft, setEnquiryDraft] = useState("");
-  const [enquiryConsent, setEnquiryConsent] = useState(true);
-  const [enquiryPending, setEnquiryPending] = useState(false);
-  const [enquiryResult, setEnquiryResult] = useState<{
-    id: string;
-    whatsappUrl: string;
-  } | null>(null);
-
-  // Comparison modal (5 vs 25 kg)
-  const [compareQuotes, setCompareQuotes] = useState<{
-    small: Extract<QuoteResult, { kind: "confirmed" }>;
-    large: Extract<QuoteResult, { kind: "confirmed" }>;
-  } | null>(null);
-
-  // Shared pilot modal
-  const [pilotInterestTarget, setPilotInterestTarget] =
-    useState<TradeSharedPilotRecord | null>(null);
-  const [pilotName, setPilotName] = useState("");
-  const [pilotPhone, setPilotPhone] = useState("");
-  const [pilotKg, setPilotKg] = useState("25");
-  const [pilotDoneId, setPilotDoneId] = useState<string | null>(null);
-
-  // Focus tracking to hide sticky action while typing
-  const [editingField, setEditingField] = useState(false);
+  const [brewOpen, setBrewOpen] = useState(false);
+  const [blendB, setBlendB] = useState(products[1]?.productId || 0);
+  const compareB = products.find((p) => p.productId === blendB);
+  const requestRef = useRef(0);
+  const trialRef = useRef(0);
+  const controllerRef = useRef<AbortController | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [enquiryVisible, setEnquiryVisible] = useState(false);
   useEffect(() => {
-    const onFocusIn = (e: FocusEvent) => {
-      const tag = (e.target as HTMLElement | null)?.tagName;
-      setEditingField(tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA");
-    };
-    const onFocusOut = () => setEditingField(false);
-    document.addEventListener("focusin", onFocusIn);
-    document.addEventListener("focusout", onFocusOut);
+    const observer = new IntersectionObserver(
+      (entries) => setEnquiryVisible(entries[0].isIntersecting),
+      { threshold: 0.05 },
+    );
+    const element = document.getElementById("enquiry");
+    if (element) observer.observe(element);
+    const focus = () =>
+      setEditing(
+        ["INPUT", "TEXTAREA", "SELECT"].includes(
+          document.activeElement?.tagName || "",
+        ),
+      );
+    document.addEventListener("focusin", focus);
+    document.addEventListener("focusout", focus);
     return () => {
-      document.removeEventListener("focusin", onFocusIn);
-      document.removeEventListener("focusout", onFocusOut);
+      observer.disconnect();
+      controllerRef.current?.abort();
+      document.removeEventListener("focusin", focus);
+      document.removeEventListener("focusout", focus);
     };
   }, []);
-
-  function invalidateBulkQuote() {
-    quoteAbortRef.current?.abort();
-    quoteSeqRef.current += 1;
+  function invalidate() {
+    controllerRef.current?.abort();
+    requestRef.current++;
     setQuote(null);
+    setPending(false);
   }
-
-  async function requestBulkQuote(
-    overridePayment?: TradePaymentMethod,
-    overrideVariantId?: number
-  ) {
-    if (!/^[1-9][0-9]{5}$/.test(pin)) {
-      setPinError("Enter a valid 6-digit Indian PIN code.");
+  function choose(p: TradeProductDto, id?: number) {
+    setProductId(p.productId);
+    setVariantId(id || defaultVariant(p)?.id || 0);
+    invalidate();
+  }
+  function focusBulk() {
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById("bulk")
+      ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" });
+    document.getElementById("trade-pin")?.focus({ preventScroll: true });
+  }
+  const totalGrams =
+    trial?.components.reduce((sum, c) => sum + c.weight_g, 0) ||
+    trial?.net_weight_g ||
+    0;
+  const packLabel = (g: number) => (g >= 1000 ? `${g / 1000} kg` : `${g} g`);
+  async function checkQuote(isTrial: boolean) {
+    const destination = isTrial ? trialPin : pin;
+    if (!/^[1-9][0-9]{5}$/.test(destination)) {
+      (isTrial ? setTrialError : setPinError)(t("pinError"));
       return;
     }
-    const variantId = overrideVariantId ?? selectedVariant?.id;
-    if (!variantId) return;
-
-    setPinError(null);
-    quoteAbortRef.current?.abort();
-    const controller = new AbortController();
-    quoteAbortRef.current = controller;
-    const seq = ++quoteSeqRef.current;
-    setQuotePending(true);
-
+    if (isTrial ? !trial : !variant) return;
+    const seq = isTrial ? ++trialRef.current : ++requestRef.current;
+    if (!isTrial) {
+      controllerRef.current?.abort();
+      controllerRef.current = new AbortController();
+    }
+    const setResult = isTrial ? setTrialQuote : setQuote,
+      setBusy = isTrial ? setTrialPending : setPending;
+    setBusy(true);
+    setResult(null);
+    (isTrial ? setTrialError : setPinError)("");
     try {
       const res = await fetch("/api/trade/quote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
+        signal: isTrial ? undefined : controllerRef.current?.signal,
         body: JSON.stringify({
           channel: "trade",
-          quoteType: "bulk",
+          quoteType: isTrial ? "trial" : "bulk",
           locale,
-          destinationPin: pin,
-          lines: [{ variantId, quantity: overrideVariantId ? 1 : quantity }],
-          payment: overridePayment ?? payment,
+          destinationPin: destination,
+          payment: isTrial ? "prepaid" : payment,
+          ...(isTrial
+            ? { trialId: trial!.id, quantity: 1 }
+            : { lines: [{ variantId: variant!.id, quantity }] }),
         }),
       });
-      const data = (await res.json()) as QuoteResult;
-      if (seq !== quoteSeqRef.current) return;
-      setQuote(data);
-    } catch (err) {
-      if ((err as Error)?.name === "AbortError") return;
-      if (seq === quoteSeqRef.current) {
-        setQuote({ kind: "temporarily_unavailable", retryable: true });
-      }
+      if (!res.ok) throw new Error();
+      const result: QuoteResult = await res.json();
+      if (seq === (isTrial ? trialRef.current : requestRef.current))
+        setResult(result);
+    } catch (e) {
+      if (
+        (e as Error).name !== "AbortError" &&
+        seq === (isTrial ? trialRef.current : requestRef.current)
+      )
+        setResult({ kind: "temporarily_unavailable", retryable: true });
     } finally {
-      if (seq === quoteSeqRef.current) {
-        setQuotePending(false);
-      }
+      if (seq === (isTrial ? trialRef.current : requestRef.current))
+        setBusy(false);
     }
   }
-
-  async function requestTrialQuote(e: React.FormEvent) {
-    e.preventDefault();
-    if (!trial || !/^[1-9][0-9]{5}$/.test(trialPin)) return;
-    setTrialPending(true);
-    try {
-      const res = await fetch("/api/trade/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channel: "trade",
-          quoteType: "trial",
-          locale,
-          destinationPin: trialPin,
-          trialId: trial.id,
-          quantity: 1,
-          payment: "prepaid",
-        }),
-      });
-      const data = (await res.json()) as QuoteResult;
-      setTrialQuote(data);
-    } catch {
-      setTrialQuote({ kind: "temporarily_unavailable", retryable: true });
-    } finally {
-      setTrialPending(false);
-    }
-  }
-
-  async function handleCompareFiveAndTwentyFive() {
-    if (!selectedProduct || !/^[1-9][0-9]{5}$/.test(pin)) return;
-    const v5 = selectedProduct.variants.find((v) => v.grams === 5000);
-    const v25 = selectedProduct.variants.find((v) => v.grams === 25000);
-    if (!v5 || !v25) return;
-
-    const [r5, r25] = await Promise.all([
-      fetch("/api/trade/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channel: "trade",
-          quoteType: "bulk",
-          locale,
-          destinationPin: pin,
-          lines: [{ variantId: v5.id, quantity: 1 }],
-          payment,
-        }),
-      }).then((r) => r.json() as Promise<QuoteResult>),
-      fetch("/api/trade/quote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          channel: "trade",
-          quoteType: "bulk",
-          locale,
-          destinationPin: pin,
-          lines: [{ variantId: v25.id, quantity: 1 }],
-          payment,
-        }),
-      }).then((r) => r.json() as Promise<QuoteResult>),
-    ]);
-
-    if (r5.kind === "confirmed" && r25.kind === "confirmed") {
-      setCompareQuotes({ small: r5, large: r25 });
-    }
-  }
-
-  function openEnquiryModal(prefillDraft?: string) {
-    setEnquiryResult(null);
-    setEnquiryDraft(
-      prefillDraft ||
-        `Hello TeaFloww, please share trade details for ${
-          selectedProduct?.name || "Tea"
-        } to PIN ${pin || "my shop"}.`
-    );
+  function openEnquiry(isTrial = false) {
+    setTrialOpen(false);
+    setEnquiryTrial(isTrial);
     setEnquiryOpen(true);
   }
-
-  async function submitEnquiry(e: React.FormEvent) {
-    e.preventDefault();
-    if (!enquiryConsent) return;
-    setEnquiryPending(true);
-    try {
-      const res = await fetch("/api/trade/enquiries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idempotencyKey: `enq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-          locale,
-          destinationPin: /^[1-9][0-9]{5}$/.test(pin) ? pin : "734001",
-          enquiryType: "bulk",
-          lines: selectedProduct && selectedVariant
-            ? [
-                {
-                  variantId: selectedVariant.id,
-                  label: `${selectedProduct.name} (${selectedVariant.grams / 1000} kg)`,
-                  quantity,
-                },
-              ]
-            : [],
-          contactName: enquiryName,
-          contactPhone: enquiryPhone,
-          preferredHours: enquiryHours,
-          consentGiven: true,
-          whatsappDraft: enquiryDraft,
-        }),
-      });
-      const data = (await res.json()) as {
-        enquiry?: { id: string };
-        whatsappUrl?: string;
-      };
-      if (data.enquiry?.id) {
-        setEnquiryResult({
-          id: data.enquiry.id,
-          whatsappUrl: data.whatsappUrl || "",
-        });
-      }
-    } finally {
-      setEnquiryPending(false);
-    }
+  function buy(q: Extract<QuoteResult, { kind: "confirmed" }>) {
+    router.push(
+      `/tea-shops/${locale}/checkout?quoteId=${encodeURIComponent(q.id)}`,
+    );
   }
-
-  const anyModalOpen =
-    brewOpen ||
-    trialOpen ||
-    enquiryOpen ||
-    Boolean(compareQuotes) ||
-    Boolean(pilotInterestTarget);
-
-  const stickyAction =
+  function openTrial() {
+    trialRef.current++;
+    setTrialQuote(null);
+    setTrialPending(false);
+    setTrialError("");
+    setTrialPin(pin);
+    setTrialOpen(true);
+  }
+  function receipt(q: QuoteResult | null, isTrial = false) {
+    if (q?.kind === "confirmed")
+      return (
+        <PriceReceipt
+          quote={q}
+          dict={dict}
+          locale={locale}
+          action={
+            <ActionButton onClick={() => buy(q)}>
+              {dict["quote.reviewPack"]}
+              <ArrowRight size={18} aria-hidden="true" />
+            </ActionButton>
+          }
+          extra={<p className={styles.small}>{t("finalReviewBody")}</p>}
+        />
+      );
+    if (q?.kind === "manual")
+      return (
+        <InlineStatus
+          title={dict["quote.manualTitle"]}
+          body={dict["quote.manualBody"].replace("{pin}", q.destinationPin)}
+          action={
+            <ActionButton
+              onClick={() => {
+                openEnquiry(q.quoteType === "trial");
+              }}
+            >
+              {dict["quote.prepareEnquiry"]}
+            </ActionButton>
+          }
+        />
+      );
+    if (q?.kind === "temporarily_unavailable")
+      return (
+        <InlineStatus
+          title={t("error")}
+          body={t("deliveryNote")}
+          action={
+            <ActionButton onClick={() => void checkQuote(isTrial)}>
+              {t("retry")}
+            </ActionButton>
+          }
+        />
+      );
+    if (q?.kind === "unavailable")
+      return (
+        <InlineStatus
+          title={t("quoteUnavailable")}
+          body={t("choosePayment")}
+          action={
+            <ActionButton onClick={() => openEnquiry()}>
+              {t("help")}
+            </ActionButton>
+          }
+        />
+      );
+    return (
+      <div>
+        <div className={styles.kicker}>{t("previewTotal")}</div>
+        <h3 className={styles.h3}>{dict["quote.heading"]}</h3>
+        {!isTrial && variant && (
+          <>
+            <p>
+              {productName(product)} · {quantity} × {packLabel(variant.grams)}
+            </p>
+            <div className={styles.row}>
+              <span>{dict["quote.tea"]}</span>
+              <strong>
+                {formatInrPaise(variant.pricePaise * quantity, locale)}
+              </strong>
+            </div>
+          </>
+        )}
+        <div className={styles.amount}>₹—</div>
+        <p className={styles.small}>{dict["quote.enterPin"]}</p>
+      </div>
+    );
+  }
+  const packs = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          products.flatMap((p) =>
+            p.variants.filter((v) => v.inStock).map((v) => v.grams),
+          ),
+        ),
+      ),
+    [products],
+  );
+  const heroImage = settings.hero_image_url;
+  const pouchesImage = settings.trial_image_url;
+  const isGeneratedHero = heroImage.includes("counter-ritual-");
+  const isGeneratedPouches = pouchesImage.includes("counter-ritual-");
+  const knownOrder = [
+    "Rozana Kadak — Daily Stall Tea",
+    "Elaichi Tea — Cardamom Chai",
+    "Ginger Tea — Adrak Chai",
+    "Masala Tea — Spiced Chai Blend",
+  ];
+  const displayComponents = isGeneratedPouches
+    ? [...(trial?.components || [])].sort((a, b) => {
+        const rank = (name: string) => {
+          const i = knownOrder.indexOf(name);
+          return i < 0 ? 99 : i;
+        };
+        return rank(a.name) - rank(b.name);
+      })
+    : trial?.components || [];
+  const steps = [
+    { icon: Coffee, title: "taste", body: "tasteBody", href: "#brew-proof" },
+    { icon: Calculator, title: "compare", body: "compareBody", href: "#cost" },
+    { icon: Package, title: "order", body: "orderBody", href: "#bulk" },
+  ];
+  const sticky =
     quote?.kind === "confirmed" ? (
-      <ActionButton
-        intent="primary"
-        onClick={() =>
-          router.push(`/tea-shops/${locale}/checkout?quoteId=${encodeURIComponent(quote.id)}`)
-        }
-      >
+      <ActionButton onClick={() => buy(quote)}>
         {dict["quote.reviewPack"]} · {formatInrPaise(quote.totalPaise, locale)}
-      </ActionButton>
-    ) : quote?.kind === "manual" ? (
-      <ActionButton
-        intent="primary"
-        onClick={() => openEnquiryModal(quote.enquiryDraft)}
-      >
-        {dict["quote.prepareEnquiry"]}
+        <ArrowRight size={16} />
       </ActionButton>
     ) : (
-      <ActionButton
-        intent="primary"
-        onClick={() => document.getElementById("trade-pin")?.focus()}
-      >
-        {dict["bulk.checkDelivery"]}
-      </ActionButton>
+      <div className={styles.stickySplit}>
+        <ActionButton intent="gold" onClick={trial ? openTrial : focusBulk}>
+          {trial ? dict["hero.ctaTrial"] : dict["hero.ctaBulk"]}
+        </ActionButton>
+        <ActionButton onClick={focusBulk}>{dict["hero.ctaBulk"]}</ActionButton>
+      </div>
     );
-
-  const availablePackGrams = useMemo(() => {
-    const set = new Set<number>();
-    products.forEach((p) => p.variants.forEach((v) => set.add(v.grams)));
-    return Array.from(set).sort((a, b) => a - b);
-  }, [products]);
-
-  const confirmedPerKgRupees =
-    quote?.kind === "confirmed" && quote.netGrams > 0
-      ? quote.totalPaise / 100 / (quote.netGrams / 1000)
-      : null;
-
   return (
     <TradeShell
       locale={locale}
       enabledLocales={settings.enabled_locales}
       dict={dict}
-      modalOpen={anyModalOpen}
-      stickyAction={editingField ? null : stickyAction}
+      modalOpen={trialOpen || enquiryOpen || brewOpen}
+      stickyAction={editing || enquiryVisible ? null : sticky}
+      onOpenEnquiry={() => openEnquiry()}
     >
-      {/* 1. HERO */}
-      <section className={styles.hero} aria-labelledby="tradeHeroTitle">
-        <div>
-          <div className={styles.kicker}>{dict["hero.kicker"]}</div>
-          <h1 id="tradeHeroTitle" className={styles.h1}>
-            {dict["hero.title"]} <em>{dict["hero.titleEmphasis"]}</em>
-          </h1>
-          <p className={styles.intro}>{dict["hero.intro"]}</p>
-          <div className={styles.actions}>
-            {trial ? (
-              <ActionButton intent="primary" onClick={() => setTrialOpen(true)}>
-                <span>{dict["hero.ctaTrial"]}</span>
-                <ArrowRight size={18} aria-hidden="true" />
-              </ActionButton>
-            ) : null}
-            <a href="#bulk" className={`${styles.btn} ${styles.btnSoft}`}>
-              {dict["hero.ctaBulk"]}
-            </a>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <AudioButton
-              label={dict["hero.listen"]}
-              script={dict["hero.intro"]}
-              locale={locale}
-              audioUrl={heroAudioUrl}
-              transcript={heroTranscript}
-            />
-          </div>
-        </div>
-
-        <div className={styles.heroimage}>
-          <img
-            src={settings.hero_image_url}
-            alt="Milk chai pouring through a strainer at a tea counter"
-            width={640}
-            height={450}
+      <div className={ui.ritual}>
+        <section className={ui.hero} aria-labelledby="tradeHeroTitle">
+          <Image
+            className={ui.heroArt}
+            src={heroImage}
+            alt={t("heroAlt")}
+            width={1920}
+            height={1080}
+            priority
+            sizes="100vw"
           />
-          <button
-            type="button"
-            className={styles.capBtn}
-            onClick={() => setBrewOpen(true)}
-          >
-            <Coffee size={16} aria-hidden="true" />
-            <span>{dict["hero.brewGuide"]}</span>
-          </button>
-        </div>
-      </section>
-
-      {/* 2. FEATURED TRIAL */}
-      <section className={styles.section} id="trial" aria-labelledby="trialHeading">
-        {trial ? (
-          <div className={styles.trial}>
-            <div className={styles.trialphoto}>
-              <img
-                src={trial.hero_image?.url || settings.trial_image_url}
-                alt={trial.hero_image?.alt_text || trial.title}
-                width={520}
-                height={230}
-              />
-            </div>
-            <div>
-              <div className={styles.kicker}>{dict["trial.kicker"]}</div>
-              <h2 id="trialHeading" className={styles.h2}>
-                {dict["trial.title"]}
-              </h2>
-              <p className={styles.intro} style={{ marginBlock: 12 }}>
-                {dict["trial.intro"]}
-              </p>
-              <p className={styles.small}>
-                {trial.title} ·{" "}
-                {trial.components
-                  .map((c) => `${c.name} (${c.weight_g} g)`)
-                  .join(", ")}{" "}
-                · <b>{formatInrPaise(trial.price_paise, locale)}</b>
-              </p>
-              <div style={{ marginTop: 16 }}>
-                <ActionButton intent="soft" onClick={() => setTrialOpen(true)}>
-                  <span>{dict["trial.cta"]}</span>
-                  <ArrowRight size={18} aria-hidden="true" />
+          <div className={`${styles.wrap} ${ui.heroInner}`}>
+            <div className={ui.heroCopy}>
+              <div className={styles.kickerDark}>{dict["hero.kicker"]}</div>
+              <h1 id="tradeHeroTitle">
+                {dict["hero.title"]}
+                <em>{dict["hero.titleEmphasis"]}</em>
+              </h1>
+              <p>{dict["hero.intro"]}</p>
+              <div className={ui.heroActions}>
+                <ActionButton
+                  intent="gold"
+                  onClick={trial ? openTrial : focusBulk}
+                >
+                  {trial ? dict["hero.ctaTrial"] : dict["hero.ctaBulk"]}
+                  <ArrowRight size={21} />
                 </ActionButton>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <InlineStatus
-            title={dict["trial.kicker"]}
-            body={dict["trial.unavailable"]}
-          />
-        )}
-      </section>
-
-      {/* 3. BULK & FREIGHT */}
-      <section className={styles.section} id="bulk" aria-labelledby="bulkHeading">
-        <div className={styles.titleRow}>
-          <div>
-            <div className={styles.kicker}>{dict["bulk.kicker"]}</div>
-            <h2 id="bulkHeading" className={styles.h2}>
-              {dict["bulk.title"]}
-            </h2>
-          </div>
-          <p className={styles.small}>{settings.dispatch_cutoff_label}</p>
-        </div>
-
-        {products.length === 0 ? (
-          <InlineStatus
-            title="Trade catalogue unavailable"
-            body="No blends are currently published for trade ordering. Please ask TeaFloww for assistance."
-            action={
-              <ActionButton intent="soft" onClick={() => openEnquiryModal()}>
-                {dict["help.whatsappCta"]}
-              </ActionButton>
-            }
-          />
-        ) : (
-          <div className={styles.grid}>
-            <form
-              className={styles.panel}
-              onSubmit={(e) => {
-                e.preventDefault();
-                void requestBulkQuote();
-              }}
-            >
-              <label className={styles.fieldLabel} htmlFor="trade-blend">
-                {dict["bulk.chooseTea"]}
-              </label>
-              <select
-                id="trade-blend"
-                className={styles.select}
-                value={selectedProduct?.productId ?? ""}
-                onChange={(e) => {
-                  const pid = Number(e.target.value);
-                  setSelectedProductId(pid);
-                  invalidateBulkQuote();
-                }}
-              >
-                {products.map((p) => (
-                  <option key={p.productId} value={p.productId}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-
-              <div className={styles.columns}>
-                <ChoiceGroup
-                  label={dict["bulk.packSize"]}
-                  selectedId={selectedVariant?.id ?? 0}
-                  options={(selectedProduct?.variants ?? []).map((v) => ({
-                    id: v.id,
-                    label: `${v.grams >= 1000 ? `${v.grams / 1000} kg` : `${v.grams} g`}${
-                      v.inStock ? "" : " (Out)"
-                    }`,
-                    disabled: !v.inStock,
-                  }))}
-                  onSelect={(id) => {
-                    setSelectedVariantId(id);
-                    invalidateBulkQuote();
+                <a
+                  href="#bulk"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    focusBulk();
                   }}
-                />
-                <QuantityStepper
-                  label={dict["bulk.packs"]}
-                  value={quantity}
+                >
+                  {dict["hero.ctaBulk"]}
+                </a>
+              </div>
+              <div className={ui.heroHelp}>
+                <button type="button" onClick={() => openEnquiry()}>
+                  <MessageCircle size={18} aria-hidden="true" />
+                  {t("help")}
+                </button>
+                <AudioButton
+                  label={dict["hero.listen"]}
+                  pauseLabel={dict["hero.pause"]}
+                  replayLabel={dict["hero.replay"]}
+                  script={dict["hero.intro"]}
                   locale={locale}
-                  onChange={(q) => {
-                    setQuantity(q);
-                    invalidateBulkQuote();
-                  }}
+                  audioUrl={heroAudioUrl}
+                  transcript={heroTranscript}
+                  variant="dark"
                 />
               </div>
-
-              <ChoiceGroup
-                label={dict["bulk.payment"]}
-                selectedId={payment}
-                options={[
-                  { id: "prepaid", label: dict["payment.prepaid"] },
-                  { id: "cod", label: dict["payment.cod"] },
-                  { id: "freight_advance", label: dict["payment.freight_advance"] },
-                ]}
-                onSelect={(p) => {
-                  setPayment(p);
-                  invalidateBulkQuote();
-                }}
-              />
-
-              <PinField
-                id="trade-pin"
-                label={dict["bulk.pinLabel"]}
-                value={pin}
-                error={pinError}
-                buttonLabel={dict["bulk.checkDelivery"]}
-                pending={quotePending}
-                onChange={(nextPin) => {
-                  setPin(nextPin);
-                  setPinError(null);
-                  invalidateBulkQuote();
-                }}
-              />
-            </form>
-
-            <div className={`${styles.panel} ${styles.ticket}`} aria-live="polite">
-              {quote?.kind === "confirmed" ? (
-                <PriceReceipt
-                  quote={quote}
-                  locale={locale}
-                  dict={dict}
-                  action={
-                    <ActionButton
-                      intent="primary"
-                      onClick={() =>
-                        router.push(
-                          `/tea-shops/${locale}/checkout?quoteId=${encodeURIComponent(
-                            quote.id
-                          )}`
-                        )
-                      }
-                    >
-                      <span>{dict["quote.reviewPack"]}</span>
-                      <ArrowRight size={18} aria-hidden="true" />
-                    </ActionButton>
-                  }
-                  extra={
-                    selectedProduct?.variants.some((v) => v.grams === 5000) &&
-                    selectedProduct?.variants.some((v) => v.grams === 25000) ? (
-                      <button
-                        type="button"
-                        className={styles.textbutton}
-                        style={{ marginTop: 8 }}
-                        onClick={() => void handleCompareFiveAndTwentyFive()}
-                      >
-                        Compare 5 kg and 25 kg
-                      </button>
-                    ) : null
-                  }
-                />
-              ) : quote?.kind === "manual" ? (
-                <div>
-                  <h3 className={styles.h3}>{dict["quote.manualTitle"]}</h3>
-                  <p className={styles.small}>
-                    {dict["quote.manualBody"].replace("{pin}", quote.destinationPin)}
-                  </p>
-                  <div style={{ marginTop: 16 }}>
-                    <ActionButton
-                      intent="primary"
-                      onClick={() => openEnquiryModal(quote.enquiryDraft)}
-                    >
-                      {dict["quote.prepareEnquiry"]}
-                    </ActionButton>
-                  </div>
-                </div>
-              ) : quote?.kind === "unavailable" ? (
-                <div>
-                  <h3 className={styles.h3}>Payment option unavailable</h3>
-                  <p className={styles.small}>{quote.reason}</p>
-                  {quote.alternatives.includes("prepaid") ? (
-                    <div style={{ marginTop: 16 }}>
-                      <ActionButton
-                        intent="primary"
-                        onClick={() => {
-                          setPayment("prepaid");
-                          void requestBulkQuote("prepaid");
-                        }}
-                      >
-                        Check prepaid price instead
-                      </ActionButton>
-                    </div>
-                  ) : null}
-                </div>
-              ) : quote?.kind === "temporarily_unavailable" ? (
-                <div>
-                  <h3 className={styles.h3}>Could not check delivery right now</h3>
-                  <p className={styles.small}>
-                    Your selection is saved. Please retry in a moment.
-                  </p>
-                  <div style={{ marginTop: 16 }}>
-                    <ActionButton
-                      intent="primary"
-                      onClick={() => void requestBulkQuote()}
-                    >
-                      Retry
-                    </ActionButton>
-                  </div>
-                </div>
-              ) : (
-                <div>
-                  <h3 className={styles.h3}>{dict["quote.heading"]}</h3>
-                  {selectedProduct && selectedVariant ? (
-                    <>
-                      <p className={styles.small}>
-                        {selectedProduct.name} · {quantity} ×{" "}
-                        {selectedVariant.grams / 1000} kg
-                      </p>
-                      <hr />
-                      <div className={styles.row}>
-                        <span>{dict["quote.tea"]}</span>
-                        <b>
-                          {formatInrPaise(
-                            selectedVariant.pricePaise * quantity,
-                            locale
-                          )}
-                        </b>
-                      </div>
-                    </>
-                  ) : null}
-                  <p className={styles.small}>{dict["quote.enterPin"]}</p>
-                </div>
-              )}
             </div>
-          </div>
-        )}
-      </section>
-
-      {/* 4. P2 SHARED SUPPLY (only when active town pilots exist) */}
-      {sharedPilots.length > 0 ? (
-        <section className={styles.section} aria-labelledby="sharedHeading">
-          <div className={styles.titleRow}>
-            <div>
-              <div className={styles.kicker}>Local shared supply</div>
-              <h2 id="sharedHeading" className={styles.h2}>
-                Shared town dispatch
-              </h2>
-            </div>
-          </div>
-          <div className={styles.pair}>
-            {sharedPilots.map((pilot) => (
-              <div key={pilot.id} className={styles.panel}>
-                <h3 className={styles.h3} style={{ fontSize: 22 }}>
-                  {pilot.town_name} · {pilot.collection_point}
-                </h3>
-                <p className={styles.small}>{pilot.collection_address}</p>
-                <p className={styles.small}>
-                  Partner: {pilot.dispatch_partner} · {pilot.dispatch_schedule} ·
-                  Local fee: {formatInrPaise(pilot.local_fee_paise, locale)}
-                </p>
-                <p className={styles.small}>
-                  Booked: {pilot.booked_kg} / {pilot.target_kg} kg
-                </p>
-                <div style={{ marginTop: 12 }}>
-                  <ActionButton
-                    intent="soft"
-                    onClick={() => {
-                      setPilotDoneId(null);
-                      setPilotInterestTarget(pilot);
-                    }}
-                  >
-                    Register interest
-                  </ActionButton>
-                </div>
-              </div>
-            ))}
+            {isGeneratedHero && (
+              <small className={ui.heroDisclosure}>{t("illustration")}</small>
+            )}
           </div>
         </section>
-      ) : null}
-
-      {/* 5. P1 CUP CALCULATOR & PACK COVERAGE */}
-      <CupCalculator
-        locale={locale}
-        dict={dict}
-        availablePackGrams={availablePackGrams}
-        confirmedPerKgRupees={confirmedPerKgRupees}
-      />
-
-      {/* 6. HELP & FAQ */}
-      <section className={styles.section} id="help" aria-labelledby="helpHeading">
-        <div className={styles.help}>
-          <div>
-            <div className={styles.kicker}>{dict["help.kicker"]}</div>
-            <h2 id="helpHeading" className={styles.h2}>
-              {dict["help.title"]}
-            </h2>
-            <p className={styles.small}>{settings.support_hours}</p>
-            <div style={{ marginTop: 16 }}>
-              <ActionButton intent="soft" onClick={() => openEnquiryModal()}>
-                {dict["help.whatsappCta"]}
+        <section
+          id="trial"
+          className={ui.trialBand}
+          aria-labelledby="trialHeading"
+        >
+          <div className={`${styles.wrap} ${ui.trialInner}`}>
+            <div className={ui.trialSummary}>
+              <div className={styles.kickerDark}>{dict["trial.kicker"]}</div>
+              <h2 id="trialHeading">{dict["trial.title"]}</h2>
+              {trial ? (
+                <>
+                  <p>
+                    {new Set(trial.components.map((c) => c.weight_g)).size === 1
+                      ? `${trial.components.length} × ${trial.components[0]?.weight_g} g`
+                      : trial.components
+                          .map((c) => `${c.weight_g} g`)
+                          .join(" + ")}{" "}
+                    · {t("net")} {totalGrams} g
+                  </p>
+                  <strong className={ui.trialPrice}>
+                    {formatInrPaise(trial.price_paise, locale)}
+                  </strong>
+                  <ActionButton
+                    intent="gold"
+                    disabled={!trial.in_stock}
+                    onClick={openTrial}
+                  >
+                    {dict["trial.cta"]}
+                    <ArrowRight size={18} />
+                  </ActionButton>
+                </>
+              ) : (
+                <p>{dict["trial.unavailable"]}</p>
+              )}
+            </div>
+            <figure className={ui.pouches}>
+              <Image
+                src={pouchesImage}
+                alt={t("pouchesAlt")}
+                width={1600}
+                height={650}
+                sizes="(max-width: 700px) 100vw, 50vw"
+              />
+              {trial && (
+                <figcaption>
+                  {displayComponents.map((c) => (
+                    <span key={c.slot_index}>
+                      {dict[`trial.component.${c.slot_index}.name`] || c.name}
+                      <small>{c.weight_g} g</small>
+                    </span>
+                  ))}
+                </figcaption>
+              )}
+              {isGeneratedPouches && (
+                <small className={ui.imageCaption}>{t("illustration")}</small>
+              )}
+            </figure>
+            <div className={ui.deliveryNote}>
+              <MapPin aria-hidden="true" size={27} />
+              <p>{t("deliveryNote")}</p>
+              <span>{t("direct")}</span>
+            </div>
+          </div>
+          <ol className={`${styles.wrap} ${ui.steps}`}>
+            {steps.map((s, i) => (
+              <li key={s.title}>
+                <s.icon size={32} strokeWidth={1.5} aria-hidden="true" />
+                <a href={s.href}>
+                  <small>0{i + 1}</small>
+                  <strong>{t(s.title)}</strong>
+                  <span>{t(s.body)}</span>
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+        <section
+          id="bulk"
+          className={`${styles.section} ${ui.buySection}`}
+          aria-labelledby="bulkHeading"
+        >
+          <div className={styles.wrap}>
+            <div className={styles.titleRow}>
+              <div>
+                <div className={styles.kicker}>{dict["bulk.kicker"]}</div>
+                <h2 id="bulkHeading" className={styles.h2}>
+                  {dict["bulk.title"]}
+                </h2>
+              </div>
+              <p className={styles.small}>{t("direct")}</p>
+            </div>
+            {!product || !variant ? (
+              <InlineStatus
+                title={t("noProducts")}
+                body={t("enquiryBody")}
+                action={
+                  <ActionButton onClick={() => openEnquiry()}>
+                    {t("help")}
+                  </ActionButton>
+                }
+              />
+            ) : (
+              <div className={ui.buyGrid}>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void checkQuote(false);
+                  }}
+                  className={ui.buyForm}
+                >
+                  <label className={styles.fieldLabel} htmlFor="trade-blend">
+                    {dict["bulk.chooseTea"]}
+                  </label>
+                  <select
+                    id="trade-blend"
+                    className={styles.select}
+                    value={product.productId}
+                    onChange={(e) => {
+                      const p = products.find(
+                        (p) => p.productId === Number(e.target.value),
+                      );
+                      if (p) choose(p);
+                    }}
+                  >
+                    {products.map((p) => (
+                      <option value={p.productId} key={p.productId}>
+                        {productName(p)}
+                      </option>
+                    ))}
+                  </select>
+                  <ChoiceGroup
+                    label={dict["bulk.packSize"]}
+                    selectedId={variant.id}
+                    options={product.variants.map((v) => ({
+                      id: v.id,
+                      label: `${packLabel(v.grams)}${v.inStock ? "" : ` · ${t("out")}`}`,
+                      disabled: !v.inStock,
+                    }))}
+                    onSelect={(id) => {
+                      setVariantId(id);
+                      invalidate();
+                    }}
+                  />
+                  <div className={ui.paymentRow}>
+                    <QuantityStepper
+                      increaseLabel={t("increase")}
+                      decreaseLabel={t("decrease")}
+                      label={dict["bulk.packs"]}
+                      value={quantity}
+                      locale={locale}
+                      onChange={(q) => {
+                        setQuantity(q);
+                        invalidate();
+                      }}
+                    />
+                    <ChoiceGroup
+                      label={dict["bulk.payment"]}
+                      selectedId={payment}
+                      options={[
+                        { id: "prepaid", label: dict["payment.prepaid"] },
+                        { id: "cod", label: dict["payment.cod"] },
+                      ]}
+                      onSelect={(p) => {
+                        setPayment(p);
+                        invalidate();
+                      }}
+                    />
+                  </div>
+                  <PinField
+                    invalidMessage={t("pinError")}
+                    id="trade-pin"
+                    label={dict["bulk.pinLabel"]}
+                    value={pin}
+                    error={pinError}
+                    buttonLabel={t("buyBulk")}
+                    pending={pending}
+                    onChange={(v) => {
+                      setPin(v);
+                      setPinError("");
+                      invalidate();
+                    }}
+                  />
+                  <p className={styles.small}>{t("choosePayment")}</p>
+                </form>
+                <div
+                  className={ui.receipt}
+                  aria-live="polite"
+                  aria-busy={pending}
+                >
+                  {receipt(quote)}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+        <section
+          className={`${styles.section} ${ui.catalogue}`}
+          id="blends"
+          aria-labelledby="blendsHeading"
+        >
+          <div className={styles.wrap}>
+            <div className={styles.titleRow}>
+              <div>
+                <div className={styles.kicker}>{dict["blends.kicker"]}</div>
+                <h2 className={styles.h2} id="blendsHeading">
+                  {dict["blends.title"]}
+                </h2>
+              </div>
+              <p className={styles.small}>{dict["blends.subtitle"]}</p>
+            </div>
+            <div className={ui.blends}>
+              {products.map((p) => {
+                const available = p.variants.filter((v) => v.inStock);
+                const lowest = available.length
+                  ? Math.min(
+                      ...available.map((v) => (v.pricePaise * 1000) / v.grams),
+                    )
+                  : 0;
+                return (
+                  <article key={p.productId} className={ui.blend}>
+                    {p.imageUrl && (
+                      <Image
+                        src={p.imageUrl}
+                        onError={(e) => {
+                          e.currentTarget.hidden = true;
+                        }}
+                        alt={productName(p)}
+                        width={500}
+                        height={400}
+                        sizes="(max-width: 700px) 50vw, 25vw"
+                      />
+                    )}
+                    <h3>{productName(p)}</h3>
+                    {dict[`product.${p.productId}.tasting_notes`] && (
+                      <p>{dict[`product.${p.productId}.tasting_notes`]}</p>
+                    )}
+                    <div className={ui.productPrice}>
+                      {lowest
+                        ? `${t("from")} ${formatInrPaise(Math.round(lowest), locale)} / kg`
+                        : t("out")}
+                      <small>{t("freightExcluded")}</small>
+                    </div>
+                    <div className={ui.packList}>
+                      {available
+                        .filter((v) => v.grams >= 1000)
+                        .map((v) => (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => {
+                              choose(p, v.id);
+                              focusBulk();
+                            }}
+                          >
+                            <strong>{packLabel(v.grams)}</strong>
+                            <span>{formatInrPaise(v.pricePaise, locale)}</span>
+                          </button>
+                        ))}
+                    </div>
+                    <ActionButton
+                      disabled={!available.length}
+                      onClick={() => {
+                        choose(p);
+                        focusBulk();
+                      }}
+                    >
+                      {t("buyBulk")}
+                      <ArrowRight size={17} />
+                    </ActionButton>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+        <section
+          id="brew-proof"
+          className={`${styles.section} ${ui.brew}`}
+          aria-labelledby="brewProofHeading"
+        >
+          <div className={styles.wrap}>
+            <div className={styles.titleRow}>
+              <div>
+                <div className={styles.kicker}>{t("brewKicker")}</div>
+                <h2 className={styles.h2} id="brewProofHeading">
+                  {t("brewTitle")}
+                </h2>
+                <p className={styles.small}>{t("brewBody")}</p>
+              </div>
+              <ActionButton intent="soft" onClick={() => setBrewOpen(true)}>
+                <Coffee size={18} />
+                {dict["hero.brewGuide"]}
               </ActionButton>
             </div>
+            <div className={ui.brewSteps}>
+              {[
+                {
+                  title: "measure",
+                  body: "measureBody",
+                  image: "/images/trials/discovery-dry-leaf.webp",
+                },
+                {
+                  title: "boil",
+                  body: "boilBody",
+                  image: "/images/ctc-brew/method-01-kadak-chai.webp",
+                },
+                {
+                  title: "liquor",
+                  body: "liquorBody",
+                  image: "/images/trials/discovery-liquor.webp",
+                },
+                {
+                  title: "serve",
+                  body: "serveBody",
+                  image: "/images/trials/discovery-milk-tea.webp",
+                },
+              ].map((s, i) => (
+                <article key={s.title}>
+                  <Image
+                    src={s.image}
+                    alt={t(s.title)}
+                    width={360}
+                    height={250}
+                    sizes="(max-width: 700px) 50vw, 25vw"
+                  />
+                  <small>0{i + 1}</small>
+                  <h3>{t(s.title)}</h3>
+                  <p>{t(s.body)}</p>
+                </article>
+              ))}
+            </div>
+            {product && compareB && (
+              <details className={ui.compare}>
+                <summary>{t("compareTitle")}</summary>
+                <div className={styles.pair}>
+                  {[
+                    { id: "cmp-blend-a", p: product, label: "blendA" },
+                    { id: "cmp-blend-b", p: compareB, label: "blendB" },
+                  ].map(({ id, p, label }) => (
+                    <div key={id}>
+                      <label className={styles.fieldLabel} htmlFor={id}>
+                        {t(label)}
+                      </label>
+                      <select
+                        id={id}
+                        className={styles.select}
+                        value={p.productId}
+                        onChange={(e) =>
+                          id === "cmp-blend-b"
+                            ? setBlendB(Number(e.target.value))
+                            : choose(
+                                products.find(
+                                  (p) => p.productId === Number(e.target.value),
+                                )!,
+                              )
+                        }
+                      >
+                        {products.map((p) => (
+                          <option key={p.productId} value={p.productId}>
+                            {productName(p)}
+                          </option>
+                        ))}
+                      </select>
+                      <p>
+                        {t("brewSpec")}: {p.brewTemp} °C ·{" "}
+                        {Math.round(p.brewSeconds / 60)} min
+                      </p>
+                      <p>
+                        {dict[`product.${p.productId}.tasting_notes`] ||
+                          (locale === "en" ? p.tastingNotes : t("liquorBody"))}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
-          <div>
-            <details className={styles.faqItem}>
-              <summary>Will the tea reach my shop?</summary>
-              <p className={styles.small}>
-                Your confirmed quote clearly identifies doorstep delivery or the
-                named collection depot before you pay.
-              </p>
-            </details>
-            <details className={styles.faqItem}>
-              <summary>Can I pay on delivery?</summary>
-              <p className={styles.small}>
-                Available payment methods (prepaid, COD, or freight advance) depend
-                on your route and order total.
-              </p>
-            </details>
-            <details className={styles.faqItem}>
-              <summary>What comes in the trial?</summary>
-              <p className={styles.small}>
-                The trial card lists the published kit contents and portion weights
-                before checkout.
-              </p>
-            </details>
-            <details className={styles.faqItem}>
-              <summary>How do I reorder?</summary>
-              <p className={styles.small}>
-                Use your order confirmation link to recheck current stock and
-                delivered price in one tap.
-              </p>
-            </details>
-          </div>
-        </div>
-      </section>
-
-      {/* MODALS */}
-      {brewOpen ? (
-        <dialog open className={styles.dialog} aria-labelledby="brewModalTitle">
-          <div className={styles.sheet}>
-            <div className={styles.sheethead}>
-              <h2 id="brewModalTitle" className={styles.h3}>
-                Brew a test pan
+        </section>
+        <CupCalculator
+          locale={locale}
+          dict={dict}
+          availablePackGrams={packs}
+          selectedExWorksPerKgRupees={
+            variant ? (variant.pricePaise / variant.grams) * 10 : null
+          }
+          confirmedPerKgRupees={
+            quote?.kind === "confirmed"
+              ? (quote.totalPaise / quote.netGrams) * 10
+              : null
+          }
+          selectedProductName={product ? productName(product) : ""}
+          onEnquireCoverage={() => openEnquiry()}
+        />
+        {sharedPilots.length > 0 && (
+          <section className={styles.section}>
+            <div className={styles.wrap}>
+              {sharedPilots.map((p) => (
+                <article key={p.id}>
+                  <h3>
+                    {p.town_name} · {p.collection_point}
+                  </h3>
+                  <p>{p.collection_address}</p>
+                  <ActionButton onClick={() => openEnquiry()}>
+                    {t("help")}
+                  </ActionButton>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+        <section
+          className={`${styles.section} ${ui.enquiry}`}
+          id="enquiry"
+          aria-labelledby="enquirySectionHeading"
+        >
+          <div className={`${styles.wrap} ${ui.enquiryGrid}`}>
+            <div>
+              <div className={styles.kicker}>{dict["help.kicker"]}</div>
+              <h2 id="enquirySectionHeading" className={styles.h2}>
+                {t("enquiryTitle")}
               </h2>
-              <button
-                type="button"
-                className={styles.closeBtn}
-                aria-label="Close"
-                onClick={() => setBrewOpen(false)}
-              >
-                <X size={20} aria-hidden="true" />
-              </button>
+              <p>{t("enquiryBody")}</p>
+              <TradeEnquiryForm
+                dict={dict}
+                locale={locale}
+                pin={pin}
+                source="inline_enquiry_section"
+              />
             </div>
-            {settings.hero_video_url ? (
-              <video
-                controls
-                playsInline
-                poster={settings.hero_video_poster_url || settings.hero_image_url}
-                style={{ width: "100%", borderRadius: 10, marginBottom: 14 }}
-              >
-                <source src={settings.hero_video_url} />
-              </video>
-            ) : null}
-            <div className={styles.row}>
-              <span>Tea dose</span>
-              <b>3 g (~333 servings / kg)</b>
+            <div id="help" className={ui.faq}>
+              <Truck size={32} strokeWidth={1.4} aria-hidden="true" />
+              <h2 className={styles.h3}>{t("faqTitle")}</h2>
+              {[1, 2, 3, 4].map((n) => (
+                <details className={styles.faqItem} key={n}>
+                  <summary>{t(`faq${n}`)}</summary>
+                  <p>{t(`faq${n}Body`)}</p>
+                </details>
+              ))}
+              <p className={styles.small}>
+                {dict["support.hours"] || settings.support_hours}
+              </p>
             </div>
-            <div className={styles.row}>
-              <span>Water + milk</span>
-              <b>120 ml + 80 ml</b>
-            </div>
-            <div className={styles.row}>
-              <span>Simmer</span>
-              <b>3–4 min</b>
-            </div>
-            <p className={styles.small}>
-              Strain and taste. Use the same milk and measure when comparing
-              batches.
-            </p>
           </div>
-        </dialog>
-      ) : null}
-
-      {trialOpen && trial ? (
-        <dialog open className={styles.dialog} aria-labelledby="trialModalTitle">
-          <div className={styles.sheet}>
-            <div className={styles.sheethead}>
-              <h2 id="trialModalTitle" className={styles.h3}>
-                {trial.title}
-              </h2>
-              <button
-                type="button"
-                className={styles.closeBtn}
-                aria-label="Close"
-                onClick={() => setTrialOpen(false)}
-              >
-                <X size={20} aria-hidden="true" />
-              </button>
-            </div>
-            <p className={styles.small}>
-              Includes:{" "}
+        </section>
+      </div>
+      <ModalDialog
+        closeLabel={t("close")}
+        open={trialOpen}
+        onClose={() => {
+          setTrialOpen(false);
+          trialRef.current++;
+          setTrialPending(false);
+        }}
+        titleId="trialModalTitle"
+        title={dict["trial.title"]}
+      >
+        {trial && (
+          <>
+            <p>
               {trial.components
-                .map((c) => `${c.name} (${c.weight_g} g)`)
-                .join(", ")}
+                .map(
+                  (c) =>
+                    `${dict[`trial.component.${c.slot_index}.name`] || c.name} (${c.weight_g} g)`,
+                )
+                .join(" · ")}
             </p>
-            <form onSubmit={requestTrialQuote}>
+            <p>
+              <b>{formatInrPaise(trial.price_paise, locale)}</b> · {totalGrams}{" "}
+              g
+            </p>
+            <p className={styles.small}>{t("deliveryNote")}</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void checkQuote(true);
+              }}
+            >
               <PinField
+                invalidMessage={t("pinError")}
                 id="trial-pin"
                 label={dict["bulk.pinLabel"]}
                 value={trialPin}
+                error={trialError}
                 buttonLabel={dict["bulk.checkDelivery"]}
                 pending={trialPending}
                 onChange={(v) => {
                   setTrialPin(v);
+                  trialRef.current++;
+                  setTrialPending(false);
                   setTrialQuote(null);
+                  setTrialError("");
                 }}
               />
             </form>
-            {trialQuote?.kind === "confirmed" ? (
-              <div style={{ marginTop: 16 }}>
-                <PriceReceipt
-                  quote={trialQuote}
-                  locale={locale}
-                  dict={dict}
-                  action={
-                    <ActionButton
-                      intent="primary"
-                      onClick={() =>
-                        router.push(
-                          `/tea-shops/${locale}/checkout?quoteId=${encodeURIComponent(
-                            trialQuote.id
-                          )}`
-                        )
-                      }
-                    >
-                      <span>{dict["quote.reviewPack"]}</span>
-                      <ArrowRight size={18} aria-hidden="true" />
-                    </ActionButton>
-                  }
-                />
-              </div>
-            ) : trialQuote?.kind === "manual" ? (
-              <InlineStatus
-                title={dict["quote.manualTitle"]}
-                body={trialQuote.enquiryDraft}
-                action={
-                  <ActionButton
-                    intent="primary"
-                    onClick={() => {
-                      setTrialOpen(false);
-                      openEnquiryModal(trialQuote.enquiryDraft);
-                    }}
-                  >
-                    {dict["quote.prepareEnquiry"]}
-                  </ActionButton>
-                }
-              />
-            ) : null}
-          </div>
-        </dialog>
-      ) : null}
-
-      {enquiryOpen ? (
-        <dialog open className={styles.dialog} aria-labelledby="enquiryModalTitle">
-          <div className={styles.sheet}>
-            <div className={styles.sheethead}>
-              <h2 id="enquiryModalTitle" className={styles.h3}>
-                {dict["enquiry.requestTransport"]}
-              </h2>
-              <button
-                type="button"
-                className={styles.closeBtn}
-                aria-label="Close"
-                onClick={() => setEnquiryOpen(false)}
-              >
-                <X size={20} aria-hidden="true" />
-              </button>
+            <div className={ui.trialReceipt} aria-live="polite">
+              {trialQuote && receipt(trialQuote, true)}
             </div>
-            {enquiryResult ? (
-              <InlineStatus
-                title={`Enquiry ${enquiryResult.id} saved`}
-                body="Our team will call you during support hours with the confirmed transport rate."
-                action={
-                  <a
-                    href={enquiryResult.whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${styles.btn} ${styles.btnPrimary}`}
-                  >
-                    Open in WhatsApp
-                  </a>
-                }
-              />
-            ) : (
-              <form onSubmit={submitEnquiry}>
-                <label className={styles.fieldLabel} htmlFor="enq-draft">
-                  Message draft
-                </label>
-                <textarea
-                  id="enq-draft"
-                  className={styles.textarea}
-                  value={enquiryDraft}
-                  onChange={(e) => setEnquiryDraft(e.target.value)}
-                />
-                <label className={styles.fieldLabel} htmlFor="enq-name">
-                  Your name / shop name
-                </label>
-                <input
-                  id="enq-name"
-                  className={styles.input}
-                  style={{ width: "100%" }}
-                  value={enquiryName}
-                  onChange={(e) => setEnquiryName(e.target.value)}
-                />
-                <label className={styles.fieldLabel} htmlFor="enq-phone">
-                  Phone / WhatsApp number *
-                </label>
-                <input
-                  id="enq-phone"
-                  className={styles.input}
-                  style={{ width: "100%" }}
-                  required
-                  placeholder="+91 98..."
-                  value={enquiryPhone}
-                  onChange={(e) => setEnquiryPhone(e.target.value)}
-                />
-                <label className={styles.fieldLabel} htmlFor="enq-hours">
-                  Preferred callback hours
-                </label>
-                <input
-                  id="enq-hours"
-                  className={styles.input}
-                  style={{ width: "100%" }}
-                  placeholder="e.g. 11 AM – 2 PM"
-                  value={enquiryHours}
-                  onChange={(e) => setEnquiryHours(e.target.value)}
-                />
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    marginTop: 12,
-                    fontSize: 13,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={enquiryConsent}
-                    onChange={(e) => setEnquiryConsent(e.target.checked)}
-                    required
-                  />
-                  <span>I agree to be contacted by TeaFloww about this quote.</span>
-                </label>
-                <div style={{ marginTop: 16 }}>
-                  <ActionButton
-                    type="submit"
-                    intent="primary"
-                    pending={enquiryPending}
-                  >
-                    Save enquiry & prepare WhatsApp
-                  </ActionButton>
-                </div>
-              </form>
-            )}
-          </div>
-        </dialog>
-      ) : null}
-
-      {compareQuotes ? (
-        <dialog open className={styles.dialog} aria-labelledby="compareTitle">
-          <div className={styles.sheet}>
-            <div className={styles.sheethead}>
-              <h2 id="compareTitle" className={styles.h3}>
-                5 kg vs 25 kg ({pin})
-              </h2>
-              <button
-                type="button"
-                className={styles.closeBtn}
-                aria-label="Close"
-                onClick={() => setCompareQuotes(null)}
-              >
-                <X size={20} aria-hidden="true" />
-              </button>
-            </div>
-            <div className={styles.row}>
-              <span>5 kg all-in</span>
-              <b>
-                {formatInrPaise(compareQuotes.small.totalPaise, locale)} (
-                {formatInrPaise(
-                  Math.round(compareQuotes.small.totalPaise / 5),
-                  locale
-                )}
-                /kg)
-              </b>
-            </div>
-            <div className={styles.row}>
-              <span>25 kg all-in</span>
-              <b>
-                {formatInrPaise(compareQuotes.large.totalPaise, locale)} (
-                {formatInrPaise(
-                  Math.round(compareQuotes.large.totalPaise / 25),
-                  locale
-                )}
-                /kg)
-              </b>
-            </div>
-          </div>
-        </dialog>
-      ) : null}
-
-      {pilotInterestTarget ? (
-        <dialog open className={styles.dialog} aria-labelledby="pilotModalTitle">
-          <div className={styles.sheet}>
-            <div className={styles.sheethead}>
-              <h2 id="pilotModalTitle" className={styles.h3}>
-                {pilotInterestTarget.town_name} shared dispatch
-              </h2>
-              <button
-                type="button"
-                className={styles.closeBtn}
-                aria-label="Close"
-                onClick={() => setPilotInterestTarget(null)}
-              >
-                <X size={20} aria-hidden="true" />
-              </button>
-            </div>
-            {pilotDoneId ? (
-              <InlineStatus
-                title={`Interest recorded (${pilotDoneId})`}
-                body="This is an interest list, not a paid reservation. Our regional team will confirm before dispatch."
-              />
-            ) : (
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  const res = await fetch("/api/trade/shared-pilots", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      pilotId: pilotInterestTarget.id,
-                      contactName: pilotName,
-                      contactPhone: pilotPhone,
-                      requestedKg: Number(pilotKg) || 25,
-                      locale,
-                    }),
-                  });
-                  const d = (await res.json()) as { interest?: { id: string } };
-                  if (d.interest?.id) setPilotDoneId(d.interest.id);
-                }}
-              >
-                <label className={styles.fieldLabel} htmlFor="sp-name">
-                  Shop / contact name
-                </label>
-                <input
-                  id="sp-name"
-                  className={styles.input}
-                  style={{ width: "100%" }}
-                  required
-                  value={pilotName}
-                  onChange={(e) => setPilotName(e.target.value)}
-                />
-                <label className={styles.fieldLabel} htmlFor="sp-phone">
-                  Phone number
-                </label>
-                <input
-                  id="sp-phone"
-                  className={styles.input}
-                  style={{ width: "100%" }}
-                  required
-                  value={pilotPhone}
-                  onChange={(e) => setPilotPhone(e.target.value)}
-                />
-                <label className={styles.fieldLabel} htmlFor="sp-kg">
-                  Estimated kg needed
-                </label>
-                <input
-                  id="sp-kg"
-                  className={styles.input}
-                  style={{ width: "100%" }}
-                  type="number"
-                  min="1"
-                  required
-                  value={pilotKg}
-                  onChange={(e) => setPilotKg(e.target.value)}
-                />
-                <div style={{ marginTop: 16 }}>
-                  <ActionButton type="submit" intent="primary">
-                    Register interest
-                  </ActionButton>
-                </div>
-              </form>
-            )}
-          </div>
-        </dialog>
-      ) : null}
+            <button
+              className={styles.textbutton}
+              type="button"
+              onClick={() => {
+                openEnquiry(true);
+              }}
+            >
+              {t("help")}
+            </button>
+          </>
+        )}
+      </ModalDialog>
+      <ModalDialog
+        closeLabel={t("close")}
+        open={enquiryOpen}
+        onClose={() => setEnquiryOpen(false)}
+        titleId="enquiryModalTitle"
+        title={t("enquiryTitle")}
+      >
+        <TradeEnquiryForm
+          locale={locale}
+          dict={dict}
+          pin={pin || trialPin}
+          source="trade_modal"
+          trial={enquiryTrial}
+        />
+      </ModalDialog>
+      <ModalDialog
+        closeLabel={t("close")}
+        open={brewOpen}
+        onClose={() => setBrewOpen(false)}
+        titleId="brewModalTitle"
+        title={dict["hero.brewGuide"]}
+      >
+        {settings.hero_video_url && (
+          <video
+            controls
+            playsInline
+            preload="none"
+            poster={settings.hero_video_poster_url || heroImage}
+          >
+            <source src={settings.hero_video_url} />
+          </video>
+        )}
+        <p>{t("brewBody")}</p>
+        <p>{t("measureBody")}</p>
+        <p>{t("boilBody")}</p>
+        <p>{t("serveBody")}</p>
+      </ModalDialog>
     </TradeShell>
   );
 }

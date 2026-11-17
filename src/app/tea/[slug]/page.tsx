@@ -10,6 +10,9 @@ import { getProductBySlug } from "@/lib/products";
 import { getProductImages } from "@/lib/storefront";
 import { constructMetadata } from "@/lib/seo/metadata";
 import { getProductSchema, getBreadcrumbSchema } from "@/lib/seo/schema";
+import { resolveProductCommercePolicy, toClientCommercePolicy } from "@/lib/seo/productPolicy";
+import { listApprovedReviews } from "@/lib/reviews";
+import { ProductReviewsSection } from "@/components/ProductReviewsSection";
 import { SESSION_COOKIE, verifySessionValue } from "@/lib/adminSessions";
 import { VariantPicker } from "@/components/VariantPicker";
 import { ProductGallery } from "@/components/ProductGallery";
@@ -70,10 +73,13 @@ export async function generateMetadata({
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ sku?: string }>;
 }) {
   const { slug } = await params;
+  const resolvedSearch = searchParams ? await searchParams : {};
   const ctx = await requestContext();
   const original = getProductBySlug(slug);
   const p = original ? localize(original, `product:${original.id}`, ctx.locale) : null;
@@ -92,7 +98,21 @@ export default async function ProductPage({
 
   const images = getProductImages(p.id);
   const recommendations = getRecommendationsForProduct(original);
-  const productJsonLd = getProductSchema(p, p.variants, images);
+  const commercePolicy = resolveProductCommercePolicy({
+    entityType: "product",
+    entityId: p.id,
+    overrides: p,
+  });
+  const approvedReviews = listApprovedReviews("product", p.id);
+  const productJsonLd = getProductSchema(p, p.variants, images, {
+    policy: commercePolicy,
+    reviews: approvedReviews,
+  });
+  const requestedSku = (resolvedSearch?.sku || "").trim().toLowerCase();
+  const matchedVariant = requestedSku
+    ? p.variants.find((v) => v.sku.toLowerCase() === requestedSku)
+    : undefined;
+  const clientPolicy = toClientCommercePolicy(commercePolicy);
   const categorySlug = p.category
     ? p.category.toLowerCase().replace(/&/g, "").replace(/\s+/g, "-").replace(/--+/g, "-").replace(/^-|-$/g, "")
     : "";
@@ -208,7 +228,12 @@ export default async function ProductPage({
           ) : null}
 
           {/* Interactive Variant Picker & Hero Purchase Container */}
-          <VariantPicker product={p} />
+          <VariantPicker
+            product={p}
+            initialFormat={matchedVariant?.packaging_format}
+            initialGrams={matchedVariant?.grams}
+            commercePolicy={clientPolicy}
+          />
         </div>
       </div>
 
@@ -220,6 +245,15 @@ export default async function ProductPage({
         <h2 className="font-serif text-2xl"><StorefrontText id="copy_87675db83a32caa1" fallback="Ingredients" /></h2><p>{p.ingredients}</p>
       </section>}
       <PDPInteractiveTabs product={p} images={images} />
+
+      {/* 4b. Verified Customer Reviews */}
+      <ProductReviewsSection
+        entityType="product"
+        entityId={String(p.id)}
+        productName={p.name}
+        summary={commercePolicy.reviewSummary}
+        reviews={approvedReviews}
+      />
 
       {/* 5. Recommendations Carousel / Grid */}
       <PDPRecommendations

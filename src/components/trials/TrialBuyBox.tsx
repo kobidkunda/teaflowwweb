@@ -8,13 +8,15 @@ import type { TrialPublicDto } from "@/lib/trials/types";
 import { formatINR } from "@/lib/trials/storefront-helpers";
 import { useCart } from "@/components/CartProvider";
 import { useRouter } from "next/navigation";
-import { Check, AlertCircle, Loader2, Zap } from "lucide-react";
+import { Check, AlertCircle, Loader2, Zap, Truck, RotateCcw, Star } from "lucide-react";
+import type { ClientCommercePolicy } from "@/lib/seo/productPolicy";
 
 export interface TrialBuyBoxProps {
   trial: TrialPublicDto;
+  commercePolicy?: ClientCommercePolicy;
 }
 
-export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
+export function TrialBuyBox({ trial, commercePolicy }: TrialBuyBoxProps) {
   const { add, buyNow } = useCart();
   const router = useRouter();
   const [added, setAdded] = useState(false);
@@ -124,7 +126,7 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
       </div>
 
       {/* Pricing Row */}
-      <div className="my-5 flex items-baseline gap-3">
+      <div className="my-5 flex items-baseline gap-3 flex-wrap">
         <span className="price text-[36px] sm:text-[42px] font-extrabold text-[#e5b869] tracking-tight">
           {priceRupees}
         </span>
@@ -133,8 +135,51 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
             {comparePrice}
           </span>
         )}
-        <span className="text-[11px] text-[#bda996]"><StorefrontText id="copy_d8cd83725ce103e5" fallback="+ delivery at checkout" /></span>
+        {commercePolicy?.reviewSummary && commercePolicy.reviewSummary.reviewCount > 0 && (
+          <a
+            href="#verified-reviews"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#edd09e] hover:underline"
+          >
+            <Star size={13} className="fill-[#e5b869] text-[#e5b869]" aria-hidden="true" />
+            <span>{commercePolicy.reviewSummary.ratingValue.toFixed(1)}</span>
+            <span className="font-normal text-[#bda996]">({commercePolicy.reviewSummary.reviewCount})</span>
+          </a>
+        )}
       </div>
+
+      {(() => {
+        const freeEligible =
+          commercePolicy &&
+          !commercePolicy.hasExplicitShippingOverride &&
+          commercePolicy.freeShippingEnabled &&
+          trial.price_paise >= commercePolicy.freeShippingThresholdPaise;
+        const shipPaise = commercePolicy
+          ? freeEligible
+            ? 0
+            : commercePolicy.flatShippingPaise
+          : 9900;
+        const deliveryLabel = commercePolicy?.deliveryWindowLabel || "3–7 day delivery";
+        const returnDays = commercePolicy?.returnWindowDays || 14;
+        const shipText =
+          shipPaise === 0
+            ? "Free delivery"
+            : `₹${Math.round(shipPaise / 100)} delivery`;
+        return (
+          <div className="mb-4 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-[#dccab4]">
+            <span className="inline-flex items-center gap-1">
+              <Truck size={12} aria-hidden="true" />
+              <span>{deliveryLabel}</span>
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{shipText}</span>
+            <span aria-hidden="true">·</span>
+            <span className="inline-flex items-center gap-1">
+              <RotateCcw size={11} aria-hidden="true" />
+              <span>{returnDays}-day returns</span>
+            </span>
+          </div>
+        );
+      })()}
 
       {/* 4x50g Inclusions List */}
       <div className="inclusions my-5 bg-[#130f0d] border border-[#ffffff10] rounded-xl p-4">
@@ -227,7 +272,17 @@ export function TrialBuyBox({ trial }: TrialBuyBoxProps) {
 
       <div className="mt-2.5 text-center text-[#edd09e] text-[11px] font-medium flex items-center justify-center gap-1.5">
         <span aria-hidden="true">⚡</span>
-        <span>Direct Checkout · FREE Delivery across India · No minimum limit</span>
+        <span>
+          Direct Checkout ·{" "}
+          {commercePolicy &&
+          !commercePolicy.hasExplicitShippingOverride &&
+          commercePolicy.freeShippingEnabled &&
+          trial.price_paise >= commercePolicy.freeShippingThresholdPaise
+            ? "Free Delivery"
+            : commercePolicy?.freeShippingEnabled
+            ? `Free delivery on orders ₹${Math.round(commercePolicy.freeShippingThresholdPaise / 100)}+`
+            : "Pan-India Dispatch"}
+        </span>
       </div>
 
       <div className="mt-3 text-center text-[#bea88e] text-[11px]"><StorefrontText id="copy_3ceb8432ffe7ae87" fallback="Includes 4 nitrogen-flushed 50g pouches with estate invoice traceability." />

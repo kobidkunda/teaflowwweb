@@ -1,13 +1,160 @@
 import { SITE_CONFIG, getSiteUrl, getDynamicSiteConfig } from "./site";
 import { buildCanonicalUrl } from "./canonical";
-import type { Product, Variant } from "@/lib/productModels";
+import { formatPackagingLabel, type Product, type Variant } from "@/lib/productModels";
+import type { TrialPublicDto } from "@/lib/trials/types";
+import type { PublicPackagingDetailResponse } from "@/lib/private-label/schemas";
+import {
+  resolveProductCommercePolicy,
+  type ProductPolicyOverrides,
+  type ResolvedProductCommercePolicy,
+} from "./productPolicy";
+import type { ProductReview, ReviewSummary } from "@/lib/reviews";
+
+function resolveImageUrl(siteUrl: string, rawUrl: string): string {
+  return /^https?:\/\//i.test(rawUrl)
+    ? rawUrl
+    : `${siteUrl}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+}
+
+function defaultPriceValidUntil(): string {
+  return `${new Date().getUTCFullYear() + 1}-12-31`;
+}
+
+function buildReturnPolicyNode(policy: ResolvedProductCommercePolicy) {
+  return {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: policy.applicableCountry,
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+    merchantReturnDays: policy.returnWindowDays,
+    returnMethod: `https://schema.org/${policy.returnMethod}`,
+    returnFees: `https://schema.org/${policy.returnFees}`,
+    url: policy.returnPolicyUrl,
+  };
+}
+
+function buildShippingDetailsNode(
+  policy: ResolvedProductCommercePolicy,
+  itemPricePaise: number
+) {
+  const ratePaise = policy.computeShippingRatePaise(itemPricePaise);
+  return {
+    "@type": "OfferShippingDetails",
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      value: (ratePaise / 100).toFixed(2),
+      currency: policy.currency,
+    },
+    shippingDestination: {
+      "@type": "DefinedRegion",
+      addressCountry: policy.applicableCountry,
+    },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: {
+        "@type": "QuantitativeValue",
+        minValue: policy.handlingDaysMin,
+        maxValue: policy.handlingDaysMax,
+        unitCode: "DAY",
+      },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: policy.transitDaysMin,
+        maxValue: policy.transitDaysMax,
+        unitCode: "DAY",
+      },
+    },
+  };
+}
+
+function buildOfferNode(options: {
+  id: string;
+  sku: string;
+  url: string;
+  pricePaise: number;
+  inStock: boolean;
+  policy: ResolvedProductCommercePolicy;
+  eligibleMinQuantity?: number;
+}) {
+  const { id, sku, url, pricePaise, inStock, policy, eligibleMinQuantity } = options;
+  return {
+    "@type": "Offer",
+    "@id": id,
+    sku,
+    url,
+    price: (pricePaise / 100).toFixed(2),
+    priceCurrency: policy.currency,
+    itemCondition: "https://schema.org/NewCondition",
+    availability: inStock
+      ? "https://schema.org/InStock"
+      : "https://schema.org/OutOfStock",
+    priceValidUntil: defaultPriceValidUntil(),
+    seller: {
+      "@type": "Organization",
+      name: policy.sellerName,
+    },
+    ...(eligibleMinQuantity && eligibleMinQuantity > 0
+      ? {
+          eligibleQuantity: {
+            "@type": "QuantitativeValue",
+            minValue: eligibleMinQuantity,
+            unitCode: "C62",
+          },
+        }
+      : {}),
+    shippingDetails: buildShippingDetailsNode(policy, pricePaise),
+    hasMerchantReturnPolicy: buildReturnPolicyNode(policy),
+  };
+}
+
+function buildReviewNodes(
+  policy: ResolvedProductCommercePolicy,
+  reviews: ProductReview[] = []
+): Record<string, unknown> {
+  const summary = policy.reviewSummary;
+  if (!summary || summary.reviewCount <= 0 || summary.ratingValue <= 0) {
+    return {};
+  }
+
+  const out: Record<string, unknown> = {
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: summary.ratingValue.toFixed(1),
+      reviewCount: summary.reviewCount,
+      bestRating: 5,
+      worstRating: 1,
+    },
+  };
+
+  if (reviews.length > 0) {
+    out.review = reviews.slice(0, 5).map((r) => ({
+      "@type": "Review",
+      author: {
+        "@type": "Person",
+        name: r.reviewer_name,
+      },
+      datePublished: r.created_at ? r.created_at.slice(0, 10) : undefined,
+      name: r.title || undefined,
+      reviewBody: r.body,
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: r.rating,
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }));
+  }
+
+  return out;
+}
 
 /**
  * Returns JSON-LD Organization and OnlineStore schema representing the brand entity.
+ * Includes store-wide MerchantReturnPolicy per Google Merchant Listing guidelines.
  */
 export function getOrganizationSchema() {
   const siteUrl = getSiteUrl();
   const config = getDynamicSiteConfig();
+  const policy = resolveProductCommercePolicy({ siteUrlOverride: siteUrl });
 
   return {
     "@context": "https://schema.org",
@@ -35,29 +182,31 @@ export function getOrganizationSchema() {
         availableLanguage: config.contact.availableLanguage,
       },
     ],
+    hasMerchantReturnPolicy: buildReturnPolicyNode(policy),
     sameAs: [...config.sameAs],
   };
 }
 
 /**
  * Returns JSON-LD LocalBusiness and Store schema for the Siliguri Works &
- * packaging facility (AGENTS.md source of truth). The Organization schema
- * above uses the registered office; this Store uses the Works address.
+ * packaging facility (AGENTS.md source of truth).
  */
 export function getLocalBusinessSchema() {
   const siteUrl = getSiteUrl();
+  const config = getDynamicSiteConfig();
+  const storeName = config.name || SITE_CONFIG.name;
 
   return {
     "@context": "https://schema.org",
     "@type": ["Store", "LocalBusiness"],
     "@id": `${siteUrl}/locations/siliguri#store`,
-    name: `${SITE_CONFIG.name} — Siliguri Tasting Room & Sourcing Hub`,
+    name: `${storeName} — Siliguri Tasting Room & Sourcing Hub`,
     image: `${siteUrl}/images/about/siliguri-packaging-craft.jpg`,
     url: `${siteUrl}/locations/siliguri`,
-    telephone: SITE_CONFIG.contact.telephone,
-    email: SITE_CONFIG.contact.email,
+    telephone: config.contact.telephone,
+    email: config.contact.email,
     priceRange: "₹₹",
-    currenciesAccepted: "INR",
+    currenciesAccepted: config.currency || "INR",
     paymentAccepted: "Cash, Credit Card, UPI, Net Banking",
     address: {
       "@type": "PostalAddress",
@@ -89,7 +238,7 @@ export function getLocalBusinessSchema() {
     ],
     parentOrganization: {
       "@type": "Organization",
-      name: SITE_CONFIG.name,
+      name: storeName,
       url: siteUrl,
     },
   };
@@ -97,22 +246,23 @@ export function getLocalBusinessSchema() {
 
 /**
  * Returns JSON-LD WebSite schema with SearchAction for the homepage.
- * Enables sitelinks searchbox eligibility; no fabricated claims.
  */
 export function getWebsiteSchema() {
   const siteUrl = getSiteUrl();
+  const config = getDynamicSiteConfig();
+  const storeName = config.name || SITE_CONFIG.name;
 
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": `${siteUrl}/#website`,
     url: siteUrl,
-    name: SITE_CONFIG.name,
-    description: SITE_CONFIG.description,
+    name: storeName,
+    description: config.description || SITE_CONFIG.description,
     inLanguage: SITE_CONFIG.defaultLocale,
     publisher: {
       "@type": "Organization",
-      name: SITE_CONFIG.name,
+      name: storeName,
       url: siteUrl,
     },
     potentialAction: {
@@ -126,145 +276,360 @@ export function getWebsiteSchema() {
   };
 }
 
+export interface ProductSchemaOptions {
+  policy?: ResolvedProductCommercePolicy;
+  reviewSummary?: ReviewSummary | null;
+  reviews?: ProductReview[];
+}
+
 /**
- * Returns JSON-LD Product schema for a catalog tea item with individual variant Offers.
- * Complies strictly with Google Merchant Center specifications.
- * Excludes fabricated reviews, fake aggregate ratings, and deprecated FAQ schema.
+ * Returns JSON-LD Product or ProductGroup schema for a catalog tea item.
+ * - Multi-variant products emit Google-compliant `ProductGroup` with `hasVariant`
+ *   so Google Search shows accurate price ranges (`₹min to ₹max`), per-SKU stock,
+ *   per-variant shipping cost (`₹0.00` when free-shipping eligible), delivery days,
+ *   and return policy.
+ * - Single-variant products emit `Product` with an `Offer`.
+ * - Verified `aggregateRating` / `review` are emitted ONLY when real approved reviews exist.
  */
 export function getProductSchema(
   product: Product,
   variants: Variant[] = [],
-  images: Array<{ url: string; alt_text?: string }> = []
+  images: Array<{ url: string; alt_text?: string }> = [],
+  options: ProductSchemaOptions = {}
 ) {
   const siteUrl = getSiteUrl();
   const canonicalUrl = buildCanonicalUrl(`/tea/${product.slug}`);
+
+  const policy =
+    options.policy ||
+    resolveProductCommercePolicy({
+      entityType: "product",
+      entityId: product.id,
+      overrides: product,
+      reviewSummary: options.reviewSummary,
+      siteUrlOverride: siteUrl,
+    });
 
   const imageUrls: string[] = [];
   if (images.length > 0) {
     for (const img of images) {
       if (img.url) {
-        imageUrls.push(
-          /^https?:\/\//i.test(img.url) ? img.url : `${siteUrl}${img.url.startsWith("/") ? "" : "/"}${img.url}`
-        );
+        imageUrls.push(resolveImageUrl(siteUrl, img.url));
       }
     }
   } else if (product.primary_image?.url) {
-    const url = product.primary_image.url;
-    imageUrls.push(/^https?:\/\//i.test(url) ? url : `${siteUrl}${url.startsWith("/") ? "" : "/"}${url}`);
+    imageUrls.push(resolveImageUrl(siteUrl, product.primary_image.url));
   } else {
     imageUrls.push(`${siteUrl}/images/product-darjeeling-tin.jpg`);
   }
 
   const activeVariants = variants.length > 0 ? variants : product.variants || [];
+  const description =
+    product.description || `${product.name} single-estate orthodox tea from ${product.origin}.`;
 
-  const offers = activeVariants.map((v) => {
-    const variantPrice = (v.price_paise / 100).toFixed(2);
-    const inStock = v.stock > 0;
+  const additionalProperty = [
+    {
+      "@type": "PropertyValue",
+      name: "Origin",
+      value: product.origin,
+    },
+    {
+      "@type": "PropertyValue",
+      name: "Estate",
+      value: product.estate,
+    },
+    {
+      "@type": "PropertyValue",
+      name: "Harvest Flush",
+      value: product.flush,
+    },
+    ...(product.elevation_display
+      ? [
+          {
+            "@type": "PropertyValue",
+            name: "Elevation",
+            value: product.elevation_display,
+          },
+        ]
+      : []),
+    ...(product.cultivar
+      ? [
+          {
+            "@type": "PropertyValue",
+            name: "Cultivar",
+            value: product.cultivar,
+          },
+        ]
+      : []),
+  ];
+
+  const reviewNodes = buildReviewNodes(policy, options.reviews || []);
+
+  if (activeVariants.length > 1) {
+    const hasVariant = activeVariants.map((v) => {
+      const formatLabel = formatPackagingLabel(v.packaging_format);
+      const variantUrl = `${canonicalUrl}?sku=${encodeURIComponent(v.sku)}`;
+      const variantImg = v.product_image_url
+        ? resolveImageUrl(siteUrl, v.product_image_url)
+        : imageUrls[0];
+
+      return {
+        "@type": "Product",
+        "@id": `${canonicalUrl}#variant-product-${v.sku}`,
+        sku: v.sku,
+        name: `${product.name} — ${formatLabel} (${v.grams}g)`,
+        description,
+        image: variantImg ? [variantImg] : imageUrls,
+        size: `${v.grams}g`,
+        material: formatLabel,
+        weight: {
+          "@type": "QuantitativeValue",
+          value: v.grams,
+          unitCode: "GRM",
+        },
+        url: variantUrl,
+        brand: {
+          "@type": "Brand",
+          name: policy.brandName,
+        },
+        offers: buildOfferNode({
+          id: `${canonicalUrl}#variant-${v.sku}`,
+          sku: v.sku,
+          url: variantUrl,
+          pricePaise: v.price_paise,
+          inStock: v.stock > 0,
+          policy,
+        }),
+      };
+    });
 
     return {
-      "@type": "Offer",
-      "@id": `${canonicalUrl}#variant-${v.sku}`,
-      sku: v.sku,
-      url: `${canonicalUrl}?sku=${encodeURIComponent(v.sku)}`,
-      price: variantPrice,
-      priceCurrency: SITE_CONFIG.currency,
-      itemCondition: "https://schema.org/NewCondition",
-      availability: inStock
-        ? "https://schema.org/InStock"
-        : "https://schema.org/OutOfStock",
-      priceValidUntil: "2027-12-31",
-      seller: {
-        "@type": "Organization",
-        name: SITE_CONFIG.name,
+      "@context": "https://schema.org",
+      "@type": "ProductGroup",
+      "@id": `${canonicalUrl}#product`,
+      productGroupID: product.slug,
+      name: product.name,
+      description,
+      url: canonicalUrl,
+      image: imageUrls,
+      category: `${product.category} Tea`,
+      brand: {
+        "@type": "Brand",
+        name: policy.brandName,
       },
-      shippingDetails: {
-        "@type": "OfferShippingDetails",
-        shippingRate: {
-          "@type": "MonetaryAmount",
-          value: (SITE_CONFIG.shipping.flatRatePaise / 100).toFixed(2),
-          currency: SITE_CONFIG.currency,
-        },
-        shippingDestination: {
-          "@type": "DefinedRegion",
-          addressCountry: "IN",
-        },
-        deliveryTime: {
-          "@type": "ShippingDeliveryTime",
-          handlingTime: {
-            "@type": "QuantitativeValue",
-            minValue: 1,
-            maxValue: 2,
-            unitCode: "DAY",
-          },
-          transitTime: {
-            "@type": "QuantitativeValue",
-            minValue: 2,
-            maxValue: 5,
-            unitCode: "DAY",
-          },
-        },
-      },
-      hasMerchantReturnPolicy: {
-        "@type": "MerchantReturnPolicy",
-        applicableCountry: "IN",
-        returnPolicyCategory:
-          "https://schema.org/MerchantReturnFiniteReturnWindow",
-        merchantReturnDays: SITE_CONFIG.returns.windowDays,
-        returnMethod: "https://schema.org/ReturnByMail",
-        returnFees: "https://schema.org/FreeReturn",
-      },
+      variesBy: ["https://schema.org/size", "https://schema.org/material"],
+      hasVariant,
+      additionalProperty,
+      ...reviewNodes,
     };
-  });
+  }
+
+  const singleVariant = activeVariants[0];
+  const fallbackPaise = product.price_paise && product.price_paise > 0 ? product.price_paise : 0;
+  const offer = singleVariant
+    ? buildOfferNode({
+        id: `${canonicalUrl}#variant-${singleVariant.sku}`,
+        sku: singleVariant.sku,
+        url: `${canonicalUrl}?sku=${encodeURIComponent(singleVariant.sku)}`,
+        pricePaise: singleVariant.price_paise,
+        inStock: singleVariant.stock > 0,
+        policy,
+      })
+    : fallbackPaise > 0
+    ? buildOfferNode({
+        id: `${canonicalUrl}#offer`,
+        sku: product.slug.toUpperCase(),
+        url: canonicalUrl,
+        pricePaise: fallbackPaise,
+        inStock: (product.inventory ?? 0) > 0,
+        policy,
+      })
+    : undefined;
 
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     "@id": `${canonicalUrl}#product`,
     name: product.name,
-    description: product.description || `${product.name} single-estate orthodox tea from ${product.origin}.`,
+    description,
+    url: canonicalUrl,
     image: imageUrls,
     category: `${product.category} Tea`,
     brand: {
       "@type": "Brand",
-      name: SITE_CONFIG.brand,
+      name: policy.brandName,
     },
-    ...(activeVariants[0]?.sku ? { sku: activeVariants[0].sku } : {}),
-    offers: offers.length === 1 ? offers[0] : offers,
+    ...(singleVariant?.sku ? { sku: singleVariant.sku } : {}),
+    ...(singleVariant?.grams
+      ? {
+          weight: {
+            "@type": "QuantitativeValue",
+            value: singleVariant.grams,
+            unitCode: "GRM",
+          },
+        }
+      : {}),
+    ...(offer ? { offers: offer } : {}),
+    additionalProperty,
+    ...reviewNodes,
+  };
+}
+
+/**
+ * Returns full Schema.org Product JSON-LD for a Trial Kit (/trials/[slug]),
+ * including OfferShippingDetails, MerchantReturnPolicy, and conditional AggregateRating.
+ */
+export function getTrialProductSchema(
+  trial: TrialPublicDto,
+  options: ProductSchemaOptions = {}
+) {
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = buildCanonicalUrl(`/trials/${trial.slug}`);
+  const policy =
+    options.policy ||
+    resolveProductCommercePolicy({
+      entityType: "trial",
+      entityId: trial.id,
+      overrides: trial.policy_overrides,
+      reviewSummary: options.reviewSummary,
+      siteUrlOverride: siteUrl,
+    });
+
+  const images: string[] = [];
+  if (trial.hero_image?.url) {
+    images.push(resolveImageUrl(siteUrl, trial.hero_image.url));
+  }
+  for (const g of trial.gallery_images || []) {
+    if (g.url) {
+      const resolved = resolveImageUrl(siteUrl, g.url);
+      if (!images.includes(resolved)) images.push(resolved);
+    }
+  }
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "@id": `${canonicalUrl}#product`,
+    name: trial.title,
+    description: trial.description || trial.tagline || trial.title,
+    url: canonicalUrl,
+    ...(images.length > 0 ? { image: images } : {}),
+    sku: trial.sku,
+    category: "Tea Trial Kit",
+    brand: {
+      "@type": "Brand",
+      name: policy.brandName,
+    },
+    weight: {
+      "@type": "QuantitativeValue",
+      value: trial.net_weight_g || 200,
+      unitCode: "GRM",
+    },
+    offers: buildOfferNode({
+      id: `${canonicalUrl}#offer`,
+      sku: trial.sku,
+      url: canonicalUrl,
+      pricePaise: trial.price_paise,
+      inStock: trial.in_stock,
+      policy,
+    }),
+    ...buildReviewNodes(policy, options.reviews || []),
+  };
+}
+
+/**
+ * Returns full Schema.org Product JSON-LD for a Private Label Packaging Variant
+ * (/private-label/packaging/[slug]), including production lead time + shipping & returns.
+ */
+export function getPackagingProductSchema(
+  variant: PublicPackagingDetailResponse,
+  overrides?: ProductPolicyOverrides | null,
+  options: ProductSchemaOptions = {}
+) {
+  const siteUrl = getSiteUrl();
+  const canonicalUrl = buildCanonicalUrl(`/private-label/packaging/${variant.slug}`);
+  const displayTitle = variant.title || variant.name || "Custom Packaging";
+  const displayCapacity =
+    variant.capacity_description || `${variant.net_weight_capacity_grams}g`;
+
+  const policy =
+    options.policy ||
+    resolveProductCommercePolicy({
+      entityType: "packaging",
+      entityId: variant.id,
+      overrides,
+      extraHandlingDays: variant.lead_time_days || 14,
+      reviewSummary: options.reviewSummary,
+      siteUrlOverride: siteUrl,
+    });
+
+  const heroImage = variant.hero_image_url
+    ? resolveImageUrl(siteUrl, variant.hero_image_url)
+    : `${siteUrl}/images/packaging-fallback.png`;
+  const unitPricePaise = variant.starting_price?.unit_price_paise ?? 0;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "@id": `${canonicalUrl}#product`,
+    name: displayTitle,
+    description: `Food-grade ${variant.material} structure with ${variant.finish} finish. Net capacity ${displayCapacity}.`,
+    url: canonicalUrl,
+    image: [heroImage],
+    sku: variant.sku || variant.slug,
+    category: `Tea Packaging / ${variant.category || variant.family || "Pouch"}`,
+    material: variant.material,
+    brand: {
+      "@type": "Brand",
+      name: policy.brandName,
+    },
+    offers: buildOfferNode({
+      id: `${canonicalUrl}#offer`,
+      sku: variant.sku || variant.slug,
+      url: canonicalUrl,
+      pricePaise: unitPricePaise,
+      inStock: true,
+      policy,
+      eligibleMinQuantity: variant.moq_units || 500,
+    }),
     additionalProperty: [
       {
         "@type": "PropertyValue",
-        name: "Origin",
-        value: product.origin,
+        name: "Exterior Dimensions",
+        value: `${variant.dimensions_mm?.width || 0}mm (W) x ${variant.dimensions_mm?.height || 0}mm (H)`,
       },
       {
         "@type": "PropertyValue",
-        name: "Estate",
-        value: product.estate,
+        name: "Label Safe Area",
+        value: `${variant.label_safe_area_mm?.width || 0}mm (W) x ${variant.label_safe_area_mm?.height || 0}mm (H)`,
       },
       {
         "@type": "PropertyValue",
-        name: "Harvest Flush",
-        value: product.flush,
+        name: "Net Tea Capacity",
+        value: `${displayCapacity} (~${variant.net_weight_capacity_grams}g)`,
       },
-      ...(product.elevation_display
-        ? [
-            {
-              "@type": "PropertyValue",
-              name: "Elevation",
-              value: product.elevation_display,
-            },
-          ]
-        : []),
-      ...(product.cultivar
-        ? [
-            {
-              "@type": "PropertyValue",
-              name: "Cultivar",
-              value: product.cultivar,
-            },
-          ]
-        : []),
+      {
+        "@type": "PropertyValue",
+        name: "Closure Type",
+        value: variant.closure_type || "Heat Seal",
+      },
+      {
+        "@type": "PropertyValue",
+        name: "Minimum Order Quantity",
+        value: `${variant.moq_units || 500} units`,
+      },
+      {
+        "@type": "PropertyValue",
+        name: "Order Multiple",
+        value: `${variant.order_multiple || 50} units`,
+      },
+      {
+        "@type": "PropertyValue",
+        name: "Production Lead Time",
+        value: `${variant.lead_time_days || 14} business days`,
+      },
     ],
+    ...buildReviewNodes(policy, options.reviews || []),
   };
 }
 
@@ -307,6 +672,8 @@ export function getArticleSchema(article: {
   pathOverride?: string;
 }) {
   const siteUrl = getSiteUrl();
+  const config = getDynamicSiteConfig();
+  const storeName = config.name || SITE_CONFIG.name;
   const articlePath = article.pathOverride
     ? article.pathOverride
     : article.slug.startsWith("compare/") || article.slug.startsWith("/compare/")
@@ -316,9 +683,7 @@ export function getArticleSchema(article: {
 
   let coverImage = `${siteUrl}/images/tea-education-hero.jpg`;
   if (article.cover_image_url) {
-    coverImage = /^https?:\/\//i.test(article.cover_image_url)
-      ? article.cover_image_url
-      : `${siteUrl}${article.cover_image_url.startsWith("/") ? "" : "/"}${article.cover_image_url}`;
+    coverImage = resolveImageUrl(siteUrl, article.cover_image_url);
   }
 
   return {
@@ -336,7 +701,7 @@ export function getArticleSchema(article: {
     },
     publisher: {
       "@type": "Organization",
-      name: SITE_CONFIG.name,
+      name: storeName,
       logo: {
         "@type": "ImageObject",
         url: `${siteUrl}/images/logo.png`,
@@ -359,13 +724,15 @@ export function getCollectionSchema(
   products: Product[] = []
 ) {
   const siteUrl = getSiteUrl();
+  const config = getDynamicSiteConfig();
+  const storeName = config.name || SITE_CONFIG.name;
   const canonicalUrl = buildCanonicalUrl(categoryPath);
 
   return {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "@id": `${canonicalUrl}#collection`,
-    name: `${categoryName} | ${SITE_CONFIG.name}`,
+    name: `${categoryName} | ${storeName}`,
     description: categoryDescription,
     url: canonicalUrl,
     mainEntity: {

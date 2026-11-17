@@ -512,5 +512,24 @@ export function toPublicDto(
       title: details.meta_title,
       description: details.meta_description,
     },
+    ...(details.shipping_fee_paise_override != null ||
+    details.handling_days_min_override != null ||
+    details.handling_days_max_override != null ||
+    details.transit_days_min_override != null ||
+    details.transit_days_max_override != null ||
+    details.return_window_days_override != null ||
+    details.return_fees_override != null
+      ? {
+          policy_overrides: {
+            shipping_fee_paise_override: details.shipping_fee_paise_override ?? null,
+            handling_days_min_override: details.handling_days_min_override ?? null,
+            handling_days_max_override: details.handling_days_max_override ?? null,
+            transit_days_min_override: details.transit_days_min_override ?? null,
+            transit_days_max_override: details.transit_days_max_override ?? null,
+            return_window_days_override: details.return_window_days_override ?? null,
+            return_fees_override: details.return_fees_override ?? null,
+          },
+        }
+      : {}),
   };
 }

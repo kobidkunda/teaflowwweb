@@ -19,6 +19,7 @@ import { up as migrateInternational } from "../../scripts/migrations/031_interna
 import { verifySignature, shippingCountries, shippingRate, razorpay } from "@/lib/international/providers";
 import { rateFor, refreshFx } from "@/lib/international/fx";
 import { queueTranslation, editTranslation, publishedTexts, sourceFor, translation, localize, validateTexts } from "@/lib/international/translations";
+import { wrapRow } from "@/lib/postgresDriver";
 import { reconcileCod, cancelUnpaid, bookShipment } from "@/lib/international/fulfillment";
 import { POST as adminPOST, GET as adminGET } from "@/app/api/admin/international/[action]/route";
 import { POST as webhook } from "@/app/api/webhooks/razorpay/route";
@@ -172,6 +173,11 @@ describe("International commerce", () => {
     const source = sourceFor(resource), text = { ...source, name: "Thé de test" };
     editTranslation(row.id, text, "draft"); expect(publishedTexts(resource, "fr")).toBeNull();
     editTranslation(row.id, text, "publish"); expect(localize({ name: "Test Tea" }, resource, "fr").name).toBe("Thé de test");
+    const proxied = wrapRow({ id: product, name: "Test Tea", nested: wrapRow({ title: "Inner" }) });
+    const localizedProxy = localize(proxied, resource, "fr");
+    expect(localizedProxy.name).toBe("Thé de test");
+    expect(localizedProxy.nested.title).toBe("Inner");
+    expect(proxied.name).toBe("Test Tea");
     env.db.prepare("UPDATE products SET name=? WHERE id=?").run("Updated Test Tea", product); expect(publishedTexts(resource, "fr")).toBeNull();
     expect(() => validateTexts({ x: "100 g TeaFloww" }, { x: "200 g TeaFloww" })).toThrow();
     expect(() => validateTexts({ x: "TeaFloww" }, { x: "<script>TeaFloww</script>" })).toThrow();

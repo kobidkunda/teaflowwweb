@@ -1,3 +1,4 @@
+import { getTraderPresentation, getTraderCatalogue, saveTraderPresentation } from "./traderRepository";
 import {
   createB2BQuote,
   getAdminB2BLeadDetail,
@@ -18,6 +19,8 @@ import {
 import type { BusinessLeadStatus, Segment } from "./schema";
 
 export const BUSINESS_TOOL_ALIASES: Record<string, string> = {
+  business_get_traders_page: "business.getTradersPage",
+  business_save_traders_page: "business.saveTradersPage",
   business_get_overview: "business.getOverview",
   business_update_settings: "business.updateSettings",
   business_list_offers: "business.listOffers",
@@ -35,6 +38,20 @@ export const BUSINESS_TOOL_ALIASES: Record<string, string> = {
 };
 
 export const BUSINESS_TOOL_DEFINITIONS = [
+  {
+    name: "business.getTradersPage",
+    description: "Read /tea-traders editable copy, ordered hero slides, selected products and live catalogue images. Empty slide/product arrays use the catalogue automatically. Translations use resource tea-traders.",
+    inputSchema: { type: "object", properties: {}, additionalProperties: false },
+    annotations: { title: "Read Tea Traders page", readOnlyHint: true, destructiveHint: false, idempotentHint: true },
+    run: () => ({ content: getTraderPresentation(), products: getTraderCatalogue().map(p => ({id:p.id,name:p.name,imageUrl:p.primary_image_url || p.primary_image?.url || null})) }),
+  },
+  {
+    name: "business.saveTradersPage",
+    description: "Save the complete Tea Traders presentation from business.getTradersPage. Set copy strings, slides [{id,productId,title,body}], productIds in display order, journeyProductId (nullable). Images, prices and stock always resolve from published enabled backend catalogue products. Up to 8 slides and 12 products. Empty arrays select automatically. Edit translations through translations.update/publish resource tea-traders.",
+    inputSchema: { type: "object", required: ["content"], properties: { content: { type: "object", required: ["copy","slides","productIds","journeyProductId"], properties: { copy: { type: "object", additionalProperties: { type: "string" } }, slides: { type: "array", maxItems: 8, items: { type: "object", required: ["id","productId","title","body"], properties: { id: {type:"string"}, productId: {type:"integer"}, title: {type:"string"}, body: {type:"string"} }, additionalProperties: false } }, productIds: {type:"array",maxItems:12,items:{type:"integer"}}, journeyProductId: {type:["integer","null"]} }, additionalProperties: false } }, additionalProperties: false },
+    annotations: { title: "Save Tea Traders page", readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    run: (args: unknown) => ({ content: saveTraderPresentation((args as {content?:unknown})?.content) }),
+  },
   {
     name: "business.getOverview",
     description:

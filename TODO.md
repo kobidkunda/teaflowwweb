@@ -1,5 +1,36 @@
 # Prioritized Development Checklist
 
+## Live Translation Records & Model Context Protocol (MCP) Translation Studio Suite — 2026-11-17
+- [x] **Translation Studio MCP Tools Suite (`src/lib/international/mcpTools.ts`)**:
+  - Implemented 9 dedicated MCP tools for Translation Studio:
+    - `translations.getLocales`: Returns all 15 supported locales, metadata, and Pan-India statuses.
+    - `translations.list`: Supports filtering by locale, status (`published`, `draft`, `stale`, `missing`), resource type (`interface`, `shell`, `product`, `category`, `page`, etc.), and pagination.
+    - `translations.get`: Provides full source, draft, published, revision, hash comparison, and audit history.
+    - `translations.update`: Saves and updates drafts with token validation and safety checks.
+    - `translations.publish`: Validates and publishes drafts or direct text payloads into live commerce translations.
+    - `translations.unpublish`: Safely removes published translations back to draft status.
+    - `translations.queue`: Queues automated background translation jobs.
+    - `translations.seedPanIndia`: Bulk-seeds standardized Pan-India dictionaries across regional Indian languages.
+    - `translations.bulkPublish`: Bulk-publishes multiple resources with detailed error reporting.
+  - Added full alias resolution (`admin.publishTranslation`, `list_translations`, `translations_list`, etc.) across snake_case, dot notation, and `admin.*` namespaces.
+  - Added static resources `tea://translations/overview` and `tea://translations/studio`.
+- [x] **Pan-India Token Preservation & Regional Numeral Harmonization**:
+  - Harmonized Indic script numerals in `src/lib/international/panIndiaDictionary.ts` (`src/lib/international/panIndiaDictionary.mjs`) to standard digits (`499`, `1`, `2`, `3`) for strict token preservation and placeholder matching (`validateTexts()`).
+- [x] **Live Translation Records on Production PostgreSQL**:
+  - Populated 44 curated, high-accuracy translation records in PostgreSQL on `43.230.200.121`:
+    - `interface` across all 7 Pan-India languages (`hi`, `bn`, `pa`, `mr`, `gu`, `ta`, `te`).
+    - `shell` (navigation, announcements) across all 7 Pan-India languages.
+    - Curated Categories: Black tea (`1`), Bengal Signature Blends (`75`), Everyday Milk Chai (`76`), Regional Origins (`77`), Trials & Sample Packs (`80`) in Hindi & Bengali.
+    - Curated Products: Darjeeling First Flush (`1`), Everyday Strong (`47`), Elaichi Chai (`48`), Ginger Chai (`49`), Masala Chai (`50`) in Hindi & Bengali.
+    - Curated Site Pages: About (`1`), Contact (`2`), Shipping (`3`), Returns (`4`), Privacy (`5`) in Hindi & Bengali.
+- [x] **Production Deployment & Verification**:
+  - Successfully synced workspace and compiled Next.js (128 routes) in 3.4 minutes on production server.
+  - Reloaded PM2 process `teafloww`.
+  - Verified `/api/health` (HTTP 200) and `/api/ready` (`{"status":"ready"}`).
+  - Verified live MCP tool calls (`translations.list`, `translations.get`, `translations.update`, `translations.publish`) with production `MCP_TOKEN`.
+  - Confirmed 0 stale and 17 published records for `hi` and `bn`, and 0 stale for `pa`, `mr`, `gu`, `ta`, `te`.
+  - `npm run check` passes locally (3,128 unit tests pass 100%, 0 failures).
+
 ## Pan-India Multilingual Storefront & Admin Translation System — 2026-11-17
 - [x] **Pan-India Language Matrix Selected & Model Expansion**:
   - Expanded supported Indian languages to cover >92% of tea consumers across India without bloat:
@@ -1028,7 +1059,8 @@ product API/MCP suite passed 26 tests. No deployment was needed.
 - [x] Add additive SQLite and production PostgreSQL migration sources and backup/rollout documentation.
 - [ ] Configure actual provider accounts, approved currencies, account destination/rate/booking/duties adapters and SMTP.
 - [ ] Run real Razorpay test-mode capture/refund and provider account serviceability/booking verification.
-- [ ] Generate and review the actual supported-language translations before enabling them for customers.
+- [x] Generate, review, and publish the live supported-language translations across Pan-India languages (hi, bn, pa, mr, gu, ta, te) for interface, shell navigation/announcements, categories, products, and site pages (verified 44 published records live in PostgreSQL).
+- [x] Complete Translation Studio MCP Parity: Added 9 MCP translation tools (`translations.list`, `translations.get`, `translations.update`, `translations.publish`, `translations.unpublish`, `translations.queue`, `translations.seedPanIndia`, `translations.bulkPublish`, `translations.getLocales`), aliases, and resources (`tea://translations/overview`, `tea://translations/studio`) in `src/lib/international/mcpTools.ts` and `src/lib/mcp.ts`. Verified with `tests/unit/translations-mcp.test.ts`.
 - [x] Verify production PostgreSQL backup/restore and migrations in an approved environment; deploy only on explicit request.
 - [x] Production deployment verified live on 43.230.200.121 (teafloww.com) following explicit user request (2026-10-17): timestamped database and code backup created at `/www/backup/teafloww-deploy-20261017-international`; additive PostgreSQL migrations 031 (`031_international_commerce.mjs`) and 032 (`032_commerce_receipt_templates.mjs`) applied cleanly; Nginx configured with unique release asset prefix `/_assets/20261017-international/_next/static/` and reloaded; native production Next.js build compiled into `.next-production-20261017-international`; PM2 process 20 (`teafloww`) switched and saved; verified 200 responses on `/api/health`, `/api/ready`, `/`, `/shop`, `/blog`, `/about`, `/contact`, `/checkout`, `/admin/markets`, `/admin/translations`, `/admin/fulfillment`, and 401 responses on protected endpoints (`/api/admin/international/markets`, `/api/admin/international/translations`, `/api/admin/products`, `/mcp`). All 19 release static assets verified over public HTTPS. Resolved post-deploy edge cases: fixed fatal HTTP 500 on localized routes (`/hi`, `/ar`, `/bn`) by binding PM2 ecosystem to `-H localhost` (resolving Next.js internal `NextURL` hostname origin comparison error in `relativize-url.js`) and preserved `requestedLocale` in `requestContext` to ensure untranslated localized routes serve `noindex, nofollow, nocache` with canonical English and correct language text direction (`dir="rtl"` for Arabic).
 - [x] Final international feature gate passed: 1,372 tests, five intentional PG skips, optimized build and six desktop/mobile browser checks; screenshots reviewed.
@@ -1312,3 +1344,24 @@ product API/MCP suite passed 26 tests. No deployment was needed.
 - [ ] Verify genuine purchase receipt, value/currency/transaction ID, deduplication, refund reconciliation, mobile checkout and five-state shipping/serviceability before spending.
 - [ ] Once permitted and verified, create paused, read back settings, set 14-day dates, and activate the approved ₹500/day Search test. Leave existing Performance Max paused.
 - [ ] Arrange daily review and pause/readback after the test; no automation has been created.
+
+## Tea Traders — selected option 2 (2026-11-17)
+
+- [x] Implement split photographic hero, audience paths, purchase guidance and responsive product shelf using backend images, prices, variants and stock.
+- [x] Add catalogue-backed hero slider and one shared admin GUI/API/MCP presentation editor, including product order, copy and SEO.
+- [x] Route B2B enquiry records into `/admin/responses` and expose page/slide copy through `/admin/translations` and its API/MCP workflows.
+- [x] Verify exact-variant cart/checkout navigation, enquiry validation and saved reference, admin slider save, backend photograph refresh, protected writes, translation publishing and stale fallback.
+- [ ] Production deployment only when explicitly requested; select intended catalogue products/slides and review/publish desired translations before rollout.
+
+- [x] Tea Traders final visual comparison and 320/390 px overflow checks reviewed; six integration tests, latest typecheck/lint and isolated production build passed. Full suite: 3,137 passed, six skipped. See docs/TESTING.md for shared-build caveat.
+
+### Tea shops Counter Ritual redesign — 2026-11-17
+
+- [x] Selected visual option 1, logo-bearing generated pouches and responsive UI.
+- [x] Direct-buy checkout with server final-total review and verified payment boundary.
+- [x] Consented enquiries saved before WhatsApp; unified `/admin/responses` coverage.
+- [x] Trade media admin upload/library and shared GUI/API/MCP translation publication.
+- [x] Browser visual comparisons, mobile/tablet checks and isolated admin publishing.
+- [ ] Production deployment only on explicit user request; no real gateway payment executed here.
+
+- [x] Tea Traders Hindi: publish 84 starter fields locally, prefill Translation Studio, retain admin overrides/custom-source safety, and verify seven feature + 22 shared translation tests and responsive browser rendering.

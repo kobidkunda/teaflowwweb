@@ -44,6 +44,10 @@ function resolveAttributionForResponseItem(item: AdminResponseItem): Record<stri
   try {
     const direct = getEntityAttribution(item.entityType, item.id);
     if (direct) return direct;
+    if (item.entityType === "bulk_order" && item.id.startsWith("trade:")) {
+      const tradeAttr = getEntityAttribution("trade_enquiry", item.id.slice("trade:".length));
+      if (tradeAttr) return tradeAttr;
+    }
     if (item.entityType === "private_label") {
       const sampleAttr = getEntityAttribution("private_label_sample", item.id);
       if (sampleAttr) return sampleAttr;
@@ -188,6 +192,35 @@ function loadCategoryItems(entityType: NotificationEventType, limitPerTable: num
   }
 
   if (entityType === "bulk_order") {
+    if (tableExists("b2b_leads")) {
+      const rows = db.prepare("SELECT * FROM b2b_leads ORDER BY created_at DESC LIMIT ?").all(limitPerTable) as Array<Record<string, unknown>>;
+      const mapped: Record<string, string> = {new:"new",contact_attempted:"in_progress",qualified:"in_progress",quote_sent:"quoted",won:"resolved",lost:"archived",disqualified:"archived"};
+      for (const r of rows) {
+        const id = `business:${String(r.id)}`;
+        items.push({ id, entityType: "bulk_order", reference: String(r.reference), customerName: String(r.name), email: null, phone: String(r.phone), summary: `${String(r.segment)} · ${String(r.interest)} · ${String(r.quantity_band)} kg · PIN ${String(r.pincode)}`, status: resolveStatus(overrides, "bulk_order", id, mapped[String(r.status)] || "new"), createdAt: toIso(r.created_at as string), deepLink: "/admin/business", payload: r });
+      }
+    }
+    if (tableExists("trade_enquiries")) {
+      const rows = db
+        .prepare("SELECT * FROM trade_enquiries ORDER BY created_at DESC LIMIT ?")
+        .all(limitPerTable) as Array<Record<string, unknown>>;
+      for (const r of rows) {
+        const id = `trade:${String(r.id)}`;
+        items.push({
+          id,
+          entityType: "bulk_order",
+          reference: String(r.id),
+          customerName: String(r.contact_name || "Tea Shop Owner"),
+          email: null,
+          phone: r.contact_phone ? String(r.contact_phone) : null,
+          summary: `PIN ${String(r.destination_pin || "")} (${String(r.locale || "en")}) · ${String(r.whatsapp_draft || "").slice(0, 100)}`,
+          status: resolveStatus(overrides, "bulk_order", id, r.status ? String(r.status) : "new"),
+          createdAt: toIso(r.created_at as string),
+          deepLink: "/admin/trade",
+          payload: r,
+        });
+      }
+    }
     if (tableExists("wholesale_inquiries")) {
       const rows = db
         .prepare("SELECT * FROM wholesale_inquiries ORDER BY id DESC LIMIT ?")
@@ -547,7 +580,10 @@ export function updateAdminResponseStatus(
     if (entityType === "enquiry" && tableExists("contact_inquiries")) {
       db.prepare("UPDATE contact_inquiries SET status = ? WHERE id = ?").run(status, Number(id));
     } else if (entityType === "bulk_order") {
-      if (id.startsWith("wholesale:") && tableExists("wholesale_inquiries")) {
+      if (id.startsWith("trade:") && tableExists("trade_enquiries")) {
+        const tradeStatus = status === "resolved" || status === "archived" ? "closed" : status === "in_progress" || status === "replied" ? "assigned" : status === "quoted" ? "quoted" : "new";
+        db.prepare("UPDATE trade_enquiries SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(tradeStatus, id.slice("trade:".length));
+      } else if (id.startsWith("wholesale:") && tableExists("wholesale_inquiries")) {
         db.prepare("UPDATE wholesale_inquiries SET status = ? WHERE id = ?").run(status, Number(id.slice("wholesale:".length)));
       } else if (id.startsWith("contact:") && tableExists("contact_inquiries")) {
         db.prepare("UPDATE contact_inquiries SET status = ? WHERE id = ?").run(status, Number(id.slice("contact:".length)));

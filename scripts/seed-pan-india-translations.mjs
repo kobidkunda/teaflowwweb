@@ -20,7 +20,7 @@ const db = new Database(dbPath);
 
 // Import dictionary items
 const storefrontCopy = JSON.parse(fs.readFileSync(path.join(rootDir, "src/lib/international/storefrontCopy.json"), "utf8"));
-const { PAN_INDIA_ITEMS, getLocaleDictionary } = await import("../src/lib/international/panIndiaDictionary.ts");
+const { PAN_INDIA_ITEMS, getLocaleDictionary } = await import("../src/lib/international/panIndiaDictionary.mjs");
 
 const UI_SOURCE = {
   ...storefrontCopy,

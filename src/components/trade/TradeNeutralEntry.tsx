@@ -4,6 +4,8 @@ import React, { useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Globe, Volume2 } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { FunnelTracker } from "@/components/analytics/FunnelTracker";
 import type { AnyTradeLocale } from "@/lib/trade/contracts";
 import { TRADE_LANGUAGE_META } from "@/lib/trade/i18nMeta";
 import styles from "./trade.module.css";
@@ -50,20 +52,26 @@ export function TradeNeutralEntry({
 
   return (
     <div className={styles.tradeRoot}>
+      <FunnelTracker />
       <header className={styles.header}>
         <div className={`${styles.wrap} ${styles.nav}`}>
-          <span className={styles.logo}>TeaFloww</span>
-          <span className={styles.tradeBadge}>For tea shops</span>
+          <Link href="/" className={styles.brandlink}>
+            <BrandLogo variant="symbol" size={34} aria-hidden={true} />
+            <span className={styles.brandWordmarkGroup}>
+              <span className={styles.logo}>TEAFLOWW</span>
+              <span className={styles.tradeBadge}>For tea shops</span>
+            </span>
+          </Link>
         </div>
       </header>
       <main id="main-content" className={styles.wrap} style={{ paddingBlock: 48 }}>
-        <div className={styles.panel} style={{ maxWidth: 520, marginInline: "auto" }}>
+        <div className={styles.panel} style={{ maxWidth: 540, marginInline: "auto" }}>
           <h1 className={styles.h2} style={{ fontSize: 32, marginBottom: 8 }}>
             <Globe size={24} aria-hidden="true" style={{ marginRight: 8 }} />
             Choose your language
           </h1>
           <p className={styles.small} lang="bn">
-            আপনার ভাষা বেছে নিন · अपनी भाषा चुनें
+            আপনার ভাষা বেছে নিন · अपनी भाषा चुनें · ਆਪਣੀ ਭਾਸ਼ਾ ਚੁਣੋ
           </p>
           <div style={{ marginTop: 18 }}>
             {enabledLocales.map((loc) => {

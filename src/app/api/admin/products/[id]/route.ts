@@ -106,6 +106,13 @@ async function handleUpdate(request: Request, params: Promise<{ id: string }>) {
       seo_description: parsed.data.seo_description !== undefined ? parsed.data.seo_description : (current.seo_description ?? null),
       canonical_override: parsed.data.canonical_override !== undefined ? parsed.data.canonical_override : (current.canonical_override ?? null),
       noindex: parsed.data.noindex !== undefined ? parsed.data.noindex : (current.noindex ?? 0),
+      shipping_fee_paise_override: parsed.data.shipping_fee_paise_override !== undefined ? parsed.data.shipping_fee_paise_override : (current.shipping_fee_paise_override ?? null),
+      handling_days_min_override: parsed.data.handling_days_min_override !== undefined ? parsed.data.handling_days_min_override : (current.handling_days_min_override ?? null),
+      handling_days_max_override: parsed.data.handling_days_max_override !== undefined ? parsed.data.handling_days_max_override : (current.handling_days_max_override ?? null),
+      transit_days_min_override: parsed.data.transit_days_min_override !== undefined ? parsed.data.transit_days_min_override : (current.transit_days_min_override ?? null),
+      transit_days_max_override: parsed.data.transit_days_max_override !== undefined ? parsed.data.transit_days_max_override : (current.transit_days_max_override ?? null),
+      return_window_days_override: parsed.data.return_window_days_override !== undefined ? parsed.data.return_window_days_override : (current.return_window_days_override ?? null),
+      return_fees_override: parsed.data.return_fees_override !== undefined ? parsed.data.return_fees_override : (current.return_fees_override ?? null),
     });
 
     const stockParam = parsed.data.stock ?? (rawBody && typeof rawBody === "object" ? ((rawBody as Record<string, unknown>).inventory ?? (rawBody as Record<string, unknown>).stock) : undefined) as number | undefined;

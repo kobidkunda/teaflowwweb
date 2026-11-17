@@ -233,6 +233,46 @@ describe("Milestone 5: System, MCP, Settings & Staff Modules", () => {
       expect(data.settings.shipping_flat_fee_paise).toBeDefined();
       expect(Number.isNaN(data.settings.shipping_flat_fee_paise)).toBe(false);
     });
+
+    it("persists and validates Google Local Inventory settings", async () => {
+      const invalidPickupRes = await settingsPUT(
+        new Request("http://localhost/api/admin/settings", {
+          method: "PUT",
+          headers: { Cookie: rootCookie, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            store_name: "Teafloww",
+            currency: "INR",
+            tax_rate_percent: 5,
+            contact_email: "support@teafloww.com",
+            google_local_store_code: "SILIGURI-01",
+            google_local_pickup_method: "buy",
+            google_local_pickup_sla: "",
+          }),
+        })
+      );
+      expect(invalidPickupRes.status).toBe(400);
+
+      const validRes = await settingsPUT(
+        new Request("http://localhost/api/admin/settings", {
+          method: "PUT",
+          headers: { Cookie: rootCookie, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            store_name: "Teafloww",
+            currency: "INR",
+            tax_rate_percent: 5,
+            contact_email: "support@teafloww.com",
+            google_local_store_code: "SILIGURI-01",
+            google_local_pickup_method: "buy",
+            google_local_pickup_sla: "same_day",
+          }),
+        })
+      );
+      expect(validRes.status).toBe(200);
+      const validData = await validRes.json();
+      expect(validData.settings.google_local_store_code).toBe("SILIGURI-01");
+      expect(validData.settings.google_local_pickup_method).toBe("buy");
+      expect(validData.settings.google_local_pickup_sla).toBe("same_day");
+    });
   });
 
   describe("Coupons Full CRUD & Boundary Enforcement", () => {

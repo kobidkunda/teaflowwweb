@@ -16,23 +16,33 @@ export const TRADE_LANGUAGE_META: Record<
 };
 
 export type TradeDictionary = {
+  [key: string]: string;
   "brand.subtitle": string;
   "nav.trial": string;
+  "nav.blends": string;
   "nav.bulk": string;
   "nav.cost": string;
+  "nav.enquiry": string;
   "hero.kicker": string;
   "hero.title": string;
   "hero.titleEmphasis": string;
   "hero.intro": string;
+  "hero.proofLine": string;
   "hero.ctaTrial": string;
   "hero.ctaBulk": string;
+  "hero.ctaEnquiry": string;
   "hero.listen": string;
+  "hero.pause": string;
+  "hero.replay": string;
   "hero.brewGuide": string;
   "trial.kicker": string;
   "trial.title": string;
   "trial.intro": string;
   "trial.cta": string;
   "trial.unavailable": string;
+  "blends.kicker": string;
+  "blends.title": string;
+  "blends.subtitle": string;
   "bulk.kicker": string;
   "bulk.title": string;
   "bulk.chooseTea": string;
@@ -80,6 +90,8 @@ export type TradeDictionary = {
   "checkout.payNow": string;
   "order.title": string;
   "enquiry.requestTransport": string;
+  "enquiry.pinLabel": string;
+  "enquiry.whatsappOpen": string;
 };
 
 export function formatTradeMessage(

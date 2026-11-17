@@ -90,7 +90,7 @@ export function BusinessLanding({
       eyebrow="FAQ"
       title={isHi ? "शुरुआत करने से पहले" : "Before you get started"}
     >
-      <FaqAccordion items={content.faq} />
+      <FaqAccordion items={content.faq} locale={locale} />
     </Section>
   );
 

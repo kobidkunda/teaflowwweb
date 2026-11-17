@@ -96,6 +96,13 @@ export interface Product {
   seo_description?: string | null;
   canonical_override?: string | null;
   noindex?: number;
+  shipping_fee_paise_override?: number | null;
+  handling_days_min_override?: number | null;
+  handling_days_max_override?: number | null;
+  transit_days_min_override?: number | null;
+  transit_days_max_override?: number | null;
+  return_window_days_override?: number | null;
+  return_fees_override?: string | null;
   primary_image?: {
     url: string;
     alt_text: string;
@@ -370,4 +377,19 @@ export function getProductSpecs(product: Product): ProductSpecs {
       })),
     },
   };
+}
+
+/**
+ * Maps database packaging format enum to a user-facing label.
+ */
+export function formatPackagingLabel(format: string | null | undefined): string {
+  switch (format) {
+    case "luxury_tin":
+      return "Luxury Tin";
+    case "pyramid_bags":
+      return "Pyramid Bags";
+    case "loose_leaf_pouch":
+    default:
+      return "Loose Leaf Pouch";
+  }
 }

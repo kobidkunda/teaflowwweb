@@ -8,11 +8,14 @@ import { PackagingDielineAction } from "./PackagingDielineAction";
 import { StatusPill } from "../shared/StatusPill";
 import { PreviewNotice } from "../shared/StudioPrimitives";
 import type { PublicPackagingDetailResponse } from "@/lib/private-label/schemas";
+import type { ClientCommercePolicy } from "@/lib/seo/productPolicy";
 
 export function PackagingDetailView({
   variant,
+  commercePolicy,
 }: {
   variant: PublicPackagingDetailResponse;
+  commercePolicy?: ClientCommercePolicy;
 }) {
   const displayTitle = variant.title || variant.name || "Custom Packaging";
   const displayFamily = variant.category || variant.family || "Packaging";
@@ -117,8 +120,9 @@ export function PackagingDetailView({
               style={{
                 display: "flex",
                 alignItems: "baseline",
+                flexWrap: "wrap",
                 gap: "12px",
-                marginBottom: "20px",
+                marginBottom: "12px",
                 paddingBottom: "16px",
                 borderBottom: "1px solid #DDE4DC",
               }}
@@ -128,6 +132,24 @@ export function PackagingDetailView({
               </span>
               <span style={{ fontSize: "0.875rem", color: "#65746D" }}><StorefrontText id="copy_ddcbffca75101ce9" fallback="(MOQ:" /> {(variant.moq_units || 500).toLocaleString("en-IN")}<StorefrontText id="copy_cb20a4486a64f501" fallback="units)" />
               </span>
+            </div>
+
+            <div style={{ fontSize: "0.8125rem", color: "#4a5047", marginBottom: "20px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              <span>In stock</span>
+              <span aria-hidden="true">·</span>
+              <span>{commercePolicy?.deliveryWindowLabel || `${(variant.lead_time_days || 14) + 3}–${(variant.lead_time_days || 14) + 7} day delivery`}</span>
+              <span aria-hidden="true">·</span>
+              <Link href="/returns" style={{ color: "#143C31", fontWeight: 600 }}>
+                {commercePolicy?.returnWindowDays || 14}-day returns
+              </Link>
+              {commercePolicy?.reviewSummary && commercePolicy.reviewSummary.reviewCount > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <a href="#verified-reviews" style={{ color: "#143C31", fontWeight: 600 }}>
+                    ★ {commercePolicy.reviewSummary.ratingValue.toFixed(1)} ({commercePolicy.reviewSummary.reviewCount})
+                  </a>
+                </>
+              )}
             </div>
 
             {/* Accessible Specs Tabs */}

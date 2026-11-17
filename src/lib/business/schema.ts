@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { localeSchema } from "@/lib/international/models";
 
 export const SEGMENTS = ["starter", "trader"] as const;
 export type Segment = (typeof SEGMENTS)[number];
@@ -81,7 +82,7 @@ export const businessLeadSchema = z
     marketingConsent: z.boolean().default(false),
     company: z.string().trim().max(100).optional(),
     note: z.string().trim().max(500).optional(),
-    locale: z.enum(LOCALES).default("en"),
+    locale: localeSchema.default("en"),
     attribution: attributionSchema,
     honeypot: z.string().max(120).optional(),
   })

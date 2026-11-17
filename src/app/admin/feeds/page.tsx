@@ -1,6 +1,6 @@
 import React from "react";
 import { headers } from "next/headers";
-import { getFeedCatalogData, resolveBaseUrl } from "@/lib/feeds";
+import { getFeedCatalogData, resolveBaseUrl, resolveLocalInventoryConfig } from "@/lib/feeds";
 import { AdminAuthGate } from "@/components/admin/catalog/AdminAuthGate";
 import { AdminFeedsClient } from "@/components/admin/feeds/AdminFeedsClient";
 
@@ -22,6 +22,7 @@ export default async function AdminFeedsPage() {
   const items = getFeedCatalogData(baseUrl);
   const configuredToken = process.env.FEED_ACCESS_TOKEN;
   const isTokenProtected = Boolean(configuredToken && configuredToken.trim().length > 0);
+  const localConfig = resolveLocalInventoryConfig();
 
   return (
     <AdminAuthGate>
@@ -31,6 +32,9 @@ export default async function AdminFeedsPage() {
         configuredToken={configuredToken}
         baseUrl={baseUrl}
         detectedOrigin={detectedOrigin}
+        initialLocalStoreCode={localConfig.storeCode}
+        initialLocalPickupMethod={localConfig.pickupMethod}
+        initialLocalPickupSla={localConfig.pickupSla}
       />
     </AdminAuthGate>
   );

@@ -1,6 +1,8 @@
 import { enabledProductCondition } from "@/lib/productAvailability";
 import { getDb } from "@/lib/db";
 import { getSiteUrl } from "./site";
+import { LANGUAGES } from "@/lib/international/models";
+import { publishedTexts } from "@/lib/international/translations";
 import type { MetadataRoute } from "next";
 
 export interface SitemapEntry {
@@ -425,6 +427,40 @@ export function getCatalogSitemapEntries(): MetadataRoute.Sitemap {
   } catch {
     // Graceful fallback
   }
+
+  // Only published, current translations get standalone sitemap URLs and
+  // reciprocal hreflang alternates. Untranslated English fallbacks stay out.
+  const translations: MetadataRoute.Sitemap = [];
+  const otherLanguages = LANGUAGES.filter((language) => language.code !== "en");
+  for (const entry of entries) {
+    const pathname = new URL(entry.url).pathname;
+    let resource: string | null = pathname === "/" ? "homepage" : null;
+    const match = /^\/(tea|collections|blog)\/([^/]+)$/.exec(pathname);
+    if (match) {
+      const table = match[1] === "tea" ? "products" : match[1] === "collections" ? "categories" : "blog_posts";
+      const type = match[1] === "tea" ? "product" : match[1] === "collections" ? "category" : "blog";
+      try {
+        const record = db.prepare(`SELECT id FROM ${table} WHERE slug=?`).get(match[2]) as { id: number } | undefined;
+        if (record) resource = `${type}:${record.id}`;
+      } catch {
+        /* Optional or un-migrated collection. */
+      }
+    }
+    if (!resource) continue;
+    const translatedLocales = otherLanguages.filter((language) =>
+      Boolean(publishedTexts("interface", language.code) && publishedTexts(resource!, language.code))
+    );
+    if (!translatedLocales.length) continue;
+    const languages: Record<string, string> = { en: entry.url, "x-default": entry.url };
+    for (const locale of translatedLocales) {
+      languages[locale.code] = `${siteUrl}/${locale.code}${pathname === "/" ? "" : pathname}`;
+    }
+    entry.alternates = { languages };
+    for (const locale of translatedLocales) {
+      translations.push({ ...entry, url: languages[locale.code], alternates: { languages } });
+    }
+  }
+  entries.push(...translations);
 
   return entries;
 }

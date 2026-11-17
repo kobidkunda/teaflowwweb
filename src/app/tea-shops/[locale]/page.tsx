@@ -1,3 +1,4 @@
+import { publishedTexts } from "@/lib/international/translations";
 import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { AnyTradeLocale } from "@/lib/trade/contracts";
@@ -29,6 +30,20 @@ export default async function TradeLocalePage({
   const trial = getPublicTradeTrial(settings);
   const sharedPilots = listTradeSharedPilots(true);
   const dict = getTradeDictionary(typedLocale);
+  for (const product of products) {
+    const texts = publishedTexts(`product:${product.productId}`, typedLocale);
+    if (texts?.name) dict[`product.${product.productId}.name`] = texts.name;
+    if (texts?.tasting_notes) dict[`product.${product.productId}.tasting_notes`] = texts.tasting_notes;
+  }
+  if (trial && typedLocale === "hi") {
+    const names: Record<string, string> = {
+      "Rozana Kadak — Daily Stall Tea": dict["ui.trialName1"],
+      "Elaichi Tea — Cardamom Chai": dict["ui.trialName2"],
+      "Masala Tea — Spiced Chai Blend": dict["ui.trialName3"],
+      "Ginger Tea — Adrak Chai": dict["ui.trialName4"],
+    };
+    for (const c of trial.components) dict[`trial.component.${c.slot_index}.name`] ||= names[c.name] || c.name;
+  }
   const l10n = listLocalizedContent(typedLocale);
   const heroIntroContent = l10n.find((item) => item.resource_key === "hero.intro");
 

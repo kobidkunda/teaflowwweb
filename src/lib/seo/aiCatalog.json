@@ -35,6 +35,16 @@
         "Where is TeaFloww's Google Merchant product feed?",
         "How can I retrieve TeaFloww product data as XML?"
       ]
+    },
+    {
+      "identifier": "urn:air:teafloww.com:catalog:openai-commerce",
+      "displayName": "TeaFloww OpenAI Commerce product feed",
+      "type": "application/x-ndjson",
+      "url": "https://teafloww.com/feeds/openai.jsonl",
+      "representativeQueries": [
+        "Where is TeaFloww's ChatGPT / OpenAI product feed?",
+        "Which TeaFloww products are in stock with shipping and return policies?"
+      ]
     }
   ]
 }

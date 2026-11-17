@@ -45,17 +45,22 @@
     ".next-international-verified/types/**/*.ts",
     ".next-pdp-preview/types/**/*.ts",
     ".next-perfcheck/types/**/*.ts",
+    ".next-pl-acceptance/types/**/*.ts",
     ".next-publish-images-check/types/**/*.ts",
     ".next-quality-check/types/**/*.ts",
     ".next-quality-final/types/**/*.ts",
+    ".next-ritual-admin/types/**/*.ts",
+    ".next-ritual-validation/types/**/*.ts",
     ".next-scroll-check/types/**/*.ts",
     ".next-test/types/**/*.ts",
     ".next-tracking-build/types/**/*.ts",
     ".next-tracking-dev/types/**/*.ts",
+    ".next-traders-build/types/**/*.ts",
+    ".next-traders-preview/types/**/*.ts",
     ".next-trials-check/types/**/*.ts",
     ".next/types/**/*.ts",
     "next-env.d.ts",
-    ".next-pl-acceptance/types/**/*.ts"
+    ".next-ritual-admin-final/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",

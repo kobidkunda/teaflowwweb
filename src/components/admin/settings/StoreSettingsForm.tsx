@@ -17,6 +17,10 @@ export function StoreSettingsForm() {
   const [contactEmail, setContactEmail] = useState("concierge@himalayanteahouse.com");
   const [whatsappNumber, setWhatsappNumber] = useState("+91 98320 12345");
   const [wholesaleMoq, setWholesaleMoq] = useState<number>(50);
+  const [returnWindowDays, setReturnWindowDays] = useState<number>(14);
+  const [returnFees, setReturnFees] = useState<string>("FreeReturn");
+  const [returnMethod, setReturnMethod] = useState<string>("ReturnByMail");
+  const [returnPolicyLabel, setReturnPolicyLabel] = useState<string>("");
 
   // Wholesale Payment & Bank Details
   const [wholesaleAdvancePercent, setWholesaleAdvancePercent] = useState<number>(0);
@@ -26,6 +30,11 @@ export function StoreSettingsForm() {
   const [wholesaleBankIfsc, setWholesaleBankIfsc] = useState("");
   const [wholesaleBankBranch, setWholesaleBankBranch] = useState("");
   const [wholesaleBankUpiId, setWholesaleBankUpiId] = useState("");
+
+  // Google Merchant Center Local Inventory (India / GBP)
+  const [googleLocalStoreCode, setGoogleLocalStoreCode] = useState("");
+  const [googleLocalPickupMethod, setGoogleLocalPickupMethod] = useState("");
+  const [googleLocalPickupSla, setGoogleLocalPickupSla] = useState("");
 
   // Notifications & Webhooks
   const [notificationEmails, setNotificationEmails] = useState("");
@@ -72,6 +81,10 @@ export function StoreSettingsForm() {
         setContactEmail(data.settings.contact_email || "concierge@himalayanteahouse.com");
         setWhatsappNumber(data.settings.whatsapp_number || "+91 98320 12345");
         setWholesaleMoq(data.settings.wholesale_moq ?? 50);
+        setReturnWindowDays(data.settings.return_window_days ?? 14);
+        setReturnFees(data.settings.return_fees || "FreeReturn");
+        setReturnMethod(data.settings.return_method || "ReturnByMail");
+        setReturnPolicyLabel(data.settings.return_policy_label || "");
 
         setWholesaleAdvancePercent(data.settings.wholesale_advance_percent ?? 0);
         setWholesaleBankBeneficiary(data.settings.wholesale_bank_beneficiary || "Nirva");
@@ -80,6 +93,9 @@ export function StoreSettingsForm() {
         setWholesaleBankIfsc(data.settings.wholesale_bank_ifsc || "");
         setWholesaleBankBranch(data.settings.wholesale_bank_branch || "");
         setWholesaleBankUpiId(data.settings.wholesale_bank_upi_id || "");
+        setGoogleLocalStoreCode(data.settings.google_local_store_code || "");
+        setGoogleLocalPickupMethod(data.settings.google_local_pickup_method || "");
+        setGoogleLocalPickupSla(data.settings.google_local_pickup_sla || "");
         setNotificationEmails(data.settings.notification_emails || "");
         setWebhookSecret(data.settings.webhook_secret || "");
         setWebhookUrls({
@@ -144,6 +160,14 @@ export function StoreSettingsForm() {
       }
     }
 
+    if (googleLocalStoreCode.trim() && !/^[a-zA-Z0-9_-]+$/.test(googleLocalStoreCode.trim())) {
+      errs.googleLocalStoreCode = "Store code may only contain letters, numbers, hyphens, and underscores.";
+    }
+
+    if (googleLocalPickupMethod && googleLocalPickupMethod !== "not supported" && !googleLocalPickupSla) {
+      errs.googleLocalPickupSla = "Select a Pickup SLA when store pickup is enabled.";
+    }
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -166,6 +190,10 @@ export function StoreSettingsForm() {
         contact_email: contactEmail.trim().toLowerCase(),
         whatsapp_number: whatsappNumber.trim(),
         wholesale_moq: Math.max(1, Number(wholesaleMoq) || 50),
+        return_window_days: Math.max(1, Number(returnWindowDays) || 14),
+        return_fees: returnFees,
+        return_method: returnMethod,
+        return_policy_label: returnPolicyLabel.trim(),
         wholesale_advance_percent: Math.min(100, Math.max(0, Number(wholesaleAdvancePercent) || 0)),
         wholesale_bank_beneficiary: wholesaleBankBeneficiary.trim(),
         wholesale_bank_name: wholesaleBankName.trim(),
@@ -173,6 +201,9 @@ export function StoreSettingsForm() {
         wholesale_bank_ifsc: wholesaleBankIfsc.trim().toUpperCase(),
         wholesale_bank_branch: wholesaleBankBranch.trim(),
         wholesale_bank_upi_id: wholesaleBankUpiId.trim(),
+        google_local_store_code: googleLocalStoreCode.trim(),
+        google_local_pickup_method: googleLocalPickupMethod,
+        google_local_pickup_sla: googleLocalPickupSla,
         notification_emails: notificationEmails.trim(),
         webhook_secret: webhookSecret.trim(),
         webhook_url_enquiry: webhookUrls.enquiry.trim(),
@@ -443,6 +474,67 @@ export function StoreSettingsForm() {
                   />
                 </div>
                 <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#63665e" }}>Minimum order quantity required for Wholesale Mode across the store (products can optionally override).</p>
+              </div>
+
+              {/* Store-wide Return Policy (Google Merchant & OpenAI Feeds) */}
+              <div style={{ gridColumn: "span 2", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "14px", padding: "16px", background: "#faf8f4", borderRadius: "8px", border: "1px solid #d9d4c8" }}>
+                <div>
+                  <label htmlFor="return_window_days" style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                    Return Window (Days)
+                  </label>
+                  <input
+                    id="return_window_days"
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={returnWindowDays}
+                    onChange={(e) => setReturnWindowDays(Math.max(1, parseInt(e.target.value, 10) || 14))}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: "6px", border: "1px solid #d9d4c8", fontSize: "14px", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="return_fees" style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                    Return Fees
+                  </label>
+                  <select
+                    id="return_fees"
+                    value={returnFees}
+                    onChange={(e) => setReturnFees(e.target.value)}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: "6px", border: "1px solid #d9d4c8", fontSize: "14px", boxSizing: "border-box", background: "#fff" }}
+                  >
+                    <option value="FreeReturn">Free Return</option>
+                    <option value="ReturnShippingFees">Return Shipping Fees</option>
+                    <option value="ReturnFeesCustomerResponsibility">Customer Responsibility</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="return_method" style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                    Return Method
+                  </label>
+                  <select
+                    id="return_method"
+                    value={returnMethod}
+                    onChange={(e) => setReturnMethod(e.target.value)}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: "6px", border: "1px solid #d9d4c8", fontSize: "14px", boxSizing: "border-box", background: "#fff" }}
+                  >
+                    <option value="ReturnByMail">Return by Mail</option>
+                    <option value="ReturnInStore">Return In Store</option>
+                    <option value="ReturnAtKiosk">Return at Kiosk</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="return_policy_label" style={{ display: "block", fontSize: "12px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                    GMC Return Label (Optional)
+                  </label>
+                  <input
+                    id="return_policy_label"
+                    type="text"
+                    value={returnPolicyLabel}
+                    onChange={(e) => setReturnPolicyLabel(e.target.value)}
+                    placeholder="e.g. default"
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: "6px", border: "1px solid #d9d4c8", fontSize: "14px", boxSizing: "border-box" }}
+                  />
+                </div>
               </div>
 
               {/* Wholesale Payment Rules & Direct Bank Details */}
@@ -825,6 +917,126 @@ export function StoreSettingsForm() {
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* Google Merchant Center Local Inventory (India / GBP) */}
+            <div
+              style={{
+                background: "#faf8f4",
+                padding: "20px",
+                borderRadius: "8px",
+                border: "1px solid #d9d4c8",
+              }}
+            >
+              <div style={{ marginBottom: "14px" }}>
+                <h3 style={{ margin: "0 0 4px 0", fontSize: "16px", fontWeight: 700, color: "#1d2a24" }}>
+                  Google Merchant Center — Local Inventory (India)
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#63665e", lineHeight: 1.5 }}>
+                  Required only if you enable Free Local Listings or Local Inventory Ads for a physical store. Must match the Store Code in your linked Google Business Profile.
+                </p>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "16px" }}>
+                <div>
+                  <label htmlFor="google_local_store_code" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                    Google Business Profile Store Code
+                  </label>
+                  <input
+                    id="google_local_store_code"
+                    name="google_local_store_code"
+                    type="text"
+                    value={googleLocalStoreCode}
+                    onChange={(e) => setGoogleLocalStoreCode(e.target.value)}
+                    placeholder="e.g. SILIGURI-01"
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: "6px",
+                      border: `1px solid ${errors.googleLocalStoreCode ? "#8f2f2a" : "#d9d4c8"}`,
+                      fontSize: "14px",
+                      fontFamily: "monospace",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                  {errors.googleLocalStoreCode && (
+                    <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#8f2f2a" }}>{errors.googleLocalStoreCode}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="google_local_pickup_method" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                    Store Pickup Method (Optional)
+                  </label>
+                  <select
+                    id="google_local_pickup_method"
+                    name="google_local_pickup_method"
+                    value={googleLocalPickupMethod}
+                    onChange={(e) => {
+                      const nextMethod = e.target.value;
+                      setGoogleLocalPickupMethod(nextMethod);
+                      if (!nextMethod || nextMethod === "not supported") {
+                        setGoogleLocalPickupSla("");
+                      } else if (!googleLocalPickupSla) {
+                        setGoogleLocalPickupSla("same_day");
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: "6px",
+                      border: "1px solid #d9d4c8",
+                      fontSize: "14px",
+                      background: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <option value="">Omit pickup attributes</option>
+                    <option value="buy">buy (Buy online, pick up in store)</option>
+                    <option value="reserve">reserve (Reserve online, pay in store)</option>
+                    <option value="ship to store">ship to store (Pickup later)</option>
+                    <option value="not supported">not supported</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="google_local_pickup_sla" style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "#1d2a24" }}>
+                    Pickup SLA
+                  </label>
+                  <select
+                    id="google_local_pickup_sla"
+                    name="google_local_pickup_sla"
+                    value={googleLocalPickupSla}
+                    onChange={(e) => setGoogleLocalPickupSla(e.target.value)}
+                    disabled={!googleLocalPickupMethod || googleLocalPickupMethod === "not supported"}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: "6px",
+                      border: `1px solid ${errors.googleLocalPickupSla ? "#8f2f2a" : "#d9d4c8"}`,
+                      fontSize: "14px",
+                      background: !googleLocalPickupMethod || googleLocalPickupMethod === "not supported" ? "#f1efe8" : "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    <option value="">Not set</option>
+                    <option value="same_day">same_day</option>
+                    <option value="next_day">next_day</option>
+                    <option value="2-day">2-day</option>
+                    <option value="3-day">3-day</option>
+                    <option value="4-day">4-day</option>
+                    <option value="5-day">5-day</option>
+                    <option value="6-day">6-day</option>
+                    <option value="multi-week">multi-week</option>
+                  </select>
+                  {errors.googleLocalPickupSla && (
+                    <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#8f2f2a" }}>{errors.googleLocalPickupSla}</p>
+                  )}
+                </div>
+              </div>
+              <p style={{ margin: "8px 0 0 0", fontSize: "11px", color: "#63665e" }}>
+                Out-of-stock items are automatically marked <code>pickup_method: not supported</code> without <code>pickup_sla</code> to comply with Google Merchant Center rules.
+              </p>
             </div>
 
             {/* Security Notice */}

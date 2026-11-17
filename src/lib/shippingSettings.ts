@@ -8,6 +8,10 @@ export const shippingSettingsSchema = z.object({
   shipping_flat_fee_rupees: z.coerce.number().min(0, "Shipping fee cannot be negative"),
   shipping_calculation_mode: z.enum(["flat", "live"]).default("flat"),
   dispatch_commitment: z.string().max(200).default("24-48 hours from Siliguri hub"),
+  handling_days_min: z.coerce.number().int().min(0).max(30).default(1),
+  handling_days_max: z.coerce.number().int().min(0).max(60).default(2),
+  transit_days_min: z.coerce.number().int().min(0).max(30).default(2),
+  transit_days_max: z.coerce.number().int().min(0).max(60).default(5),
   announcement_auto_sync: z.boolean().default(true),
   // Cash on Delivery (COD) Rules
   cod_enabled: z.boolean().default(true),
