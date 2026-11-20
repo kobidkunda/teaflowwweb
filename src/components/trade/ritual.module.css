@@ -928,3 +928,42 @@
   .quickOrderCard { border-radius: 18px; padding: 18px 15px; }
   .quickOrderPackGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+
+/* Mobile paid-traffic hero: keep the first purchase CTA near the first viewport. */
+@media (max-width: 700px) {
+  .heroInner {
+    padding-top: 192px;
+    padding-bottom: 26px;
+  }
+  .heroArt {
+    height: 197px !important;
+    object-position: 75% center;
+  }
+  .heroCopy h1 {
+    font-size: clamp(32px, 8vw, 39px);
+    line-height: 1.09;
+    margin: 13px 0 11px;
+  }
+  .heroCopy h1 em {
+    margin-top: 7px;
+    font-size: .72em;
+    line-height: 1.2;
+  }
+  .heroCopy > p {
+    font-size: 14px;
+    line-height: 1.55;
+    margin-bottom: 16px;
+  }
+  .heroActions {
+    gap: 8px 16px;
+  }
+  .heroHelp {
+    margin-top: 7px;
+    gap: 14px;
+  }
+  .heroDisclosure {
+    top: 161px;
+    bottom: auto;
+  }
+}
