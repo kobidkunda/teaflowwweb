@@ -40,6 +40,7 @@ import { TradeEnquiryForm } from "./TradeEnquiryForm";
 import { CupCalculator } from "./CupCalculator";
 import { TradeHeroArt } from "./TradeHeroArt";
 import { TradePilotLocations } from "./TradePilotLocations";
+import { sendFunnelEvent } from "@/lib/funnel/clientAttribution";
 import styles from "./trade.module.css";
 import ui from "./ritual.module.css";
 
@@ -189,8 +190,21 @@ export function TradeStorefrontClient({
       });
       if (!res.ok) throw new Error();
       const result: QuoteResult = await res.json();
-      if (seq === (isTrial ? trialRef.current : requestRef.current))
+      if (seq === (isTrial ? trialRef.current : requestRef.current)) {
         setResult(result);
+        sendFunnelEvent({
+          funnelStage: "form_submit",
+          eventName: result.kind === "confirmed" ? "trade_quote_confirmed" : "trade_quote_response",
+          entityType: isTrial ? "trade_trial" : "trade_product",
+          entityId: isTrial ? trial!.id : String(product?.productId || ""),
+          valuePaise: result.kind === "confirmed" ? result.totalPaise : 0,
+          metadata: {
+            quoteType: isTrial ? "trial" : "bulk",
+            outcome: result.kind,
+            paymentMethod: isTrial ? "prepaid" : payment,
+          },
+        });
+      }
     } catch (e) {
       if (
         (e as Error).name !== "AbortError" &&
@@ -208,6 +222,14 @@ export function TradeStorefrontClient({
     setEnquiryOpen(true);
   }
   function buy(q: Extract<QuoteResult, { kind: "confirmed" }>) {
+    sendFunnelEvent({
+      funnelStage: "checkout_start",
+      eventName: "trade_quote_checkout_click",
+      entityType: "trade_quote",
+      entityId: q.id,
+      valuePaise: q.totalPaise,
+      currency: "INR",
+    });
     router.push(
       `/tea-shops/${locale}/checkout?quoteId=${encodeURIComponent(q.id)}`,
     );
