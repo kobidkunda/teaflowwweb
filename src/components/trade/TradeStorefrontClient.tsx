@@ -74,9 +74,11 @@ export function TradeStorefrontClient({
   const [productId, setProductId] = useState(initial?.productId || 0);
   const product =
     products.find((p) => p.productId === productId) || products[0];
+  // First-time visitors should not be defaulted into a 25 kg bulk commitment.
   const defaultVariant = (p?: TradeProductDto) =>
+    p?.variants.find((v) => v.grams === 5000 && v.inStock) ||
+    p?.variants.find((v) => v.grams === 1000 && v.inStock) ||
     p?.variants.find((v) => v.id === p.defaultVariantId && v.inStock) ||
-    p?.variants.find((v) => v.grams === 25000 && v.inStock) ||
     p?.variants.find((v) => v.inStock);
   const [variantId, setVariantId] = useState(defaultVariant(initial)?.id || 0);
   const variant =
@@ -140,10 +142,12 @@ export function TradeStorefrontClient({
   }
   function focusBulk() {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document
-      .getElementById("bulk")
-      ?.scrollIntoView({ behavior: reduced ? "instant" : "smooth" });
-    document.getElementById("trade-pin")?.focus({ preventScroll: true });
+    const quick = locale === "en" ? document.getElementById("quick-order") : null;
+    (quick || document.getElementById("bulk"))?.scrollIntoView({
+      behavior: reduced ? "instant" : "smooth",
+    });
+    (quick ? document.getElementById("quick-trade-pin") : document.getElementById("trade-pin"))
+      ?.focus({ preventScroll: true });
   }
   const totalGrams =
     trial?.components.reduce((sum, c) => sum + c.weight_g, 0) ||
@@ -313,7 +317,7 @@ export function TradeStorefrontClient({
     "Ginger Tea — Adrak Chai",
     "Masala Tea — Spiced Chai Blend",
   ];
-  const displayComponents = isGeneratedPouches
+  const displayComponents = Boolean(trial?.components.length)
     ? [...(trial?.components || [])].sort((a, b) => {
         const rank = (name: string) => {
           const i = knownOrder.indexOf(name);
@@ -398,6 +402,158 @@ export function TradeStorefrontClient({
             </div>
           </div>
         </section>
+
+        {locale === "en" && (
+          <section id="quick-order" className={ui.quickOrderSection} aria-labelledby="quickOrderHeading">
+            <div className={[styles.wrap, ui.quickOrderGrid].join(" ")}>
+              <div className={ui.quickOrderStory}>
+                <span className={ui.quickOrderEyebrow}>For tea stalls and chai shops</span>
+                <h2 id="quickOrderHeading">Taste it. Price it. Order it.</h2>
+                <p>Buy the tea your customers will ask for again. Start with a tasting kit, or choose a smaller trade pack and check your exact delivered price before you commit.</p>
+                <div className={ui.quickOrderPromises}>
+                  <span><Coffee size={17} aria-hidden="true" /> Test in your own milk</span>
+                  <span><Truck size={17} aria-hidden="true" /> Freight before checkout</span>
+                  <span><Package size={17} aria-hidden="true" /> Live pack availability</span>
+                </div>
+                {trial?.in_stock && (
+                  <button type="button" className={ui.quickOrderTrial} onClick={openTrial}>
+                    <span>
+                      <small>Start with a trial</small>
+                      <strong>Try the tea sample kit</strong>
+                      <small>Check delivery to your shop PIN</small>
+                    </span>
+                    <span className={ui.quickOrderTrialPrice}>
+                      {formatInrPaise(trial.price_paise, locale)}
+                      <ArrowRight size={18} aria-hidden="true" />
+                    </span>
+                  </button>
+                )}
+                <p className={ui.quickOrderDisclosure}>See the price without providing your phone number. Delivery fees are confirmed from your PIN before payment.</p>
+              </div>
+              <div className={ui.quickOrderCard}>
+                <div className={ui.quickOrderCardHead}>
+                  <span>READY TO ORDER?</span>
+                  <h3>Get your delivered price</h3>
+                  <p>Choose tea, pack size and PIN. Confirm the total before checkout.</p>
+                </div>
+                {product && variant ? (
+                  <>
+                    <form
+                      className={ui.quickOrderForm}
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void checkQuote(false);
+                      }}
+                    >
+                      <label htmlFor="quick-trade-blend">Choose your chai</label>
+                      <select
+                        id="quick-trade-blend"
+                        className={styles.select}
+                        value={product.productId}
+                        onChange={(e) => {
+                          const selected = products.find((p) => p.productId === Number(e.target.value));
+                          if (selected) choose(selected);
+                        }}
+                      >
+                        {products.map((p) => (
+                          <option value={p.productId} key={p.productId}>{productName(p)}</option>
+                        ))}
+                      </select>
+                      <fieldset className={ui.quickOrderPacks}>
+                        <legend>Choose a pack size</legend>
+                        <div className={ui.quickOrderPackGrid}>
+                          {product.variants.filter((v) => v.inStock).map((v) => (
+                            <button
+                              type="button"
+                              key={v.id}
+                              aria-pressed={variant.id === v.id}
+                              className={variant.id === v.id ? ui.quickOrderPackActive : ui.quickOrderPack}
+                              onClick={() => {
+                                setVariantId(v.id);
+                                invalidate();
+                              }}
+                            >
+                              <strong>{packLabel(v.grams)}</strong>
+                              <small>{formatInrPaise(v.pricePaise, locale)}</small>
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                      <div className={ui.quickOrderInline}>
+                        <div>
+                          <label htmlFor="quick-trade-qty">Packs</label>
+                          <input
+                            id="quick-trade-qty"
+                            type="number"
+                            min="1"
+                            max="100"
+                            step="1"
+                            value={quantity}
+                            onChange={(e) => {
+                              const n = Number(e.target.value);
+                              setQuantity(Number.isFinite(n) ? Math.min(100, Math.max(1, Math.floor(n))) : 1);
+                              invalidate();
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="quick-trade-payment">Payment</label>
+                          <select
+                            id="quick-trade-payment"
+                            value={payment}
+                            onChange={(e) => {
+                              setPayment(e.target.value as TradePaymentMethod);
+                              invalidate();
+                            }}
+                          >
+                            <option value="prepaid">Prepaid</option>
+                            <option value="cod">Cash on delivery</option>
+                          </select>
+                        </div>
+                      </div>
+                      <label htmlFor="quick-trade-pin">Shop delivery PIN code</label>
+                      <input
+                        id="quick-trade-pin"
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="postal-code"
+                        pattern="[1-9][0-9]{5}"
+                        placeholder="Enter 6-digit PIN"
+                        maxLength={6}
+                        required
+                        value={pin}
+                        aria-invalid={Boolean(pinError)}
+                        aria-describedby={pinError ? "quick-order-pin-error" : undefined}
+                        onChange={(e) => {
+                          setPin(e.target.value.replace(/\D/g, "").slice(0, 6));
+                          setPinError("");
+                          invalidate();
+                        }}
+                      />
+                      {pinError && <p id="quick-order-pin-error" role="alert" className={ui.quickOrderError}>{pinError}</p>}
+                      <div className={ui.quickOrderSubtotal}>
+                        <span>Tea subtotal<small>Excludes delivery and fees</small></span>
+                        <strong>{formatInrPaise(variant.pricePaise * quantity, locale)}</strong>
+                      </div>
+                      <button className={ui.quickOrderSubmit} disabled={pending} type="submit">
+                        {pending ? "Checking delivery…" : "Check final delivered price"}
+                        <ArrowRight size={18} aria-hidden="true" />
+                      </button>
+                    </form>
+                    {quote && (
+                      <div aria-live="polite" aria-busy={pending} className={ui.quickOrderResult}>
+                        {receipt(quote)}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p>Trade packs are currently unavailable. Ask our team for restock details.</p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         <section
           id="trial"
           className={ui.trialBand}
