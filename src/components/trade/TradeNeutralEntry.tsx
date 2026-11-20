@@ -21,13 +21,27 @@ export function TradeNeutralEntry({
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    const qs = searchParams.toString();
+    const paidClick = ["gclid", "fbclid", "gbraid", "wbraid", "msclkid"]
+      .some((param) => searchParams.has(param));
+    const paidMedium = /^(cpc|ppc|paid|paid_social|paid-search|paid_search)$/i
+      .test(searchParams.get("utm_medium") || "");
+    let saved: AnyTradeLocale | null = null;
     try {
-      const saved = window.localStorage.getItem(TRADE_LANG_STORAGE_KEY) as AnyTradeLocale | null;
-      if (saved && enabledLocales.includes(saved)) {
-        const qs = searchParams.toString();
-        router.replace(`/tea-shops/${saved}${qs ? `?${qs}` : ""}`);
-      }
-    } catch {}
+      saved = window.localStorage.getItem(TRADE_LANG_STORAGE_KEY) as AnyTradeLocale | null;
+    } catch {
+      // Campaign visitors still need a destination if storage is unavailable.
+    }
+    // Paid ads should open the shop, not a mandatory language picker.
+    // Keep all UTM and ad click identifiers on the new URL.
+    const locale = saved && enabledLocales.includes(saved)
+      ? saved
+      : (paidClick || paidMedium) && enabledLocales.includes("en")
+        ? "en"
+        : null;
+    if (locale) {
+      router.replace("/tea-shops/" + locale + (qs ? "?" + qs : ""));
+    }
   }, [enabledLocales, router, searchParams]);
 
   function preview(loc: AnyTradeLocale) {
